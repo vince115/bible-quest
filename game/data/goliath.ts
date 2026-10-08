@@ -30,14 +30,14 @@ export const GOLIATH_ACTIONS: Record<GoliathActionId, GoliathAction> = {
   swing: {
     id: "swing",
     name: "Furious Swing",
-    description: "7 damage to every ally.",
-    damageAll: 7,
+    description: "12 damage to every ally.",
+    damageAll: 12,
   },
   crush: {
     id: "crush",
     name: "Crushing Blow",
-    description: "14 damage to one ally.",
-    damageOne: 14,
+    description: "22 damage to one ally.",
+    damageOne: 22,
   },
 };
 
