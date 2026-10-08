@@ -11,7 +11,7 @@ interface LocaleStore {
 }
 
 // Storage can throw (private mode, blocked site data); fall back silently.
-const safeStorage = {
+export const safeStorage = {
   getItem: (k: string) => {
     try {
       return localStorage.getItem(k);

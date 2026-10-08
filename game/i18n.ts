@@ -1,4 +1,5 @@
 import { enV2, zhV2 } from "./v2/i18n";
+import { enV3, zhV3 } from "./v3/i18n";
 
 export type Locale = "en" | "zh";
 
@@ -375,8 +376,8 @@ const zh: Record<MessageKey, string> = {
 };
 
 const DICTS: Record<Locale, Record<string, string>> = {
-  en: { ...en, ...enV2 },
-  zh: { ...zh, ...zhV2 },
+  en: { ...en, ...enV2, ...enV3 },
+  zh: { ...zh, ...zhV2, ...zhV3 },
 };
 
 /**
@@ -387,7 +388,7 @@ export function translate(locale: Locale, key: string, params: Params = {}): str
   const dict = DICTS[locale];
   const raw = dict[key] ?? DICTS.en[key] ?? key;
   // v2 messages name v2 cards and Goliath actions.
-  const ns = key.startsWith("v2.") ? "v2." : "";
+  const ns = key.startsWith("v2.") || key.startsWith("v3.") ? "v2." : "";
   return raw.replace(/\{(\w+)\}/g, (match, name: string) => {
     const v = params[name];
     if (v === undefined) return match;
