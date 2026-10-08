@@ -5,6 +5,7 @@ import { CARD_BY_ID } from "@/game/data/cards";
 import { RULES } from "@/game/data/rules";
 import { canPlayCard } from "@/game/engine";
 import type { BattleState, CardDef } from "@/game/types";
+import { useT } from "@/game/locale";
 
 function cardTone(card: CardDef) {
   const e = card.effect;
@@ -24,15 +25,14 @@ export function ScriptureHand({
   locked: boolean;
   onPlay: (handIndex: number) => void;
 }) {
+  const t = useT();
   return (
     <section>
       <div className="mb-2 flex items-center justify-between text-xs text-stone-400">
         <span className="font-semibold text-stone-200">
-          Scripture Hand ({battle.hand.length}/{RULES.maxHand})
+          {t("ui.hand", { n: battle.hand.length, max: RULES.maxHand })}
         </span>
-        <span>
-          Deck {battle.drawPile.length} · Discard {battle.discard.length}
-        </span>
+        <span>{t("ui.deck", { deck: battle.drawPile.length, discard: battle.discard.length })}</span>
       </div>
       <div className="flex min-h-44 flex-wrap gap-2">
         <AnimatePresence mode="popLayout">
@@ -55,12 +55,12 @@ export function ScriptureHand({
                   {card.cost}
                 </span>
                 <span className="mt-1 text-[10px] uppercase tracking-wider text-stone-400">
-                  {card.reference}
+                  {t(`card.${card.id}.ref`)}
                 </span>
                 <span className="mt-0.5 text-sm font-bold leading-tight text-stone-100">
-                  {card.name}
+                  {t(`card.${card.id}.name`)}
                 </span>
-                <span className="mt-auto pt-2 text-xs leading-snug text-stone-300">{card.text}</span>
+                <span className="mt-auto pt-2 text-xs leading-snug text-stone-300">{t(`card.${card.id}.text`, { ...card.effect })}</span>
               </motion.button>
             );
           })}

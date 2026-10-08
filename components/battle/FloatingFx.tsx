@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { Fx, FxTarget } from "@/game/types";
+import { useT } from "@/game/locale";
 
 const COLORS: Record<Fx["kind"], string> = {
   damage: "text-red-400",
@@ -13,6 +14,7 @@ const COLORS: Record<Fx["kind"], string> = {
 };
 
 export function FloatingFx({ fx, target }: { fx: Fx[]; target: FxTarget }) {
+  const t = useT();
   const items = fx.filter((f) => f.target === target);
   return (
     <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center">
@@ -25,7 +27,7 @@ export function FloatingFx({ fx, target }: { fx: Fx[]; target: FxTarget }) {
           transition={{ duration: 1.4, delay: i * 0.12, ease: "easeOut" }}
           style={{ marginTop: i * 22 }}
         >
-          {f.text}
+          {t(f.key, f.params)}
         </motion.span>
       ))}
     </div>

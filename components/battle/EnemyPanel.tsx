@@ -1,14 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CHARACTERS } from "@/game/data/characters";
 import { GOLIATH_ACTIONS } from "@/game/data/goliath";
 import { RULES } from "@/game/data/rules";
 import type { BattleState } from "@/game/types";
+import { useT } from "@/game/locale";
 import { FloatingFx, hitKey } from "./FloatingFx";
 import { HpBar } from "./HpBar";
 
 export function EnemyPanel({ battle }: { battle: BattleState }) {
+  const t = useT();
   const { goliath, intent } = battle;
   const action = intent ? GOLIATH_ACTIONS[intent.actionId] : null;
   const enraged = !goliath.armored;
@@ -32,19 +33,19 @@ export function EnemyPanel({ battle }: { battle: BattleState }) {
 
         <div className="flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-bold text-stone-100">Goliath of Gath</h2>
+            <h2 className="text-xl font-bold text-stone-100">{t("ui.goliath")}</h2>
             {goliath.armored ? (
               <span className="rounded bg-amber-600/30 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                🛡 ARMORED — max {RULES.armoredMaxDamage} dmg per hit
+                {t("ui.armored", { n: RULES.armoredMaxDamage })}
               </span>
             ) : (
               <span className="rounded bg-stone-700 px-2 py-0.5 text-xs font-semibold text-stone-300 line-through">
-                Armor broken
+                {t("ui.armorBroken")}
               </span>
             )}
             {enraged && (
               <span className="rounded bg-red-700/40 px-2 py-0.5 text-xs font-semibold text-red-300">
-                ENRAGED
+                {t("ui.enraged")}
               </span>
             )}
           </div>
@@ -53,17 +54,17 @@ export function EnemyPanel({ battle }: { battle: BattleState }) {
 
         <div className="rounded-xl border border-red-900/60 bg-red-950/40 p-3 sm:w-64">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-red-300/70">
-            Next action
+            {t("ui.nextAction")}
           </div>
           {action ? (
             <>
-              <div className="font-semibold text-red-200">{action.name}</div>
+              <div className="font-semibold text-red-200">{t(`action.${action.id}.name`)}</div>
               <div className="text-xs text-red-200/80">
-                {action.description}
+                {t(`action.${action.id}.desc`, { ...action })}
               </div>
               {intent?.targetId && !(action.targetsDavid && intent.targetId === "david") && (
                 <div className="mt-1 text-xs font-semibold text-red-300">
-                  🎯 Target: {CHARACTERS[intent.targetId].name}
+                  {t("ui.target", { char: intent.targetId })}
                 </div>
               )}
             </>

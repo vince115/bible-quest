@@ -3,8 +3,9 @@
 import { RULES } from "@/game/data/rules";
 import { battlePhase, isEmboldened } from "@/game/engine";
 import type { BattleState } from "@/game/types";
+import { useT } from "@/game/locale";
 
-const PHASES = ["Fear", "Faith", "Break Armor", "Defeat Goliath"];
+const PHASES = [1, 2, 3, 4] as const;
 
 function Meter({
   label,
@@ -44,13 +45,14 @@ function Meter({
 }
 
 export function ResourceBar({ battle }: { battle: BattleState }) {
+  const t = useT();
   const phase = battlePhase(battle);
   const faithNote = battle.slingStoneUsed
-    ? "Sling Stone used"
+    ? t("ui.slingUsed")
     : battle.party.david.hp <= 0
-      ? "David has fallen"
+      ? t("ui.davidFallen")
       : battle.faith >= RULES.maxFaith
-        ? "Sling Stone ready!"
+        ? t("ui.slingReady")
         : undefined;
 
   return (
@@ -67,17 +69,17 @@ export function ResourceBar({ battle }: { battle: BattleState }) {
                     : "bg-stone-800 text-stone-500"
               }`}
             >
-              {i + 1}. {p}
+              {p}. {t(`ui.phase.${p}`)}
             </span>
             {i < PHASES.length - 1 && <span className="text-stone-600">→</span>}
           </span>
         ))}
-        <span className="ml-auto text-stone-400">Turn {battle.turn}</span>
+        <span className="ml-auto text-stone-400">{t("ui.turn", { n: battle.turn })}</span>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-6">
         <div className="sm:w-36">
-          <div className="mb-1 text-xs font-semibold text-stone-200">Energy</div>
+          <div className="mb-1 text-xs font-semibold text-stone-200">{t("ui.energy")}</div>
           <div className="flex gap-1">
             {Array.from({ length: Math.max(battle.energy, RULES.baseEnergy) }).map((_, i) => (
               <span
@@ -92,15 +94,19 @@ export function ResourceBar({ battle }: { battle: BattleState }) {
           </div>
         </div>
         <Meter
-          label="🔥 Courage"
+          label={t("ui.courage")}
           value={battle.courage}
           max={RULES.maxCourage}
           fill="bg-orange-500"
           marker={RULES.emboldenedAt}
-          note={isEmboldened(battle) ? `Emboldened +${RULES.emboldenedBonus} ATK` : `≥${RULES.emboldenedAt}: +${RULES.emboldenedBonus} ATK`}
+          note={
+            isEmboldened(battle)
+              ? t("ui.emboldened", { n: RULES.emboldenedBonus })
+              : t("ui.emboldenedHint", { at: RULES.emboldenedAt, n: RULES.emboldenedBonus })
+          }
         />
         <Meter
-          label="✨ Faith (David)"
+          label={t("ui.faith")}
           value={battle.faith}
           max={RULES.maxFaith}
           fill="bg-amber-300"

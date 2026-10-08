@@ -1,11 +1,12 @@
 import { CARD_BY_ID, CARDS } from "./data/cards";
-import { CHARACTERS, PARTY_ORDER, SLING_STONE } from "./data/characters";
+import { CHARACTERS, PARTY_ORDER, SLING_STONE_COST } from "./data/characters";
 import {
   ARMORED_PATTERN,
   ENRAGED_PATTERN,
   GOLIATH_ACTIONS,
 } from "./data/goliath";
 import { RULES } from "./data/rules";
+import type { Params } from "./i18n";
 import type {
   BattleState,
   CharacterId,
@@ -34,13 +35,13 @@ function shuffle<T>(arr: T[], rng: Rng): T[] {
   return a;
 }
 
-function log(s: BattleState, text: string, kind: LogEntry["kind"]) {
-  s.log.push({ id: ++s.seq, turn: s.turn, text, kind });
+function log(s: BattleState, key: string, kind: LogEntry["kind"], params?: Params) {
+  s.log.push({ id: ++s.seq, turn: s.turn, key, params, kind });
   if (s.log.length > 60) s.log.splice(0, s.log.length - 60);
 }
 
-function fx(s: BattleState, target: Fx["target"], text: string, kind: Fx["kind"]) {
-  s.fx.push({ id: ++s.seq, target, text, kind });
+function fx(s: BattleState, target: Fx["target"], kind: Fx["kind"], key: string, params?: Params) {
+  s.fx.push({ id: ++s.seq, target, kind, key, params });
 }
 
 const isAlive = (c: CharacterState) => c.hp > 0;
@@ -62,7 +63,7 @@ function draw(s: BattleState, n: number, rng: Rng) {
       if (s.discard.length === 0) return;
       s.drawPile = shuffle(s.discard, rng);
       s.discard = [];
-      log(s, "Discard pile reshuffled into the deck.", "system");
+      log(s, "log.reshuffle", "system");
     }
     s.hand.push(s.drawPile.shift()!);
   }
@@ -72,26 +73,26 @@ function checkVictory(s: BattleState) {
   if (s.result === "ongoing" && s.goliath.hp <= 0) {
     s.goliath.hp = 0;
     s.result = "victory";
-    log(s, "Goliath falls! The battle is the LORD's.", "system");
+    log(s, "log.victory", "system");
   }
 }
 
 function checkDefeat(s: BattleState) {
   if (s.result === "ongoing" && livingAllies(s).length === 0) {
     s.result = "defeat";
-    log(s, "All of Israel's champions have fallen.", "system");
+    log(s, "log.defeat", "system");
   }
 }
 
 /** Returns the damage actually dealt after Armor. */
 function damageGoliath(s: BattleState, amount: number): number {
   if (amount <= 0) {
-    fx(s, "goliath", "0", "miss");
+    fx(s, "goliath", "miss", "fx.dmg", { n: 0 });
     return 0;
   }
   const dealt = s.goliath.armored ? Math.min(amount, RULES.armoredMaxDamage) : amount;
   s.goliath.hp = Math.max(0, s.goliath.hp - dealt);
-  fx(s, "goliath", `-${dealt}`, dealt < amount ? "miss" : "damage");
+  fx(s, "goliath", dealt < amount ? "miss" : "damage", "fx.dmg", { n: dealt });
   return dealt;
 }
 
@@ -102,13 +103,13 @@ function damageAlly(s: BattleState, id: CharacterId, amount: number) {
   c.shield -= absorbed;
   const taken = amount - absorbed;
   c.hp = Math.max(0, c.hp - taken);
-  fx(s, id, absorbed > 0 ? `-${taken} (🛡${absorbed})` : `-${taken}`, "damage");
+  fx(s, id, "damage", absorbed > 0 ? "fx.dmgShield" : "fx.dmg", { n: taken, s: absorbed });
   if (c.hp === 0) {
     c.fear = 0;
     c.shield = 0;
-    log(s, `${CHARACTERS[id].name} has fallen!`, "system");
+    log(s, "log.fallen", "system", { char: id });
     if (id === "david" && !s.slingStoneUsed) {
-      log(s, "Without David, the Sling Stone is lost.", "system");
+      log(s, "log.slingLost", "system");
     }
   }
 }
@@ -118,9 +119,9 @@ function addFear(s: BattleState, id: CharacterId, amount: number) {
   if (!isAlive(c) || amount <= 0) return;
   const before = c.fear;
   c.fear = Math.min(RULES.maxFear, c.fear + amount);
-  if (c.fear > before) fx(s, id, `+${c.fear - before} Fear`, "fear");
+  if (c.fear > before) fx(s, id, "fear", "fx.fearUp", { n: c.fear - before });
   if (c.fear >= RULES.maxFear && before < RULES.maxFear) {
-    log(s, `${CHARACTERS[id].name} is Terrified!`, "enemy");
+    log(s, "log.terrified", "enemy", { char: id });
   }
 }
 
@@ -129,12 +130,12 @@ function removeFear(s: BattleState, id: CharacterId, amount: number) {
   if (!isAlive(c) || c.fear === 0) return;
   const removed = Math.min(c.fear, amount);
   c.fear -= removed;
-  fx(s, id, `-${removed} Fear`, "buff");
+  fx(s, id, "buff", "fx.fearDown", { n: removed });
 }
 
 function addFaith(s: BattleState, n: number) {
   s.faith = Math.min(RULES.maxFaith, s.faith + n);
-  fx(s, "david", `+${n} Faith`, "buff");
+  fx(s, "david", "buff", "fx.faith", { n });
 }
 
 function addCourage(s: BattleState, n: number) {
@@ -185,7 +186,7 @@ export function createBattle(rng: Rng = Math.random): BattleState {
   };
   draw(s, RULES.openingHand, rng);
   s.intent = pickIntent(s, rng);
-  log(s, "Goliath of Gath steps forward, clad in bronze armor.", "system");
+  log(s, "log.start", "system");
   return s;
 }
 
@@ -200,9 +201,10 @@ export function isSlingStoneReady(s: BattleState): boolean {
   return !s.slingStoneUsed && s.goliath.armored && isAlive(s.party.david) && s.faith >= RULES.maxFaith;
 }
 
-export function skillInfo(s: BattleState, id: CharacterId) {
-  if (id === "david" && isSlingStoneReady(s)) return SLING_STONE;
-  return CHARACTERS[id].skill;
+/** `key` selects the skill's text in i18n (`skill.<key>.name` / `.desc`). */
+export function skillInfo(s: BattleState, id: CharacterId): { key: string; cost: number } {
+  if (id === "david" && isSlingStoneReady(s)) return { key: "slingStone", cost: SLING_STONE_COST };
+  return { key: id, cost: CHARACTERS[id].skillCost };
 }
 
 export function canUseSkill(s: BattleState, id: CharacterId): boolean {
@@ -238,7 +240,7 @@ export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.
   const e = card.effect;
   s.energy -= card.cost;
   s.discard.push(cardId);
-  log(s, `Played ${card.name} (${card.reference}).`, "player");
+  log(s, "log.playCard", "player", { card: cardId });
 
   if (e.faith) addFaith(s, e.faith);
   if (e.courage) addCourage(s, e.courage);
@@ -250,7 +252,7 @@ export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.
   if (e.shieldAll) {
     livingAllies(s).forEach((c) => {
       c.shield += e.shieldAll!;
-      fx(s, c.id, `+${e.shieldAll} Shield`, "shield");
+      fx(s, c.id, "shield", "fx.shield", { n: e.shieldAll });
     });
   }
   if (e.healLowest) {
@@ -258,12 +260,12 @@ export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.
     if (target) {
       const healed = Math.min(e.healLowest, CHARACTERS[target.id].maxHp - target.hp);
       target.hp += healed;
-      fx(s, target.id, `+${healed}`, "heal");
+      fx(s, target.id, "heal", "fx.heal", { n: healed });
     }
   }
   if (e.damage) {
     const dealt = damageGoliath(s, e.damage);
-    log(s, `Goliath takes ${dealt} damage${s.goliath.armored ? " (Armor)" : ""}.`, "player");
+    log(s, s.goliath.armored ? "log.cardDamageArmor" : "log.cardDamage", "player", { n: dealt });
     checkVictory(s);
   }
   if (e.energy) s.energy += e.energy;
@@ -285,30 +287,30 @@ export function activateSkill(state: BattleState, id: CharacterId, rng: Rng = Ma
       s.slingStoneUsed = true;
       s.goliath.armored = false;
       s.goliath.patternIndex = 0;
-      log(s, "SLING STONE! The stone sinks into Goliath's forehead — his Armor shatters!", "player");
+      log(s, "log.slingStone", "player");
       damageGoliath(s, RULES.slingStoneDamage);
       checkVictory(s);
       if (s.result === "ongoing") {
         // No stagger: Goliath turns Enraged at once and reveals his first Phase 4 action.
         s.intent = pickIntent(s, rng);
-        log(s, "Goliath roars in fury — he is Enraged!", "enemy");
+        log(s, "log.enraged", "enemy");
       }
     } else {
       const dealt = damageGoliath(s, RULES.slingDamage);
-      log(s, `David slings a stone: ${dealt} damage${s.goliath.armored ? " (Armor)" : ""}.`, "player");
+      log(s, s.goliath.armored ? "log.slingArmor" : "log.sling", "player", { n: dealt });
       checkVictory(s);
     }
   } else if (id === "samuel") {
     addFaith(s, RULES.samuelFaith);
     PARTY_ORDER.forEach((pid) => removeFear(s, pid, RULES.samuelFearRemoval));
-    log(s, `Samuel anoints: +${RULES.samuelFaith} Faith, Fear eased.`, "player");
+    log(s, "log.anoint", "player", { n: RULES.samuelFaith });
   } else {
     addCourage(s, RULES.jonathanCourage);
     livingAllies(s).forEach((ally) => {
       ally.shield += RULES.jonathanShield;
-      fx(s, ally.id, `+${RULES.jonathanShield} Shield`, "shield");
+      fx(s, ally.id, "shield", "fx.shield", { n: RULES.jonathanShield });
     });
-    log(s, `Jonathan's Covenant Shield: +${RULES.jonathanCourage} Courage, Shield ${RULES.jonathanShield} to all.`, "player");
+    log(s, "log.covenant", "player", { courage: RULES.jonathanCourage, shield: RULES.jonathanShield });
   }
   return s;
 }
@@ -318,7 +320,7 @@ export function spendCourage(state: BattleState, id: CharacterId): BattleState {
   const s = clone(state);
   s.courage -= 1;
   removeFear(s, id, 1);
-  log(s, `Spent 1 Courage: ${CHARACTERS[id].name} loses 1 Fear.`, "player");
+  log(s, "log.spendCourage", "player", { char: id });
   return s;
 }
 
@@ -330,15 +332,14 @@ export function resolveBasicAttacks(state: BattleState): BattleState {
   for (const id of PARTY_ORDER) {
     const c = s.party[id];
     if (!isAlive(c)) continue;
-    const name = CHARACTERS[id].name;
     if (isTerrified(c)) {
-      log(s, `${name} is Terrified and cannot attack.`, "ally");
-      fx(s, id, "Terrified", "fear");
+      log(s, "log.terrifiedSkip", "ally", { char: id });
+      fx(s, id, "fear", "fx.terrified");
       continue;
     }
     const dmg = basicAttackDamage(s, id);
     const dealt = damageGoliath(s, dmg);
-    log(s, `${name} attacks: ${dealt} damage${s.goliath.armored && dmg > dealt ? " (Armor)" : ""}.`, "ally");
+    log(s, s.goliath.armored && dmg > dealt ? "log.attackArmor" : "log.attack", "ally", { char: id, n: dealt });
     checkVictory(s);
     if (s.result !== "ongoing") break;
   }
@@ -351,7 +352,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
 
   if (s.intent) {
     const action = GOLIATH_ACTIONS[s.intent.actionId];
-    log(s, `Goliath uses ${action.name}.`, "enemy");
+    log(s, "log.goliathUses", "enemy", { action: action.id });
     if (action.fearAll) PARTY_ORDER.forEach((id) => addFear(s, id, action.fearAll!));
     if (action.damageAll) PARTY_ORDER.forEach((id) => damageAlly(s, id, action.damageAll!));
     if (action.damageOne !== undefined) {
@@ -382,7 +383,7 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
     c.skillUsed = false;
   }
   draw(s, RULES.drawPerTurn, rng);
-  log(s, `— Turn ${s.turn} —`, "system");
+  log(s, "log.turn", "system", { n: s.turn });
   return s;
 }
 

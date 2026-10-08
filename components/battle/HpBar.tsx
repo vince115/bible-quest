@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useT } from "@/game/locale";
 
 export function HpBar({
   hp,
@@ -13,6 +14,7 @@ export function HpBar({
   shield?: number;
   color?: string;
 }) {
+  const t = useT();
   const pct = Math.max(0, (hp / max) * 100);
   return (
     <div>
@@ -24,9 +26,7 @@ export function HpBar({
         />
       </div>
       <div className="mt-1 flex justify-between text-xs text-stone-400">
-        <span>
-          HP {hp}/{max}
-        </span>
+        <span>{t("ui.hp", { hp, max })}</span>
         {shield > 0 && <span className="text-sky-300">🛡 {shield}</span>}
       </div>
     </div>

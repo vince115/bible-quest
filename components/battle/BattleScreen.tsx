@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { PARTY_ORDER } from "@/game/data/characters";
 import { useBattleStore } from "@/game/store";
+import { useT } from "@/game/locale";
 import { BattleLog } from "./BattleLog";
 import { CharacterPanel } from "./CharacterPanel";
 import { EnemyPanel } from "./EnemyPanel";
@@ -11,6 +12,7 @@ import { ResultOverlay } from "./ResultOverlay";
 import { ScriptureHand } from "./ScriptureHand";
 
 export function BattleScreen() {
+  const t = useT();
   const battle = useBattleStore((s) => s.battle);
   const resolving = useBattleStore((s) => s.resolving);
   const start = useBattleStore((s) => s.start);
@@ -25,7 +27,7 @@ export function BattleScreen() {
   }, [start]);
 
   if (!battle) {
-    return <div className="flex flex-1 items-center justify-center text-stone-400">Preparing the battlefield…</div>;
+    return <div className="flex flex-1 items-center justify-center text-stone-400">{t("ui.preparing")}</div>;
   }
 
   const locked = resolving || battle.result !== "ongoing";
@@ -59,7 +61,7 @@ export function BattleScreen() {
             disabled={locked}
             className="rounded-2xl bg-red-700 px-6 py-4 text-lg font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40 sm:mt-6"
           >
-            {resolving ? "Resolving…" : "End Turn"}
+            {resolving ? t("ui.resolving") : t("ui.endTurn")}
           </button>
         </div>
       </div>

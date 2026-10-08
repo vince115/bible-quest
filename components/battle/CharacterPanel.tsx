@@ -12,6 +12,7 @@ import {
   skillInfo,
 } from "@/game/engine";
 import type { BattleState, CharacterId } from "@/game/types";
+import { useT } from "@/game/locale";
 import { FloatingFx, hitKey } from "./FloatingFx";
 import { HpBar } from "./HpBar";
 
@@ -34,6 +35,7 @@ export function CharacterPanel({
   onSkill: () => void;
   onSpendCourage: () => void;
 }) {
+  const t = useT();
   const def = CHARACTERS[id];
   const c = battle.party[id];
   const fallen = c.hp <= 0;
@@ -65,12 +67,12 @@ export function CharacterPanel({
         </motion.div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-bold text-stone-100">{def.name}</span>
+            <span className="font-bold text-stone-100">{t(`char.${id}.name`)}</span>
             <span className="text-[11px] text-stone-400">
-              {fallen ? "Fallen" : terrified ? "Terrified" : `ATK ${atk}`}
+              {fallen ? t("ui.fallen") : terrified ? t("ui.terrified") : t("ui.atk", { n: atk })}
             </span>
           </div>
-          <div className="text-[11px] text-stone-500">{def.role}</div>
+          <div className="text-[11px] text-stone-500">{t(`char.${id}.role`)}</div>
         </div>
       </div>
 
@@ -79,7 +81,7 @@ export function CharacterPanel({
       {/* Fear */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 text-xs text-stone-400">
-          Fear
+          {t("ui.fear")}
           {Array.from({ length: RULES.maxFear }).map((_, i) => (
             <span
               key={i}
@@ -93,9 +95,9 @@ export function CharacterPanel({
           onClick={onSpendCourage}
           disabled={locked || !canSpendCourage(battle, id)}
           className="rounded-md border border-orange-500/50 px-2 py-0.5 text-[11px] font-semibold text-orange-300 enabled:hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-30"
-          title="Spend 1 Courage to remove 1 Fear (no Energy cost)"
+          title={t("ui.spendCourageHint")}
         >
-          −1 Fear (1 🔥)
+          {t("ui.spendCourage")}
         </button>
       </div>
 
@@ -114,12 +116,12 @@ export function CharacterPanel({
       >
         <div className="flex items-center justify-between">
           <span className={`text-sm font-bold ${slingStone ? "text-amber-300" : "text-stone-100"}`}>
-            {skill.name}
+            {t(`skill.${skill.key}.name`)}
           </span>
           <span className="text-xs font-semibold text-yellow-300">⚡{skill.cost}</span>
         </div>
-        <div className="text-[11px] leading-snug text-stone-400">{skill.description}</div>
-        {c.skillUsed && !fallen && <div className="mt-1 text-[10px] text-stone-500">Used this turn</div>}
+        <div className="text-[11px] leading-snug text-stone-400">{t(`skill.${skill.key}.desc`, RULES)}</div>
+        {c.skillUsed && !fallen && <div className="mt-1 text-[10px] text-stone-500">{t("ui.usedThisTurn")}</div>}
       </motion.button>
     </div>
   );

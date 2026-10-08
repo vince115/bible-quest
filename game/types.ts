@@ -1,16 +1,13 @@
+import type { Params } from "./i18n";
+
 export type CharacterId = "david" | "samuel" | "jonathan";
 
+// Display text lives in game/i18n.ts, keyed by id.
 export interface CharacterDef {
   id: CharacterId;
-  name: string;
-  role: string;
   maxHp: number;
   attack: number;
-  skill: {
-    name: string;
-    cost: number;
-    description: string;
-  };
+  skillCost: number;
 }
 
 export interface CharacterState {
@@ -36,10 +33,7 @@ export interface CardEffect {
 
 export interface CardDef {
   id: string;
-  reference: string;
-  name: string;
   cost: number;
-  text: string;
   effect: CardEffect;
 }
 
@@ -53,8 +47,6 @@ export type GoliathActionId =
 
 export interface GoliathAction {
   id: GoliathActionId;
-  name: string;
-  description: string;
   fearAll?: number;
   damageAll?: number;
   /** Single-target attack; target is chosen when the intent is revealed. */
@@ -83,14 +75,16 @@ export type FxTarget = CharacterId | "goliath";
 export interface Fx {
   id: number;
   target: FxTarget;
-  text: string;
+  key: string;
+  params?: Params;
   kind: "damage" | "heal" | "fear" | "shield" | "buff" | "miss";
 }
 
 export interface LogEntry {
   id: number;
   turn: number;
-  text: string;
+  key: string;
+  params?: Params;
   kind: "player" | "ally" | "enemy" | "system";
 }
 
