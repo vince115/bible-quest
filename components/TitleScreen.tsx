@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RULES } from "@/game/data/rules";
 import { useT } from "@/game/locale";
-
-const PHASE_COLORS = ["text-purple-400", "text-amber-300", "text-amber-400", "text-red-400"];
 
 export function TitleScreen() {
   const t = useT();
@@ -16,19 +13,8 @@ export function TitleScreen() {
         <p className="mt-3 text-stone-400">{t("ui.subtitle")}</p>
       </div>
 
-      <ol className="max-w-lg space-y-1 text-left text-sm text-stone-300">
-        {PHASE_COLORS.map((color, i) => (
-          <li key={i}>
-            <span className={color}>
-              {i + 1}. {t(`ui.phase.${i + 1}`)}
-            </span>{" "}
-            — {t(`ui.phaseDesc.${i + 1}`, RULES)}
-          </li>
-        ))}
-      </ol>
-
       <Link
-        href="/battle"
+        href="/battle-v3"
         className="rounded-2xl bg-amber-500 px-8 py-4 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400"
       >
         {t("ui.start")}
