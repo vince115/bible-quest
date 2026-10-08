@@ -2,12 +2,21 @@ import type { Params } from "./i18n";
 
 export type CharacterId = "david" | "samuel" | "jonathan";
 
+export type SkillId =
+  | "sling"
+  | "youngWarrior"
+  | "anoint"
+  | "prayer"
+  | "covenantShield"
+  | "brothersCovenant";
+
 // Display text lives in game/i18n.ts, keyed by id.
 export interface CharacterDef {
   id: CharacterId;
   maxHp: number;
   attack: number;
-  skillCost: number;
+  /** Two active skills; at most one of them may be used per turn. */
+  skills: [SkillId, SkillId];
 }
 
 export interface CharacterState {
@@ -102,6 +111,8 @@ export interface BattleState {
   courage: number;
   faith: number;
   slingStoneUsed: boolean;
+  /** Young Warrior is active for the rest of this turn. */
+  youngWarrior: boolean;
   goliath: GoliathState;
   intent: Intent | null;
   party: Record<CharacterId, CharacterState>;

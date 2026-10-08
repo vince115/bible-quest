@@ -47,7 +47,7 @@ export function BattleScreen() {
               battle={battle}
               id={id}
               locked={locked}
-              onSkill={() => activateSkill(id)}
+              onSkill={(skill) => activateSkill(id, skill)}
               onSpendCourage={() => spendCourage(id)}
               reviveMode={pendingRevive !== null}
               onRevive={() => chooseReviveTarget(id)}

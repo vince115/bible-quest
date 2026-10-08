@@ -1,5 +1,5 @@
 import { CARD_BY_ID, CARDS } from "./data/cards";
-import { CHARACTERS, PARTY_ORDER, SLING_STONE_COST } from "./data/characters";
+import { CHARACTERS, PARTY_ORDER, SKILL_COST } from "./data/characters";
 import {
   ARMORED_PATTERN,
   ENRAGED_PATTERN,
@@ -15,6 +15,7 @@ import type {
   Fx,
   Intent,
   LogEntry,
+  SkillId,
 } from "./types";
 
 export type Rng = () => number;
@@ -185,6 +186,7 @@ export function createBattle(rng: Rng = Math.random): BattleState {
     courage: RULES.startCourage,
     faith: 0,
     slingStoneUsed: false,
+    youngWarrior: false,
     goliath: { hp: RULES.goliathHp, armored: true, patternIndex: 0 },
     intent: null,
     party,
@@ -233,29 +235,40 @@ export function giantBonus(s: BattleState): number {
   return isAlive(s.party.david) && s.faith >= RULES.giantFaith ? RULES.giantBonus : 0;
 }
 
+/** All of David's bonus damage vs Goliath: Against the Giant + Young Warrior (additive). */
+export function davidBonus(s: BattleState): number {
+  if (!isAlive(s.party.david)) return 0;
+  return giantBonus(s) + (s.youngWarrior ? RULES.youngWarriorBonus : 0);
+}
+
 export function slingDamage(s: BattleState): number {
-  return (isSlingStoneReady(s) ? RULES.slingStoneDamage : RULES.slingDamage) + giantBonus(s);
+  return (isSlingStoneReady(s) ? RULES.slingStoneDamage : RULES.slingDamage) + davidBonus(s);
 }
 
 export function isSlingStoneReady(s: BattleState): boolean {
   return !s.slingStoneUsed && s.goliath.armored && isAlive(s.party.david) && s.faith >= RULES.maxFaith;
 }
 
-/** `key` selects the skill's text in i18n (`skill.<key>.name` / `.desc`). */
-export function skillInfo(s: BattleState, id: CharacterId): { key: string; cost: number } {
-  if (id === "david" && isSlingStoneReady(s)) return { key: "slingStone", cost: SLING_STONE_COST };
-  return { key: id, cost: CHARACTERS[id].skillCost };
+/** `key` selects the skill's text in i18n (`skill.<key>.name` / `.desc`); Sling becomes Sling Stone at full Faith. */
+export function skillInfo(s: BattleState, skill: SkillId): { key: string; cost: number } {
+  if (skill === "sling" && isSlingStoneReady(s)) return { key: "slingStone", cost: SKILL_COST.sling };
+  return { key: skill, cost: SKILL_COST[skill] };
 }
 
-export function canUseSkill(s: BattleState, id: CharacterId): boolean {
+/** Why a skill can't be used right now (an i18n key), or null if it can. */
+export function skillBlockReason(s: BattleState, id: CharacterId, skill: SkillId): string | null {
   const c = s.party[id];
-  return (
-    s.result === "ongoing" &&
-    isAlive(c) &&
-    !isTerrified(c) &&
-    !c.skillUsed &&
-    skillInfo(s, id).cost <= s.energy
-  );
+  if (s.result !== "ongoing") return "ui.reason.over";
+  if (!CHARACTERS[id].skills.includes(skill)) return "ui.reason.invalid";
+  if (!isAlive(c)) return "ui.reason.fallen";
+  if (isTerrified(c)) return "ui.reason.terrified";
+  if (c.skillUsed) return "ui.reason.used";
+  if (skillInfo(s, skill).cost > s.energy) return "ui.reason.energy";
+  return null;
+}
+
+export function canUseSkill(s: BattleState, id: CharacterId, skill: SkillId): boolean {
+  return skillBlockReason(s, id, skill) === null;
 }
 
 export function canSpendCourage(s: BattleState, id: CharacterId): boolean {
@@ -266,7 +279,7 @@ export function canSpendCourage(s: BattleState, id: CharacterId): boolean {
 export function basicAttackDamage(s: BattleState, id: CharacterId): number {
   const c = s.party[id];
   if (!isAlive(c) || isTerrified(c)) return 0;
-  const bonus = (isEmboldened(s) ? RULES.emboldenedBonus : 0) + (id === "david" ? giantBonus(s) : 0);
+  const bonus = (isEmboldened(s) ? RULES.emboldenedBonus : 0) + (id === "david" ? davidBonus(s) : 0);
   return Math.max(0, CHARACTERS[id].attack - c.fear + bonus);
 }
 
@@ -332,45 +345,65 @@ export function playCard(
   return s;
 }
 
-export function activateSkill(state: BattleState, id: CharacterId, rng: Rng = Math.random): BattleState {
-  if (!canUseSkill(state, id)) return state;
+/** One skill per character per turn; every skill spends Team Energy. */
+export function activateSkill(
+  state: BattleState,
+  id: CharacterId,
+  skill: SkillId,
+  rng: Rng = Math.random,
+): BattleState {
+  if (!canUseSkill(state, id, skill)) return state;
   const s = clone(state);
-  const c = s.party[id];
-  const info = skillInfo(s, id);
-  s.energy -= info.cost;
-  c.skillUsed = true;
+  s.energy -= skillInfo(s, skill).cost;
+  s.party[id].skillUsed = true;
 
-  if (id === "david") {
-    const dmg = slingDamage(s); // Against the Giant is checked before Faith is spent
-    if (isSlingStoneReady(s)) {
-      s.faith = 0;
-      s.slingStoneUsed = true;
-      s.goliath.armored = false;
-      s.goliath.patternIndex = 0;
-      log(s, "log.slingStone", "player");
-      damageGoliath(s, dmg);
-      checkVictory(s);
-      if (s.result === "ongoing") {
-        // No stagger: Goliath turns Enraged at once and reveals his first Phase 4 action.
-        s.intent = pickIntent(s, rng);
-        log(s, "log.enraged", "enemy");
+  switch (skill) {
+    case "sling": {
+      const dmg = slingDamage(s); // bonuses are checked before Faith is spent
+      if (isSlingStoneReady(s)) {
+        s.faith = 0;
+        s.slingStoneUsed = true;
+        s.goliath.armored = false;
+        s.goliath.patternIndex = 0;
+        log(s, "log.slingStone", "player");
+        damageGoliath(s, dmg);
+        checkVictory(s);
+        if (s.result === "ongoing") {
+          // No stagger: Goliath turns Enraged at once and reveals his first Phase 4 action.
+          s.intent = pickIntent(s, rng);
+          log(s, "log.enraged", "enemy");
+        }
+      } else {
+        const dealt = damageGoliath(s, dmg);
+        log(s, s.goliath.armored ? "log.slingArmor" : "log.sling", "player", { n: dealt });
+        checkVictory(s);
       }
-    } else {
-      const dealt = damageGoliath(s, dmg);
-      log(s, s.goliath.armored ? "log.slingArmor" : "log.sling", "player", { n: dealt });
-      checkVictory(s);
+      break;
     }
-  } else if (id === "samuel") {
-    addFaith(s, RULES.samuelFaith);
-    PARTY_ORDER.forEach((pid) => removeFear(s, pid, RULES.samuelFearRemoval));
-    log(s, "log.anoint", "player", { n: RULES.samuelFaith });
-  } else {
-    addCourage(s, RULES.jonathanCourage);
-    livingAllies(s).forEach((ally) => {
-      ally.shield += RULES.jonathanShield;
-      fx(s, ally.id, "shield", "fx.shield", { n: RULES.jonathanShield });
-    });
-    log(s, "log.covenant", "player", { courage: RULES.jonathanCourage, shield: RULES.jonathanShield });
+    case "youngWarrior":
+      s.youngWarrior = true;
+      fx(s, "david", "buff", "fx.youngWarrior", { n: RULES.youngWarriorBonus });
+      log(s, "log.youngWarrior", "player", { n: RULES.youngWarriorBonus });
+      break;
+    case "anoint":
+      addFaith(s, RULES.samuelFaith);
+      log(s, "log.anoint", "player", { n: RULES.samuelFaith });
+      break;
+    case "prayer":
+      PARTY_ORDER.forEach((pid) => removeFear(s, pid, RULES.samuelFearRemoval));
+      log(s, "log.prayer", "player", { n: RULES.samuelFearRemoval });
+      break;
+    case "covenantShield":
+      livingAllies(s).forEach((ally) => {
+        ally.shield += RULES.jonathanShield;
+        fx(s, ally.id, "shield", "fx.shield", { n: RULES.jonathanShield });
+      });
+      log(s, "log.covenant", "player", { shield: RULES.jonathanShield });
+      break;
+    case "brothersCovenant":
+      addCourage(s, RULES.jonathanCourage);
+      log(s, "log.brothers", "player", { n: RULES.jonathanCourage });
+      break;
   }
   return s;
 }
@@ -438,6 +471,7 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
   const s = clone(state);
   s.turn += 1;
   s.energy = RULES.baseEnergy + Math.min(s.energy, RULES.maxEnergyCarry);
+  s.youngWarrior = false;
   for (const c of Object.values(s.party)) {
     c.shield = 0;
     c.skillUsed = false;

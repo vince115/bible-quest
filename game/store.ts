@@ -12,7 +12,7 @@ import {
   spendCourage,
   startNextTurn,
 } from "./engine";
-import type { BattleState, CharacterId } from "./types";
+import type { BattleState, CharacterId, SkillId } from "./types";
 
 interface BattleStore {
   battle: BattleState | null;
@@ -25,7 +25,7 @@ interface BattleStore {
   playCard: (handIndex: number) => void;
   chooseReviveTarget: (id: CharacterId) => void;
   cancelRevive: () => void;
-  activateSkill: (id: CharacterId) => void;
+  activateSkill: (id: CharacterId, skill: SkillId) => void;
   spendCourage: (id: CharacterId) => void;
   endTurn: () => void;
 }
@@ -56,7 +56,7 @@ export const useBattleStore = create<BattleStore>((set, get) => {
       if (i !== null) act((b) => playCard(b, i, id));
     },
     cancelRevive: () => set({ pendingRevive: null }),
-    activateSkill: (id) => act((b) => activateSkill(b, id)),
+    activateSkill: (id, skill) => act((b) => activateSkill(b, id, skill)),
     spendCourage: (id) => act((b) => spendCourage(b, id)),
 
     endTurn: () => {

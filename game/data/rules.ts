@@ -1,6 +1,6 @@
 // All tunable battle numbers live here.
 export const RULES = {
-  baseEnergy: 3,
+  baseEnergy: 6,
   maxEnergyCarry: 1,
   openingHand: 4,
   drawPerTurn: 2,
@@ -23,6 +23,7 @@ export const RULES = {
 
   slingDamage: 6,
   slingStoneDamage: 20,
+  youngWarriorBonus: 3,
   samuelFaith: 3,
   samuelFearRemoval: 1,
   jonathanCourage: 2,

@@ -6,13 +6,14 @@ import { RULES } from "@/game/data/rules";
 import {
   basicAttackDamage,
   canSpendCourage,
-  canUseSkill,
+  davidBonus,
   giantBonus,
   isSlingStoneReady,
   isTerrified,
+  skillBlockReason,
   skillInfo,
 } from "@/game/engine";
-import type { BattleState, CharacterId } from "@/game/types";
+import type { BattleState, CharacterId, SkillId } from "@/game/types";
 import { useT } from "@/game/locale";
 import { FloatingFx, hitKey } from "./FloatingFx";
 import { HpBar } from "./HpBar";
@@ -35,7 +36,7 @@ export function CharacterPanel({
   battle: BattleState;
   id: CharacterId;
   locked: boolean;
-  onSkill: () => void;
+  onSkill: (skill: SkillId) => void;
   onSpendCourage: () => void;
   /** A resurrection card is waiting for a target. */
   reviveMode: boolean;
@@ -46,15 +47,13 @@ export function CharacterPanel({
   const c = battle.party[id];
   const fallen = c.hp <= 0;
   const terrified = isTerrified(c);
-  const skill = skillInfo(battle, id);
-  const slingStone = id === "david" && isSlingStoneReady(battle);
-  const skillEnabled = !locked && canUseSkill(battle, id);
   const atk = basicAttackDamage(battle, id);
   const giant = giantBonus(battle);
+  const bonus = davidBonus(battle);
   const skillParams = {
     ...RULES,
-    slingDamage: RULES.slingDamage + giant,
-    slingStoneDamage: RULES.slingStoneDamage + giant,
+    slingDamage: RULES.slingDamage + bonus,
+    slingStoneDamage: RULES.slingStoneDamage + bonus,
   };
 
   return (
@@ -101,6 +100,11 @@ export function CharacterPanel({
           <span className="font-semibold">⚔ {t("ui.giantName")}</span>
           {giant > 0 && <span className="ml-1 font-bold text-amber-300">+{giant}</span>}
           <div>{t("ui.giantDesc", RULES)}</div>
+          {battle.youngWarrior && !fallen && (
+            <div className="mt-0.5 font-semibold text-red-300">
+              ⚡ {t("ui.youngWarriorActive", { n: RULES.youngWarriorBonus })}
+            </div>
+          )}
         </div>
       )}
 
@@ -136,28 +140,47 @@ export function CharacterPanel({
         </button>
       </div>
 
-      {/* Skill */}
-      <motion.button
-        onClick={onSkill}
-        disabled={!skillEnabled}
-        whileTap={skillEnabled ? { scale: 0.96 } : undefined}
-        animate={slingStone && skillEnabled ? { boxShadow: ["0 0 0px #fbbf24", "0 0 18px #fbbf24", "0 0 0px #fbbf24"] } : {}}
-        transition={slingStone ? { repeat: Infinity, duration: 1.4 } : undefined}
-        className={`rounded-xl border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
-          slingStone
-            ? "border-amber-400 bg-amber-500/20"
-            : "border-stone-600 bg-stone-800 enabled:hover:border-stone-400"
-        }`}
-      >
-        <div className="flex items-center justify-between">
-          <span className={`text-sm font-bold ${slingStone ? "text-amber-300" : "text-stone-100"}`}>
-            {t(`skill.${skill.key}.name`)}
-          </span>
-          <span className="text-xs font-semibold text-yellow-300">⚡{skill.cost}</span>
-        </div>
-        <div className="text-[11px] leading-snug text-stone-400">{t(`skill.${skill.key}.desc`, skillParams)}</div>
-        {c.skillUsed && !fallen && <div className="mt-1 text-[10px] text-stone-500">{t("ui.usedThisTurn")}</div>}
-      </motion.button>
+      {/* Skills: two per character, at most one per turn */}
+      <div className="grid gap-2">
+        {def.skills.map((skillId) => {
+          const skill = skillInfo(battle, skillId);
+          const reason = skillBlockReason(battle, id, skillId);
+          const enabled = !locked && reason === null;
+          const slingStone = skillId === "sling" && isSlingStoneReady(battle);
+          return (
+            <motion.button
+              key={skillId}
+              onClick={() => onSkill(skillId)}
+              disabled={!enabled}
+              whileTap={enabled ? { scale: 0.96 } : undefined}
+              animate={
+                slingStone && enabled
+                  ? { boxShadow: ["0 0 0px #fbbf24", "0 0 18px #fbbf24", "0 0 0px #fbbf24"] }
+                  : {}
+              }
+              transition={slingStone ? { repeat: Infinity, duration: 1.4 } : undefined}
+              className={`rounded-xl border px-3 py-2 text-left transition disabled:cursor-not-allowed ${
+                slingStone
+                  ? "border-amber-400 bg-amber-500/20"
+                  : "border-stone-600 bg-stone-800 enabled:hover:border-stone-400"
+              }`}
+            >
+              <div className={`flex items-center justify-between ${enabled ? "" : "opacity-45"}`}>
+                <span className={`text-sm font-bold ${slingStone ? "text-amber-300" : "text-stone-100"}`}>
+                  {t(`skill.${skill.key}.name`)}
+                </span>
+                <span className="text-xs font-semibold text-yellow-300">⚡{skill.cost}</span>
+              </div>
+              <div className={`text-[11px] leading-snug text-stone-400 ${enabled ? "" : "opacity-45"}`}>
+                {t(`skill.${skill.key}.desc`, skillParams)}
+              </div>
+              {reason && reason !== "ui.reason.over" && (
+                <div className="mt-1 text-[10px] font-semibold text-rose-300/90">⛔ {t(reason)}</div>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
     </div>
   );
 }
