@@ -1,3 +1,5 @@
+import { enV2, zhV2 } from "./v2/i18n";
+
 export type Locale = "en" | "zh";
 
 export type Params = Record<string, string | number | boolean | undefined>;
@@ -372,7 +374,10 @@ const zh: Record<MessageKey, string> = {
   "ui.reason.over": "戰鬥結束",
 };
 
-const DICTS: Record<Locale, Record<string, string>> = { en, zh };
+const DICTS: Record<Locale, Record<string, string>> = {
+  en: { ...en, ...enV2 },
+  zh: { ...zh, ...zhV2 },
+};
 
 /**
  * Looks up a message and fills {placeholders}. The params `char`, `card` and
@@ -380,12 +385,18 @@ const DICTS: Record<Locale, Record<string, string>> = { en, zh };
  */
 export function translate(locale: Locale, key: string, params: Params = {}): string {
   const dict = DICTS[locale];
-  const raw = dict[key] ?? en[key as MessageKey] ?? key;
+  const raw = dict[key] ?? DICTS.en[key] ?? key;
+  // v2 messages name v2 cards and Goliath actions.
+  const ns = key.startsWith("v2.") ? "v2." : "";
   return raw.replace(/\{(\w+)\}/g, (match, name: string) => {
     const v = params[name];
     if (v === undefined) return match;
     if (name === "char") return translate(locale, `char.${v}.name`);
-    if (name === "action") return translate(locale, `action.${v}.name`);
+    if (name === "action") return translate(locale, `${ns}action.${v}.name`);
+    if (name === "card" && ns) return translate(locale, `v2.card.${v}.name`);
+    if (name === "skill" && ns) return translate(locale, `v2.skill.${v}.name`);
+    if (name === "energy" && ns) return translate(locale, `v2.energy.${v}.name`);
+    if (name === "enemy" && ns) return translate(locale, `v2.enemy.${v}.name`);
     if (name === "card") {
       return translate(locale, "fmt.cardRef", {
         name: translate(locale, `card.${v}.name`),
