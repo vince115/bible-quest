@@ -172,7 +172,7 @@ export function createBattle(rng: Rng = Math.random): BattleState {
     courage: RULES.startCourage,
     faith: 0,
     slingStoneUsed: false,
-    goliath: { hp: RULES.goliathHp, armored: true, staggered: false, patternIndex: 0 },
+    goliath: { hp: RULES.goliathHp, armored: true, patternIndex: 0 },
     intent: null,
     party,
     drawPile: shuffle(CARDS.map((c) => c.id), rng),
@@ -271,7 +271,7 @@ export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.
   return s;
 }
 
-export function activateSkill(state: BattleState, id: CharacterId): BattleState {
+export function activateSkill(state: BattleState, id: CharacterId, rng: Rng = Math.random): BattleState {
   if (!canUseSkill(state, id)) return state;
   const s = clone(state);
   const c = s.party[id];
@@ -284,14 +284,14 @@ export function activateSkill(state: BattleState, id: CharacterId): BattleState 
       s.faith = 0;
       s.slingStoneUsed = true;
       s.goliath.armored = false;
-      s.goliath.staggered = true;
       s.goliath.patternIndex = 0;
       log(s, "SLING STONE! The stone sinks into Goliath's forehead — his Armor shatters!", "player");
       damageGoliath(s, RULES.slingStoneDamage);
       checkVictory(s);
       if (s.result === "ongoing") {
-        log(s, "Goliath is Staggered and will lose his next action. Then he becomes Enraged.", "system");
-        s.intent = null;
+        // No stagger: Goliath turns Enraged at once and reveals his first Phase 4 action.
+        s.intent = pickIntent(s, rng);
+        log(s, "Goliath roars in fury — he is Enraged!", "enemy");
       }
     } else {
       const dealt = damageGoliath(s, RULES.slingDamage);
@@ -349,11 +349,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
   if (state.result !== "ongoing") return state;
   const s = clone(state);
 
-  if (s.goliath.staggered) {
-    s.goliath.staggered = false;
-    log(s, "Goliath staggers and cannot act! His rage grows…", "enemy");
-    fx(s, "goliath", "Staggered", "miss");
-  } else if (s.intent) {
+  if (s.intent) {
     const action = GOLIATH_ACTIONS[s.intent.actionId];
     log(s, `Goliath uses ${action.name}.`, "enemy");
     if (action.fearAll) PARTY_ORDER.forEach((id) => addFear(s, id, action.fearAll!));

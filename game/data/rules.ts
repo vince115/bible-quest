@@ -14,7 +14,7 @@ export const RULES = {
   maxFaith: 10,
   maxFear: 3,
 
-  goliathHp: 100,
+  goliathHp: 130,
   armoredMaxDamage: 1,
 
   slingDamage: 6,

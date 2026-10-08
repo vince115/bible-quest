@@ -11,7 +11,7 @@ import { HpBar } from "./HpBar";
 export function EnemyPanel({ battle }: { battle: BattleState }) {
   const { goliath, intent } = battle;
   const action = intent ? GOLIATH_ACTIONS[intent.actionId] : null;
-  const enraged = !goliath.armored && !goliath.staggered;
+  const enraged = !goliath.armored;
 
   return (
     <section className="relative rounded-2xl border border-stone-700 bg-stone-900/80 p-4">
@@ -42,11 +42,6 @@ export function EnemyPanel({ battle }: { battle: BattleState }) {
                 Armor broken
               </span>
             )}
-            {goliath.staggered && (
-              <span className="rounded bg-sky-700/40 px-2 py-0.5 text-xs font-semibold text-sky-300">
-                STAGGERED
-              </span>
-            )}
             {enraged && (
               <span className="rounded bg-red-700/40 px-2 py-0.5 text-xs font-semibold text-red-300">
                 ENRAGED
@@ -60,9 +55,7 @@ export function EnemyPanel({ battle }: { battle: BattleState }) {
           <div className="text-[10px] font-semibold uppercase tracking-widest text-red-300/70">
             Next action
           </div>
-          {goliath.staggered ? (
-            <div className="text-sm font-semibold text-sky-300">Staggered — will not act</div>
-          ) : action ? (
+          {action ? (
             <>
               <div className="font-semibold text-red-200">{action.name}</div>
               <div className="text-xs text-red-200/80">

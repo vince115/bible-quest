@@ -73,7 +73,6 @@ export interface Intent {
 export interface GoliathState {
   hp: number;
   armored: boolean;
-  staggered: boolean;
   patternIndex: number;
 }
 
