@@ -17,6 +17,10 @@ export const RULES = {
   goliathHp: 130,
   armoredMaxDamage: 1,
 
+  /** David's passive "Against the Giant": bonus damage vs Goliath at this much Faith. */
+  giantFaith: 5,
+  giantBonus: 3,
+
   slingDamage: 6,
   slingStoneDamage: 20,
   samuelFaith: 3,

@@ -5,6 +5,7 @@ import { RULES } from "./data/rules";
 import {
   activateSkill,
   createBattle,
+  needsReviveTarget,
   playCard,
   resolveBasicAttacks,
   resolveGoliath,
@@ -18,8 +19,12 @@ interface BattleStore {
   /** True while end-of-turn steps are resolving; player input is locked. */
   resolving: boolean;
   runId: number;
+  /** Hand index of a resurrection card waiting for the player to pick a fallen ally. */
+  pendingRevive: number | null;
   start: () => void;
   playCard: (handIndex: number) => void;
+  chooseReviveTarget: (id: CharacterId) => void;
+  cancelRevive: () => void;
   activateSkill: (id: CharacterId) => void;
   spendCourage: (id: CharacterId) => void;
   endTurn: () => void;
@@ -29,17 +34,28 @@ export const useBattleStore = create<BattleStore>((set, get) => {
   const act = (fn: (b: BattleState) => BattleState) => {
     const { battle, resolving } = get();
     if (!battle || resolving) return;
-    set({ battle: fn(battle) });
+    set({ battle: fn(battle), pendingRevive: null });
   };
 
   return {
     battle: null,
     resolving: false,
     runId: 0,
+    pendingRevive: null,
 
-    start: () => set((st) => ({ battle: createBattle(), resolving: false, runId: st.runId + 1 })),
+    start: () =>
+      set((st) => ({ battle: createBattle(), resolving: false, pendingRevive: null, runId: st.runId + 1 })),
 
-    playCard: (i) => act((b) => playCard(b, i)),
+    playCard: (i) => {
+      const { battle, resolving } = get();
+      if (battle && !resolving && needsReviveTarget(battle, i)) set({ pendingRevive: i });
+      else act((b) => playCard(b, i));
+    },
+    chooseReviveTarget: (id) => {
+      const i = get().pendingRevive;
+      if (i !== null) act((b) => playCard(b, i, id));
+    },
+    cancelRevive: () => set({ pendingRevive: null }),
     activateSkill: (id) => act((b) => activateSkill(b, id)),
     spendCourage: (id) => act((b) => spendCourage(b, id)),
 
@@ -53,7 +69,7 @@ export const useBattleStore = create<BattleStore>((set, get) => {
         (b) => resolveGoliath(b),
         (b) => startNextTurn(b),
       ];
-      set({ resolving: true });
+      set({ resolving: true, pendingRevive: null });
 
       const run = (i: number) => {
         if (get().runId !== runId) return; // battle was restarted

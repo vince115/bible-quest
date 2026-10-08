@@ -19,6 +19,7 @@ export interface CharacterState {
 }
 
 export interface CardEffect {
+  /** Faith for David. */
   faith?: number;
   courage?: number;
   /** Remove N Fear from every living ally ("all" clears it). */
@@ -26,14 +27,21 @@ export interface CardEffect {
   removeDavidFear?: boolean;
   shieldAll?: number;
   healLowest?: number;
+  /** Fear removed from the ally healed by healLowest. */
+  healLowestFear?: number;
+  healAll?: number;
+  /** Revive a fallen ally with this fraction of max HP (rounded up). */
+  revive?: number;
   damage?: number;
-  energy?: number;
-  draw?: number;
+  /** David strikes Goliath (Against the Giant applies). */
+  davidStrike?: number;
 }
 
 export interface CardDef {
   id: string;
   cost: number;
+  /** Removed from the battle once played instead of going to the discard pile. */
+  singleUse?: boolean;
   effect: CardEffect;
 }
 

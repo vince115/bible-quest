@@ -7,6 +7,7 @@ import {
   basicAttackDamage,
   canSpendCourage,
   canUseSkill,
+  giantBonus,
   isSlingStoneReady,
   isTerrified,
   skillInfo,
@@ -28,12 +29,17 @@ export function CharacterPanel({
   locked,
   onSkill,
   onSpendCourage,
+  reviveMode,
+  onRevive,
 }: {
   battle: BattleState;
   id: CharacterId;
   locked: boolean;
   onSkill: () => void;
   onSpendCourage: () => void;
+  /** A resurrection card is waiting for a target. */
+  reviveMode: boolean;
+  onRevive: () => void;
 }) {
   const t = useT();
   const def = CHARACTERS[id];
@@ -44,11 +50,19 @@ export function CharacterPanel({
   const slingStone = id === "david" && isSlingStoneReady(battle);
   const skillEnabled = !locked && canUseSkill(battle, id);
   const atk = basicAttackDamage(battle, id);
+  const giant = giantBonus(battle);
+  const skillParams = {
+    ...RULES,
+    slingDamage: RULES.slingDamage + giant,
+    slingStoneDamage: RULES.slingStoneDamage + giant,
+  };
 
   return (
     <div
       className={`relative flex flex-col gap-3 rounded-2xl border p-3 transition ${
-        fallen
+        fallen && reviveMode
+          ? "border-emerald-400 bg-emerald-950/40 ring-2 ring-emerald-400"
+          : fallen
           ? "border-stone-800 bg-stone-950 opacity-50"
           : terrified
             ? "border-purple-600 bg-purple-950/40"
@@ -77,6 +91,27 @@ export function CharacterPanel({
       </div>
 
       <HpBar hp={c.hp} max={def.maxHp} shield={c.shield} color="bg-emerald-500" />
+
+      {id === "david" && (
+        <div
+          className={`rounded-lg border px-2 py-1 text-[11px] leading-snug ${
+            giant > 0 ? "border-amber-400/70 bg-amber-500/15 text-amber-200" : "border-stone-700 text-stone-500"
+          }`}
+        >
+          <span className="font-semibold">⚔ {t("ui.giantName")}</span>
+          {giant > 0 && <span className="ml-1 font-bold text-amber-300">+{giant}</span>}
+          <div>{t("ui.giantDesc", RULES)}</div>
+        </div>
+      )}
+
+      {fallen && reviveMode && (
+        <button
+          onClick={onRevive}
+          className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-bold text-stone-950 hover:bg-emerald-400"
+        >
+          ✝ {t("ui.revive")}
+        </button>
+      )}
 
       {/* Fear */}
       <div className="flex items-center justify-between gap-2">
@@ -120,7 +155,7 @@ export function CharacterPanel({
           </span>
           <span className="text-xs font-semibold text-yellow-300">⚡{skill.cost}</span>
         </div>
-        <div className="text-[11px] leading-snug text-stone-400">{t(`skill.${skill.key}.desc`, RULES)}</div>
+        <div className="text-[11px] leading-snug text-stone-400">{t(`skill.${skill.key}.desc`, skillParams)}</div>
         {c.skillUsed && !fallen && <div className="mt-1 text-[10px] text-stone-500">{t("ui.usedThisTurn")}</div>}
       </motion.button>
     </div>

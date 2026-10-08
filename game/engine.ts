@@ -9,6 +9,7 @@ import { RULES } from "./data/rules";
 import type { Params } from "./i18n";
 import type {
   BattleState,
+  CardDef,
   CharacterId,
   CharacterState,
   Fx,
@@ -133,9 +134,20 @@ function removeFear(s: BattleState, id: CharacterId, amount: number) {
   fx(s, id, "buff", "fx.fearDown", { n: removed });
 }
 
+function heal(s: BattleState, id: CharacterId, amount: number) {
+  const c = s.party[id];
+  const healed = Math.min(amount, CHARACTERS[id].maxHp - c.hp);
+  c.hp += healed;
+  fx(s, id, "heal", "fx.heal", { n: healed });
+}
+
+/** Faith is David's own meter: it is frozen while he is fallen and kept if he is revived. */
 function addFaith(s: BattleState, n: number) {
+  if (!isAlive(s.party.david)) return;
+  const before = s.faith;
   s.faith = Math.min(RULES.maxFaith, s.faith + n);
   fx(s, "david", "buff", "fx.faith", { n });
+  if (before < RULES.giantFaith && s.faith >= RULES.giantFaith) log(s, "log.giantActive", "player");
 }
 
 function addCourage(s: BattleState, n: number) {
@@ -192,9 +204,37 @@ export function createBattle(rng: Rng = Math.random): BattleState {
 
 // ---------- queries ----------
 
+export function fallenAllies(s: BattleState): CharacterId[] {
+  return PARTY_ORDER.filter((id) => !isAlive(s.party[id]));
+}
+
+/** Cards whose effects only concern David can't be played while he is fallen. */
+function cardNeedsDavid(card: CardDef): boolean {
+  const e = card.effect;
+  return !!(e.faith || e.davidStrike || e.removeDavidFear);
+}
+
 export function canPlayCard(s: BattleState, handIndex: number): boolean {
   const card = CARD_BY_ID[s.hand[handIndex]];
-  return s.result === "ongoing" && !!card && card.cost <= s.energy;
+  if (s.result !== "ongoing" || !card || card.cost > s.energy) return false;
+  if (card.effect.revive && fallenAllies(s).length === 0) return false;
+  if (cardNeedsDavid(card) && !isAlive(s.party.david)) return false;
+  return true;
+}
+
+/** True when the card must be told which fallen ally to revive. */
+export function needsReviveTarget(s: BattleState, handIndex: number): boolean {
+  const card = CARD_BY_ID[s.hand[handIndex]];
+  return !!card?.effect.revive && fallenAllies(s).length > 1;
+}
+
+/** David's passive "Against the Giant": bonus damage vs Goliath while Faith ≥ giantFaith. */
+export function giantBonus(s: BattleState): number {
+  return isAlive(s.party.david) && s.faith >= RULES.giantFaith ? RULES.giantBonus : 0;
+}
+
+export function slingDamage(s: BattleState): number {
+  return (isSlingStoneReady(s) ? RULES.slingStoneDamage : RULES.slingDamage) + giantBonus(s);
 }
 
 export function isSlingStoneReady(s: BattleState): boolean {
@@ -226,20 +266,28 @@ export function canSpendCourage(s: BattleState, id: CharacterId): boolean {
 export function basicAttackDamage(s: BattleState, id: CharacterId): number {
   const c = s.party[id];
   if (!isAlive(c) || isTerrified(c)) return 0;
-  const bonus = isEmboldened(s) ? RULES.emboldenedBonus : 0;
+  const bonus = (isEmboldened(s) ? RULES.emboldenedBonus : 0) + (id === "david" ? giantBonus(s) : 0);
   return Math.max(0, CHARACTERS[id].attack - c.fear + bonus);
 }
 
 // ---------- player actions ----------
 
-export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.random): BattleState {
+export function playCard(
+  state: BattleState,
+  handIndex: number,
+  reviveTarget?: CharacterId,
+): BattleState {
   if (!canPlayCard(state, handIndex)) return state;
+  const fallen = fallenAllies(state);
+  const target = reviveTarget ?? (fallen.length === 1 ? fallen[0] : undefined);
+  if (CARD_BY_ID[state.hand[handIndex]].effect.revive && (!target || !fallen.includes(target))) return state;
+
   const s = clone(state);
   const [cardId] = s.hand.splice(handIndex, 1);
   const card = CARD_BY_ID[cardId];
   const e = card.effect;
   s.energy -= card.cost;
-  s.discard.push(cardId);
+  if (!card.singleUse) s.discard.push(cardId);
   log(s, "log.playCard", "player", { card: cardId });
 
   if (e.faith) addFaith(s, e.faith);
@@ -256,20 +304,31 @@ export function playCard(state: BattleState, handIndex: number, rng: Rng = Math.
     });
   }
   if (e.healLowest) {
-    const target = livingAllies(s).sort((a, b) => a.hp - b.hp)[0];
-    if (target) {
-      const healed = Math.min(e.healLowest, CHARACTERS[target.id].maxHp - target.hp);
-      target.hp += healed;
-      fx(s, target.id, "heal", "fx.heal", { n: healed });
+    const lowest = livingAllies(s).sort((a, b) => a.hp - b.hp)[0];
+    if (lowest) {
+      heal(s, lowest.id, e.healLowest);
+      if (e.healLowestFear) removeFear(s, lowest.id, e.healLowestFear);
     }
+  }
+  if (e.healAll) livingAllies(s).forEach((c) => heal(s, c.id, e.healAll!));
+  if (e.revive && target) {
+    const c = s.party[target];
+    c.hp = Math.ceil(CHARACTERS[target].maxHp * e.revive);
+    c.fear = 0;
+    c.shield = 0;
+    fx(s, target, "heal", "fx.heal", { n: c.hp });
+    log(s, "log.revive", "player", { char: target, n: c.hp });
   }
   if (e.damage) {
     const dealt = damageGoliath(s, e.damage);
     log(s, s.goliath.armored ? "log.cardDamageArmor" : "log.cardDamage", "player", { n: dealt });
     checkVictory(s);
   }
-  if (e.energy) s.energy += e.energy;
-  if (e.draw) draw(s, e.draw, rng);
+  if (e.davidStrike) {
+    const dealt = damageGoliath(s, e.davidStrike + giantBonus(s));
+    log(s, s.goliath.armored ? "log.davidStrikeArmor" : "log.davidStrike", "player", { n: dealt });
+    checkVictory(s);
+  }
   return s;
 }
 
@@ -282,13 +341,14 @@ export function activateSkill(state: BattleState, id: CharacterId, rng: Rng = Ma
   c.skillUsed = true;
 
   if (id === "david") {
+    const dmg = slingDamage(s); // Against the Giant is checked before Faith is spent
     if (isSlingStoneReady(s)) {
       s.faith = 0;
       s.slingStoneUsed = true;
       s.goliath.armored = false;
       s.goliath.patternIndex = 0;
       log(s, "log.slingStone", "player");
-      damageGoliath(s, RULES.slingStoneDamage);
+      damageGoliath(s, dmg);
       checkVictory(s);
       if (s.result === "ongoing") {
         // No stagger: Goliath turns Enraged at once and reveals his first Phase 4 action.
@@ -296,7 +356,7 @@ export function activateSkill(state: BattleState, id: CharacterId, rng: Rng = Ma
         log(s, "log.enraged", "enemy");
       }
     } else {
-      const dealt = damageGoliath(s, RULES.slingDamage);
+      const dealt = damageGoliath(s, dmg);
       log(s, s.goliath.armored ? "log.slingArmor" : "log.sling", "player", { n: dealt });
       checkVictory(s);
     }

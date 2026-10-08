@@ -20,6 +20,9 @@ export function BattleScreen() {
   const activateSkill = useBattleStore((s) => s.activateSkill);
   const spendCourage = useBattleStore((s) => s.spendCourage);
   const endTurn = useBattleStore((s) => s.endTurn);
+  const pendingRevive = useBattleStore((s) => s.pendingRevive);
+  const chooseReviveTarget = useBattleStore((s) => s.chooseReviveTarget);
+  const cancelRevive = useBattleStore((s) => s.cancelRevive);
 
   // The deck is shuffled on the client so prerendering stays deterministic.
   useEffect(() => {
@@ -46,6 +49,8 @@ export function BattleScreen() {
               locked={locked}
               onSkill={() => activateSkill(id)}
               onSpendCourage={() => spendCourage(id)}
+              reviveMode={pendingRevive !== null}
+              onRevive={() => chooseReviveTarget(id)}
             />
           ))}
         </div>
@@ -54,7 +59,13 @@ export function BattleScreen() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="flex-1">
-            <ScriptureHand battle={battle} locked={locked} onPlay={playCard} />
+            <ScriptureHand
+              battle={battle}
+              locked={locked}
+              onPlay={playCard}
+              pendingRevive={pendingRevive}
+              onCancelRevive={cancelRevive}
+            />
           </div>
           <button
             onClick={endTurn}
