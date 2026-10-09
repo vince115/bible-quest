@@ -226,6 +226,8 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
   const hands = s.handsUp ? R.handsBonus : 0;
   const base = (def.damage ?? 0) + giant + till + seed + blessing + hands;
   if (!target) return base;
+  // Now also the axe is laid unto the root of the trees (Matthew 3:10): wood enemies take double.
+  if (skill === "axe" && ENEMY_ELEMENT[target] === "wood") return toTens(base * 2 * elementMultiplier(CHARACTER_ELEMENT[def.owner], ENEMY_ELEMENT[target]));
   return toTens(base * elementMultiplier(CHARACTER_ELEMENT[def.owner], ENEMY_ELEMENT[target]));
 }
 
@@ -268,6 +270,9 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "buildWall") return R.wallShield;
   if (skill === "incense") return R.incenseFaith;
   if (skill === "nameIsJohn") return R.johnHeal;
+  if (skill === "handmaid") return R.handmaidFaith;
+  if (skill === "carpenter") return R.carpenterShield;
+  if (skill === "baptism") return R.baptismHeal;
   return 0;
 }
 
@@ -346,6 +351,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     lionsDen: false,
     wallCourses: 0,
     johnUsed: false,
+    magnificatUsed: false,
+    dreamUsed: false,
     enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
     stage,
     coiled: null,
@@ -403,10 +410,10 @@ export function playCard(state: BattleState, uid: number): BattleState {
 // ---------- skills ----------
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel") return "enemy";
+  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
   if (skill === "volley" || skill === "courage") return "anyEnemy";
-  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings") return "ally";
+  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter") return "ally";
   if (skill === "whither") return "otherAlly";
   if (skill === "arise" || skill === "restorer") return "fallenAlly";
   if (skill === "helper") return "actedAlly";
@@ -459,6 +466,8 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (skill === "contrary" && s.contraryUsed) return "v2.reason.ariseUsed";
   if (skill === "lionsDen" && s.lionsDenUsed) return "v2.reason.ariseUsed";
   if (skill === "nameIsJohn" && s.johnUsed) return "v2.reason.ariseUsed";
+  if (skill === "magnificat" && s.magnificatUsed) return "v2.reason.ariseUsed";
+  if (skill === "dreamWarning" && s.dreamUsed) return "v2.reason.ariseUsed";
   // Thou shalt be dumb, until the day that these things shall be performed (Luke 1:20).
   if (skill === "nameIsJohn" && s.turn < R.johnTurn) return "v2.reason.silent";
   // The ladder is for allies who have already acted: someone must have.
@@ -646,6 +655,61 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const gained = Math.min(R.fastingFaith, R.maxFaith - s.energy.faith);
       s.energy.faith += gained;
       log(s, "v2.log.fasting", "player", { n: gained, hp: c.hp, max: MAX_HP.esther });
+      break;
+    }
+    case "baptism": {
+      // I indeed baptize you with water unto repentance (Matthew 3:11).
+      log(s, "v2.log.baptism", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.baptismHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        c.shaken = false;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      // His father Zechariah beside him: +1 Faith.
+      if (isAlive(s, "zechariah")) s.energy.faith = Math.min(R.maxFaith, s.energy.faith + 1);
+      break;
+    }
+    case "carpenter": {
+      // Is not this the carpenter's son? (Matthew 13:55) — Joseph cares for Mary twice over.
+      const ally = target as CharacterId;
+      const k = ally === "mary" ? 2 : 1;
+      const c = s.party[ally];
+      const healed = Math.min(R.carpenterHeal * k, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      log(s, "v2.log.carpenter", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      addShield(s, ally, R.carpenterShield * k);
+      break;
+    }
+    case "dreamWarning":
+      // The angel of the Lord appeareth to Joseph in a dream, saying, Arise, and flee (Matthew 2:13).
+      s.goliath.stunned = true;
+      s.dreamUsed = true;
+      log(s, "v2.log.dreamWarning", "player");
+      break;
+    case "handmaid":
+      // Behold the handmaid of the Lord; be it unto me according to thy word (Luke 1:38).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.handmaidFaith);
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      log(s, "v2.log.handmaid", "player");
+      break;
+    case "magnificat": {
+      // He hath put down the mighty from their seats, and exalted them of low degree (Luke 1:52).
+      s.magnificatUsed = true;
+      const boss = bossOf(s);
+      const e = s.enemies[boss];
+      const n = toTens(e.hp * R.magnificatShare);
+      e.hp = Math.max(0, e.hp - n);
+      log(s, "v2.log.magnificat", "player", { enemy: boss, n, hp: e.hp });
+      afterEnemyHit(s, boss);
+      const lowly = living(s).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+      if (lowly) {
+        const c = s.party[lowly];
+        const healed = MAX_HP[lowly] - c.hp;
+        c.hp = MAX_HP[lowly];
+        log(s, "v2.log.motherHeal", "detail", { char: lowly, n: healed, hp: c.hp, max: MAX_HP[lowly] });
+      }
       break;
     }
     case "incense": {

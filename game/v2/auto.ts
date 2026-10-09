@@ -99,6 +99,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (underThreat(s) && canCast(s, "ark")) return { type: "cast", skill: "ark" };
   if (underThreat(s) && !s.breastplate && canCast(s, "breastplate")) return { type: "cast", skill: "breastplate" };
   if (underThreat(s) && canCast(s, "faceShone")) return { type: "cast", skill: "faceShone" };
+  if (underThreat(s) && canCast(s, "dreamWarning")) return { type: "cast", skill: "dreamWarning" };
   // Esther turns the leader's heaviest blows back on it.
   const heavy = !s.goliath.stunned && (["crush", "swing", "fang", "coil"] as const).some((a) => s.intents[0].action === a) && !(s.intents[0].action === "crush" && !s.goliath.charging);
   if (heavy && canCast(s, "contrary")) return { type: "cast", skill: "contrary" };
@@ -159,6 +160,10 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.energy.faith < R.maxFaith && canCast(s, "prayer")) return { type: "cast", skill: "prayer" };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.johnHeal).length >= 2 && canCast(s, "nameIsJohn")) return { type: "cast", skill: "nameIsJohn" };
   if (canCast(s, "incense")) return { type: "cast", skill: "incense" };
+  // Mary: the Magnificat once the leader is still strong or someone is low; Handmaid when Shaken or Faith has room.
+  const lowest = Math.min(...s.lineup.filter((id) => isAlive(s, id)).map((id) => s.party[id].hp / MAX_HP[id]));
+  if ((s.enemies[s.stage === "eden" ? "serpent" : "goliath"].hp >= 160 || lowest <= 0.4) && canCast(s, "magnificat")) return { type: "cast", skill: "magnificat" };
+  if ((shaken.length >= 1 || s.energy.faith < R.maxFaith) && canCast(s, "handmaid")) return { type: "cast", skill: "handmaid" };
   if (s.energy.faith <= R.maxFaith - R.fastingFaith && isAlive(s, "esther") && s.party.esther.hp > 40 && canCast(s, "fasting")) return { type: "cast", skill: "fasting" };
   if (canCast(s, "wisdom")) return { type: "cast", skill: "wisdom" };
   if (isAlive(s, "elijah") && MAX_HP.elijah - s.party.elijah.hp >= R.ravensHeal && canCast(s, "ravens")) return { type: "cast", skill: "ravens" };
@@ -175,8 +180,10 @@ export function nextAutoAction(s: BattleState): AutoAction {
   const worn = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.blessingHeal).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
   if (worn && canCast(s, "blessing", worn)) return { type: "cast", skill: "blessing", target: worn };
   if (worn && canCast(s, "counsel", worn)) return { type: "cast", skill: "counsel", target: worn };
+  if (worn && canCast(s, "carpenter", worn)) return { type: "cast", skill: "carpenter", target: worn };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.provisionHeal).length >= 2 && canCast(s, "provision")) return { type: "cast", skill: "provision" };
   if ((shaken.length >= 1 || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.healWatersHeal).length >= 2) && canCast(s, "healWaters")) return { type: "cast", skill: "healWaters" };
+  if ((shaken.length >= 1 || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.baptismHeal).length >= 2) && canCast(s, "baptism")) return { type: "cast", skill: "baptism" };
 
   // 5b. Eve's Helper: an ally who has already acted strikes again if there is energy for it (David first).
   const again = (["david", "jonathan", "adam", "cain", "samuel"] as CharacterId[]).find(
@@ -192,7 +199,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   const boss = s.stage === "eden" ? "serpent" : "goliath";
   if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "courage", boss)) return { type: "cast", skill: "courage", target: boss };
-  for (const skill of ["stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel"] as SkillId[]) {
+  for (const skill of ["axe", "stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
   }

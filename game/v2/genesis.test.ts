@@ -896,3 +896,82 @@ describe("Zechariah", () => {
     expect(s.johnUsed).toBe(true);
   });
 });
+
+describe("Mary", () => {
+  const mary = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["mary", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Be It unto Me gives 1 Faith and lifts Shaken", () => {
+    const start = mary({ guard: 1 });
+    start.party.david.shaken = true;
+    const s = castSkill(start, "handmaid");
+    expect(s.energy.faith).toBe(R.handmaidFaith);
+    expect(s.party.david.shaken).toBe(false);
+  });
+
+  it("the Magnificat takes a quarter of the leader's HP and restores the lowest ally, once", () => {
+    const start = mary({ faith: 3 });
+    start.party.david.hp = 20;
+    const s = castSkill(start, "magnificat");
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 50); // 220 / 4 = 55 → 50
+    expect(s.party.david.hp).toBe(MAX_HP.david);
+    expect(s.magnificatUsed).toBe(true);
+  });
+});
+
+describe("Joseph of Nazareth", () => {
+  const joseph = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["josephNaz", "mary", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Carpenter's Hands shield and heal one ally, double for Mary", () => {
+    const start = joseph({ guard: 1 });
+    start.party.david.hp = 50;
+    start.party.mary.hp = 50;
+    const d = castSkill(start, "carpenter", "david");
+    expect([d.party.david.hp, d.party.david.shield]).toEqual([50 + R.carpenterHeal, R.carpenterShield]);
+    const m = castSkill(start, "carpenter", "mary");
+    expect([m.party.mary.hp, m.party.mary.shield]).toEqual([50 + R.carpenterHeal * 2, R.carpenterShield * 2]);
+  });
+
+  it("Warned in a Dream makes the leader lose its next action, once per battle", () => {
+    let s = castSkill(joseph({ faith: 2 }), "dreamWarning");
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(MAX_HP.david);
+    expect(s.dreamUsed).toBe(true);
+  });
+});
+
+describe("John the Baptist", () => {
+  const john = (lineup: CharacterId[], energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), lineup);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("the Axe deals 40, double against the wood shield bearer", () => {
+    const s = john(["johnBaptist", "david"], { attack: 2 });
+    expect(skillDamage(s, "axe", "bearer")).toBe(80);
+    expect(skillDamage(s, "axe", "goliath")).toBe(40); // water → metal ×1
+  });
+
+  it("Baptism heals everyone 30 and lifts Shaken; +1 Faith with Zechariah", () => {
+    const start = john(["johnBaptist", "zechariah"], { guard: 2 });
+    start.party.zechariah.hp = 50;
+    start.party.zechariah.shaken = true;
+    const s = castSkill(start, "baptism");
+    expect(s.party.zechariah.hp).toBe(50 + R.baptismHeal);
+    expect(s.party.zechariah.shaken).toBe(false);
+    expect(s.energy.faith).toBe(1);
+  });
+});

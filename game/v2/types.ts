@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -194,6 +194,10 @@ export interface BattleState {
   wallCourses: number;
   /** Zechariah's His Name Is John can be used once per battle. */
   johnUsed: boolean;
+  /** Mary's Magnificat can be used once per battle. */
+  magnificatUsed: boolean;
+  /** Joseph of Nazareth's Warned in a Dream can be used once per battle. */
+  dreamUsed: boolean;
   /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
   lineup: CharacterId[];
   log: LogEntry[];
