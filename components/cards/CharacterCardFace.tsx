@@ -15,14 +15,29 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.41, head: 0.176, feet: 0.947 } },
   samuel: { src: "/cards/samuel.jpg", figure: { cx: 0.435, head: 0.112, feet: 0.952 } },
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
   adam: { src: "/cards/adam.jpg", figure: { cx: 0.43, head: 0.223, feet: 0.963 } },
+  abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
+  abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
+  miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
+  gideon: { src: "/cards/gideon.jpg", figure: { cx: 0.46, head: 0.244, feet: 0.933 } },
+  deborah: { src: "/cards/deborah.jpg", figure: { cx: 0.49, head: 0.161, feet: 0.977 } },
+  rahab: { src: "/cards/rahab.jpg", figure: { cx: 0.47, head: 0.145, feet: 0.947 } },
+  joshua: { src: "/cards/joshua.jpg", figure: { cx: 0.47, head: 0.107, feet: 0.967 } },
+  mosesSinai: { src: "/cards/moses-sinai.jpg", figure: { cx: 0.49, head: 0.132, feet: 0.957 } },
+  aaron: { src: "/cards/aaron.jpg", figure: { cx: 0.49, head: 0.062, feet: 0.967 } },
+  moses: { src: "/cards/moses.jpg", figure: { cx: 0.5, head: 0.117, feet: 0.962 } },
+  joseph: { src: "/cards/joseph.jpg", figure: { cx: 0.5, head: 0.112, feet: 0.962 } },
+  jacob: { src: "/cards/jacob.jpg", figure: { cx: 0.49, head: 0.142, feet: 0.947 } },
+  isaac: { src: "/cards/isaac.jpg", figure: { cx: 0.5, head: 0.142, feet: 0.962 } },
+  noah: { src: "/cards/noah.jpg", figure: { cx: 0.47, head: 0.098, feet: 0.952 } },
+  cain: { src: "/cards/cain.jpg", figure: { cx: 0.62, head: 0.095, feet: 0.965, gaze: "left" } },
   eve: { src: "/cards/eve.jpg", figure: { cx: 0.44, head: 0.215, feet: 0.928 } },
   // Enemy cards drawn by the player: same art as their enemy versions, except the Serpent.
   goliathP: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943 } },
@@ -97,10 +112,10 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
   const resist = ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {id === "david" && (
+      {(id === "david" || id === "abel") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
-          {t("v2.passive.david")}
+          {t(`v2.passive.${id}`)}
         </div>
       )}
       {/* Story bonus: what this character gains in their own Bible story */}
@@ -120,7 +135,7 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
               <div className="flex items-center gap-[3%]">
                 <span className="w-[22%] shrink-0 text-[0.8em] tracking-tighter">{ENERGY_ICON[def.kind].repeat(def.cost)}</span>
                 <span className="flex-1 text-[0.95em] font-black">{t(`v2.skill.${skill}.name`)}</span>
-                <span className="text-[1.15em] font-black">{def.damage ? amount : amount > 0 && `+${amount}`}</span>
+                <span className="text-[1.15em] font-black">{def.damage ? amount : amount > 0 && `${skill === "mark" ? "↩" : "+"}${amount}`}</span>
               </div>
               <div className="pl-[25%] text-[0.58em] leading-snug opacity-75">{t(`v2.skill.${skill}.desc`, { n: amount })}</div>
             </div>

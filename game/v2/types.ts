@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -131,6 +131,36 @@ export interface BattleState {
   helperUsed: boolean;
   /** The Serpent card's Beguile can be used once per battle. */
   beguileUsed: boolean;
+  /** Cain's Mark can be used once per battle; marked: it holds through this turn's enemy phase. */
+  markUsed: boolean;
+  marked: boolean;
+  /** Noah's Rainbow Covenant can be used once per battle. */
+  rainbowUsed: boolean;
+  /** Abraham's The LORD Will Provide can be used once per battle. */
+  provideUsed: boolean;
+  /** Isaac's Ram in the Thicket can be used once per battle; ramReady: it spares the next ally who would fall this turn. */
+  ramUsed: boolean;
+  ramReady: boolean;
+  /** Jacob's Ladder can be used once per battle. */
+  ladderUsed: boolean;
+  /** Joseph's God Meant It for Good can be used once per battle. */
+  goodUsed: boolean;
+  /** Moses: Part the Red Sea once per battle; handsUp: his raised hands strengthen every attack this turn. */
+  seaUsed: boolean;
+  handsUp: boolean;
+  /** Aaron's Breastplate: the enemy leader's damage is halved this turn. */
+  breastplate: boolean;
+  /** Moses at Sinai: His Face Shone can be used once per battle. */
+  shoneUsed: boolean;
+  /** Joshua's Jericho Falls can be used once per battle. */
+  jerichoUsed: boolean;
+  /** Rahab's Scarlet Cord can be used once per battle; cordReady: no ally can fall this turn. */
+  cordUsed: boolean;
+  cordReady: boolean;
+  /** Deborah's Stars Fought from Heaven can be used once per battle. */
+  starsFoughtUsed: boolean;
+  /** Gideon's Torches and Pitchers can be used once per battle. */
+  torchesUsed: boolean;
   /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
   lineup: CharacterId[];
   log: LogEntry[];

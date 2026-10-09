@@ -24,9 +24,9 @@ export const RULES_V2 = {
   ariseHp: 70,
   covShield: 30,
   /** The Serpent of Eden. Coil hits every ally. */
-  fang: 90,
-  fangShed: 110,
-  coil: 60,
+  fang: 70,
+  fangShed: 90,
+  coil: 40,
   temptFaith: 1,
 
   /** Story bonuses: a character fighting in their own Bible story. */
@@ -44,6 +44,47 @@ export const RULES_V2 = {
 
   /** Adam's Keep the Garden: Shield on himself. */
   keepShield: 50,
+  /** Cain's Fruit of the Ground also gives Faith; his Mark strikes back at every enemy that hits him. */
+  offeringFaith: 1,
+  markRetaliate: 30,
+  /** Abel's Firstlings of the Flock heals one ally; when he falls, Yet Speaketh shields every ally and gives Faith. */
+  firstlingsHeal: 40,
+  speakethShield: 30,
+  speakethFaith: 1,
+  /** Noah's Build the Ark shields every ally; his Rainbow Covenant (once per battle) heals every ally and lifts Shaken. */
+  arkShield: 40,
+  rainbowHeal: 50,
+  /** Abraham's Look Toward Heaven gives Faith; The LORD Will Provide (once per battle) draws cards. */
+  starsFaith: 2,
+  provideDraw: 3,
+  /** Isaac's Hundredfold Harvest hits harder with Abraham in the line-up; the Ram leaves a falling ally at this HP. */
+  harvestBlessing: 20,
+  ramHp: 10,
+  /** Jacob's Wrestle Until Dawn costs him HP and wins the party Faith. */
+  wrestleCost: 10,
+  wrestleFaith: 1,
+  /** Joseph's Storehouses heal and shield every ally; God Meant It for Good turns half the party's lost HP into damage. */
+  granaryHeal: 30,
+  granaryShield: 20,
+  goodCap: 100,
+  /** Moses' Hold Up His Hands: every ally's attacks this turn +20. */
+  handsBonus: 20,
+  /** Aaron's Blessing heals and shields one ally. */
+  blessingHeal: 30,
+  blessingShield: 30,
+  /** Miriam's Song of the Sea gives Faith and lifts Shaken from everyone. */
+  songFaith: 2,
+  /** Moses at Sinai: The Ten Words shield every ally and give Faith. */
+  tenWordsShield: 30,
+  tenWordsFaith: 1,
+  /** Rahab's Hide the Spies shields one ally. */
+  hideShield: 40,
+  /** Deborah's Up! This Is the Day gives Attack energy. */
+  upTodayAttack: 2,
+  /** Gideon's Sign of the Fleece gives Faith and draws a card. */
+  fleeceFaith: 1,
+  fleeceDraw: 1,
+
   /** Eve's Mother of All Living: heals every ally. */
   motherHeal: 40,
 
@@ -81,6 +122,21 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   samuel: "water",
   jonathan: "fire",
   adam: "earth",
+  cain: "earth",
+  abel: "light",
+  noah: "water",
+  abraham: "metal",
+  isaac: "wood",
+  jacob: "earth",
+  joseph: "metal",
+  moses: "fire",
+  aaron: "light",
+  miriam: "water",
+  mosesSinai: "light",
+  joshua: "metal",
+  rahab: "fire",
+  deborah: "wood",
+  gideon: "fire",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
@@ -89,8 +145,12 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
 };
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark" };
 
+/** Cards that show the same person: a line-up holds only one of them. */
+export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses" };
+export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
+
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -104,9 +164,9 @@ export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = { goliath: ["bearer", "
 export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent" };
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
-export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 320 };
+export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -120,6 +180,36 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   keep: { id: "keep", owner: "adam", kind: "guard", cost: 1 },
   mother: { id: "mother", owner: "eve", kind: "guard", cost: 1 },
   helper: { id: "helper", owner: "eve", kind: "guard", cost: 1 },
+  offering: { id: "offering", owner: "cain", kind: "attack", cost: 1, damage: 20 },
+  mark: { id: "mark", owner: "cain", kind: "guard", cost: 2 },
+  firstlings: { id: "firstlings", owner: "abel", kind: "guard", cost: 1 },
+  faithOffering: { id: "faithOffering", owner: "abel", kind: "attack", cost: 1, damage: 20 },
+  ark: { id: "ark", owner: "noah", kind: "guard", cost: 2 },
+  rainbow: { id: "rainbow", owner: "noah", kind: "guard", cost: 3 },
+  stars: { id: "stars", owner: "abraham", kind: "guard", cost: 1 },
+  provide: { id: "provide", owner: "abraham", kind: "faith", cost: 2 },
+  harvest: { id: "harvest", owner: "isaac", kind: "attack", cost: 1, damage: 20 },
+  ram: { id: "ram", owner: "isaac", kind: "guard", cost: 2 },
+  wrestle: { id: "wrestle", owner: "jacob", kind: "attack", cost: 2, damage: 40 },
+  ladder: { id: "ladder", owner: "jacob", kind: "faith", cost: 3 },
+  granary: { id: "granary", owner: "joseph", kind: "guard", cost: 2 },
+  meantForGood: { id: "meantForGood", owner: "joseph", kind: "faith", cost: 2 },
+  sea: { id: "sea", owner: "moses", kind: "faith", cost: 3, damage: 60 },
+  handsUp: { id: "handsUp", owner: "moses", kind: "guard", cost: 2 },
+  blessing: { id: "blessing", owner: "aaron", kind: "guard", cost: 1 },
+  breastplate: { id: "breastplate", owner: "aaron", kind: "guard", cost: 2 },
+  timbrel: { id: "timbrel", owner: "miriam", kind: "attack", cost: 1, damage: 10 },
+  song: { id: "song", owner: "miriam", kind: "guard", cost: 2 },
+  tenWords: { id: "tenWords", owner: "mosesSinai", kind: "guard", cost: 2 },
+  faceShone: { id: "faceShone", owner: "mosesSinai", kind: "faith", cost: 3 },
+  courage: { id: "courage", owner: "joshua", kind: "attack", cost: 1, damage: 30 },
+  jericho: { id: "jericho", owner: "joshua", kind: "faith", cost: 3, damage: 40 },
+  hideSpies: { id: "hideSpies", owner: "rahab", kind: "guard", cost: 1 },
+  scarletCord: { id: "scarletCord", owner: "rahab", kind: "guard", cost: 3 },
+  upToday: { id: "upToday", owner: "deborah", kind: "attack", cost: 1 },
+  starsFought: { id: "starsFought", owner: "deborah", kind: "faith", cost: 3, damage: 60 },
+  fleece: { id: "fleece", owner: "gideon", kind: "guard", cost: 1 },
+  torches: { id: "torches", owner: "gideon", kind: "faith", cost: 3, damage: 30 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -134,6 +224,21 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   samuel: ["rebuke", "heal", "arise"],
   jonathan: ["sword", "covshield"],
   adam: ["till", "keep"],
+  cain: ["offering", "mark"],
+  abel: ["firstlings", "faithOffering"],
+  noah: ["ark", "rainbow"],
+  abraham: ["stars", "provide"],
+  isaac: ["harvest", "ram"],
+  jacob: ["wrestle", "ladder"],
+  joseph: ["granary", "meantForGood"],
+  moses: ["sea", "handsUp"],
+  aaron: ["blessing", "breastplate"],
+  miriam: ["timbrel", "song"],
+  mosesSinai: ["tenWords", "faceShone"],
+  joshua: ["courage", "jericho"],
+  rahab: ["hideSpies", "scarletCord"],
+  deborah: ["upToday", "starsFought"],
+  gideon: ["fleece", "torches"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],

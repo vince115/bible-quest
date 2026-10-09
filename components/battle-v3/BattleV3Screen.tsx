@@ -19,7 +19,7 @@ import {
   SKILLS,
 } from "@/game/v2/data";
 import { bossOf, canAct, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, payment, skillDamage, type Target } from "@/game/v2/engine";
-import { PARTY_ORDER } from "@/game/v2/data";
+import { PARTY_ORDER, personOf } from "@/game/v2/data";
 import type { BattleState, CharacterId, EnemyId, EnergyKind, Intent, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
@@ -276,6 +276,9 @@ function CharacterSlot({
 
 /** How long a skill's effect plays on the close-up card before it resolves (ms). */
 const CAST_FX_MS = 550;
+/** Skills with their own illustration: it fills the card while the skill is cast, so the effect plays longer. */
+const SKILL_ART: Partial<Record<SkillId, string>> = { ark: "/cards/ark.jpg", sea: "/cards/red-sea.jpg" };
+const ART_FX_MS = 1500;
 const BURST: Record<EnergyKind, string> = {
   faith: "rgb(253 224 71 / 0.95)",
   attack: "rgb(248 113 113 / 0.95)",
@@ -297,9 +300,27 @@ function CardShine() {
 }
 
 /** The cast effect: a burst of the skill's energy colour from the card, with the skill name. */
-function CastBurst({ kind, label }: { kind: EnergyKind; label: string }) {
+function CastBurst({ kind, label, art }: { kind: EnergyKind; label: string; art?: string }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+      {art && (
+        // The skill's illustration fades in over the card and drifts slowly closer.
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0.85] }}
+          transition={{ duration: ART_FX_MS / 1000, times: [0, 0.25, 0.8, 1] }}
+          className="absolute inset-0 overflow-hidden rounded-xs"
+        >
+          <motion.img
+            src={art}
+            alt=""
+            initial={{ scale: 1.15 }}
+            animate={{ scale: 1.3 }}
+            transition={{ duration: ART_FX_MS / 1000, ease: "easeOut" }}
+            className="h-full w-full object-cover"
+          />
+        </motion.div>
+      )}
       <motion.div
         initial={{ scale: 0.2, opacity: 1 }}
         animate={{ scale: 2.2, opacity: 0 }}
@@ -347,7 +368,7 @@ function SkillFocus({
   const [casting, setCasting] = useState<SkillId | null>(null);
   const cast = (skill: SkillId) => {
     setCasting(skill);
-    setTimeout(() => onSkill(skill), CAST_FX_MS);
+    setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
   const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
   return (
@@ -385,7 +406,7 @@ function SkillFocus({
             <CharacterCardFace id={id} />
           </HoloCard>
           {lookOf(id).shine && <CardShine />}
-          {casting && <CastBurst kind={SKILLS[casting].kind} label={t(`v2.skill.${casting}.name`)} />}
+          {casting && <CastBurst kind={SKILLS[casting].kind} label={t(`v2.skill.${casting}.name`)} art={SKILL_ART[casting]} />}
         </div>
 
         {/* Skill bars: compact and off to the right. Anchored to the bottom, where every card prints its skills just above
@@ -413,7 +434,7 @@ function SkillFocus({
                   {reason && reason !== "v2.reason.over" && <span className="block truncate text-[0.62em] font-semibold text-red-700">{t(reason)}</span>}
                 </span>
                 <span className="text-[1.4em] font-black leading-none">
-                  {def.damage ? amount : amount > 0 && `+${amount}`}
+                  {def.damage ? amount : amount > 0 && `${skill === "mark" ? "↩" : "+"}${amount}`}
                   {boosted && <span className="ml-0.5 text-[0.6em] text-amber-500">▲</span>}
                 </span>
               </button>
@@ -455,10 +476,12 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
   const [front, setFront] = useState<CharacterId>(last.front);
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   const lead = chosen.includes(front) ? front : chosen[0];
-  // At most three characters go to battle.
+  // At most three characters go to battle, and one card per person: picking another card of the same person swaps it in.
   const full = chosen.length >= MAX_LINEUP;
+  const twin = (id: CharacterId) => chosen.find((x) => x !== id && personOf(x) === personOf(id));
   const toggle = (id: CharacterId) => {
     if (lineup.includes(id)) setLineup(lineup.filter((x) => x !== id));
+    else if (twin(id)) setLineup([...lineup.filter((x) => x !== twin(id)), id]);
     else if (!full) setLineup([...lineup, id]);
   };
 
@@ -508,7 +531,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
               <div className="flex gap-1.5">
                 <button
                   onClick={() => toggle(id)}
-                  disabled={!on && full}
+                  disabled={!on && full && !twin(id)}
                   className={`rounded-full px-3 py-1 text-xs font-bold disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
                 >
                   {on ? t("v3.lineup.in") : t("v3.lineup.out")}

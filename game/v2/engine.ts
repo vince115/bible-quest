@@ -128,18 +128,42 @@ function addShield(s: BattleState, id: CharacterId, n: number) {
 
 function damageAlly(s: BattleState, id: CharacterId, base: number, from: EnemyId) {
   if (!isAlive(s, id)) return;
-  const n = enemyDamage(from, id, base);
+  // Aaron bears the names of the tribes upon his heart (Exodus 28:29): the leader's blows are halved.
+  const n = s.breastplate && from === bossOf(s) ? toTens(enemyDamage(from, id, base) / 2) : enemyDamage(from, id, base);
   const c = s.party[id];
   const blocked = Math.min(c.shield, n);
   c.shield -= blocked;
-  const taken = Math.min(c.hp, n - blocked);
+  let taken = Math.min(c.hp, n - blocked);
+  // The ram caught in the thicket takes the place of the first ally who would fall (Genesis 22:13);
+  // under Rahab's scarlet cord nobody in the house falls this turn (Joshua 2:18).
+  const spared = (s.ramReady || s.cordReady) && taken === c.hp && c.hp > R.ramHp;
+  if (spared) {
+    if (!s.cordReady) s.ramReady = false;
+    taken = c.hp - R.ramHp;
+  }
   c.hp -= taken;
   log(s, "v2.log.allyDamage", "detail", { char: id, n: taken, blocked, hp: c.hp, max: MAX_HP[id] });
+  if (spared) log(s, s.cordReady ? "v2.log.cordSaves" : "v2.log.ramSaves", "player", { char: id, hp: c.hp });
   if (c.hp === 0) {
     c.shaken = false;
     c.shield = 0;
     log(s, "v2.log.fallen", "system", { char: id });
+    // Abel, being dead, yet speaketh (Hebrews 11:4): every ally is shielded and gains Faith.
+    if (id === "abel") {
+      log(s, "v2.log.speaketh", "player");
+      living(s).forEach((ally) => addShield(s, ally, R.speakethShield));
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.speakethFaith);
+    }
   }
+  // The mark of Cain: whoever strikes him suffers vengeance (Genesis 4:15).
+  if (id === "cain" && s.marked && enemyAlive(s, from)) strikeBack(s, from);
+}
+
+function strikeBack(s: BattleState, enemy: EnemyId) {
+  const e = s.enemies[enemy];
+  e.hp = Math.max(0, e.hp - R.markRetaliate);
+  log(s, "v2.log.markHit", "player", { enemy, n: R.markRetaliate, hp: e.hp });
+  afterEnemyHit(s, enemy);
 }
 
 /** Damage is shown in steps of 10, like Pokémon TCG. */
@@ -168,7 +192,11 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
   const till = skill === "till" && inStory(s, "adam") ? R.edenTillBonus : 0;
   // Eve in Eden: her seed shall bruise the serpent's head — every attack on the Serpent +20.
   const seed = target === "serpent" && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
-  const base = (def.damage ?? 0) + giant + till + seed;
+  // Isaac sowed and reaped a hundredfold, for the LORD blessed him (Genesis 26:12): more with his father beside him.
+  const blessing = skill === "harvest" && isAlive(s, "abraham") ? R.harvestBlessing : 0;
+  // While Moses held up his hand, Israel prevailed (Exodus 17:11).
+  const hands = s.handsUp ? R.handsBonus : 0;
+  const base = (def.damage ?? 0) + giant + till + seed + blessing + hands;
   if (!target) return base;
   return toTens(base * elementMultiplier(CHARACTER_ELEMENT[def.owner], ENEMY_ELEMENT[target]));
 }
@@ -182,6 +210,20 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "keep") return R.keepShield;
   if (skill === "mother") return R.motherHeal;
   if (skill === "shieldUp") return R.shieldUpAmount;
+  if (skill === "mark") return R.markRetaliate;
+  if (skill === "firstlings") return R.firstlingsHeal;
+  if (skill === "ark") return R.arkShield;
+  if (skill === "rainbow") return R.rainbowHeal;
+  if (skill === "stars") return R.starsFaith;
+  if (skill === "provide") return R.provideDraw;
+  if (skill === "granary") return R.granaryHeal;
+  if (skill === "handsUp") return R.handsBonus;
+  if (skill === "blessing") return R.blessingHeal;
+  if (skill === "song") return R.songFaith;
+  if (skill === "tenWords") return R.tenWordsShield;
+  if (skill === "hideSpies") return R.hideShield;
+  if (skill === "upToday") return R.upTodayAttack;
+  if (skill === "fleece") return R.fleeceFaith;
   return 0;
 }
 
@@ -192,6 +234,12 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
 }
 
 /** Damage an enemy deals to an ally, with elements (e.g. metal Goliath hits wood Eve ×1.5). */
+/** God Meant It for Good: half the HP the line-up has lost, in tens, up to the cap. */
+export function goodDamage(s: BattleState): number {
+  const lost = s.lineup.reduce((n, id) => n + MAX_HP[id] - s.party[id].hp, 0);
+  return Math.min(R.goodCap, toTens(lost / 2));
+}
+
 export function enemyDamage(enemy: EnemyId, ally: CharacterId, base: number): number {
   return toTens(base * elementMultiplier(ENEMY_ELEMENT[enemy], CHARACTER_ELEMENT[ally]));
 }
@@ -213,6 +261,23 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     lineup: PARTY_ORDER.filter((id) => lineup.includes(id)),
     helperUsed: false,
     beguileUsed: false,
+    markUsed: false,
+    marked: false,
+    rainbowUsed: false,
+    provideUsed: false,
+    ramUsed: false,
+    ramReady: false,
+    ladderUsed: false,
+    goodUsed: false,
+    seaUsed: false,
+    handsUp: false,
+    breastplate: false,
+    shoneUsed: false,
+    jerichoUsed: false,
+    cordUsed: false,
+    cordReady: false,
+    starsFoughtUsed: false,
+    torchesUsed: false,
     enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
     stage,
     coiled: null,
@@ -270,10 +335,10 @@ export function playCard(state: BattleState, uid: number): BattleState {
 // ---------- skills ----------
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till") return "enemy";
+  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
-  if (skill === "volley") return "anyEnemy";
-  if (skill === "heal" || skill === "shieldUp") return "ally";
+  if (skill === "volley" || skill === "courage") return "anyEnemy";
+  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies") return "ally";
   if (skill === "arise") return "fallenAlly";
   if (skill === "helper") return "actedAlly";
   return "none";
@@ -302,6 +367,20 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (skill === "arise" && s.ariseUsed) return "v2.reason.ariseUsed";
   if (skill === "helper" && s.helperUsed) return "v2.reason.ariseUsed";
   if (skill === "beguile" && s.beguileUsed) return "v2.reason.ariseUsed";
+  if (skill === "mark" && s.markUsed) return "v2.reason.ariseUsed";
+  if (skill === "rainbow" && s.rainbowUsed) return "v2.reason.ariseUsed";
+  if (skill === "provide" && s.provideUsed) return "v2.reason.ariseUsed";
+  if (skill === "ram" && s.ramUsed) return "v2.reason.ariseUsed";
+  if (skill === "ladder" && s.ladderUsed) return "v2.reason.ariseUsed";
+  if (skill === "meantForGood" && s.goodUsed) return "v2.reason.ariseUsed";
+  if (skill === "sea" && s.seaUsed) return "v2.reason.ariseUsed";
+  if (skill === "faceShone" && s.shoneUsed) return "v2.reason.ariseUsed";
+  if (skill === "jericho" && s.jerichoUsed) return "v2.reason.ariseUsed";
+  if (skill === "scarletCord" && s.cordUsed) return "v2.reason.ariseUsed";
+  if (skill === "starsFought" && s.starsFoughtUsed) return "v2.reason.ariseUsed";
+  if (skill === "torches" && s.torchesUsed) return "v2.reason.ariseUsed";
+  // The ladder is for allies who have already acted: someone must have.
+  if (skill === "ladder" && !s.lineup.some((id) => id !== "jacob" && isAlive(s, id) && s.party[id].acted)) return "v2.reason.noTarget";
   if (!payment(s, skill)) return def.kind === "faith" ? "v2.reason.needFaith" : "v2.reason.energy";
   if (skillTargetKind(skill) !== "none") {
     const valid = skillTargets(s, skill);
@@ -322,6 +401,12 @@ function hitEnemy(s: BattleState, skill: SkillId, enemy: EnemyId) {
     n: dmg,
     hp: e.hp,
   });
+  afterEnemyHit(s, enemy);
+}
+
+/** After any damage to an enemy: the Serpent may shed its skin, a minion may fall, the boss may fall. */
+function afterEnemyHit(s: BattleState, enemy: EnemyId) {
+  const e = s.enemies[enemy];
   // The Serpent sheds its skin at half HP: its fang hits harder from then on.
   if (s.stage === "eden" && enemy === "serpent" && e.hp > 0 && !s.goliath.enraged && e.hp <= ENEMY_HP.serpent / 2) {
     s.goliath.enraged = true;
@@ -345,8 +430,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
   s.party[def.owner].acted = true;
   // Against the Giant reads the Faith held before paying. Sling Stone flies over the shield into Goliath.
   // Taunt hits every enemy; other attacks hit their target (Sling Stone always the boss).
-  if (skill === "taunt") ENEMY_ORDER.filter((id) => enemyAlive(s, id)).forEach((id) => s.result === "ongoing" && hitEnemy(s, skill, id));
-  else if (def.damage) hitEnemy(s, skill, skill === "slingStone" ? bossOf(s) : (target as EnemyId));
+  if (skill === "taunt" || skill === "sea" || skill === "timbrel" || skill === "jericho" || skill === "torches") ENEMY_ORDER.filter((id) => enemyAlive(s, id)).forEach((id) => s.result === "ongoing" && hitEnemy(s, skill, id));
+  else if (def.damage) hitEnemy(s, skill, skill === "slingStone" || skill === "starsFought" ? bossOf(s) : (target as EnemyId));
   s.energy.faith -= pay.faith;
   s.energy.attack -= pay.attack;
   s.energy.guard -= pay.guard;
@@ -370,6 +455,15 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const healed = Math.min(R.healAmount, MAX_HP[ally] - c.hp);
       c.hp += healed;
       log(s, "v2.log.heal", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "firstlings": {
+      // Abel brought of the firstlings of his flock (Genesis 4:4).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.firstlingsHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      log(s, "v2.log.firstlings", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
       break;
     }
     case "arise": {
@@ -401,6 +495,168 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
       break;
+    case "ark":
+      // Make thee an ark of gopher wood (Genesis 6:14).
+      log(s, "v2.log.ark", "player");
+      living(s).forEach((id) => addShield(s, id, R.arkShield));
+      break;
+    case "rainbow":
+      // I do set my bow in the cloud (Genesis 9:13).
+      s.rainbowUsed = true;
+      log(s, "v2.log.rainbow", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.rainbowHeal, MAX_HP[id] - c.hp);
+        c.shaken = false;
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    case "stars": {
+      // Look now toward heaven, and tell the stars (Genesis 15:5).
+      const gained = Math.min(R.starsFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      log(s, "v2.log.stars", "player", { n: gained });
+      break;
+    }
+    case "provide":
+      // Jehovah-jireh: the LORD will provide (Genesis 22:14).
+      s.provideUsed = true;
+      log(s, "v2.log.provide", "player", { n: R.provideDraw });
+      draw(s, R.provideDraw, rng);
+      break;
+    case "wrestle": {
+      // I will not let thee go, except thou bless me (Genesis 32:26).
+      const c = s.party.jacob;
+      c.hp = Math.max(R.wrestleCost, c.hp - R.wrestleCost);
+      const gained = Math.min(R.wrestleFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      log(s, "v2.log.wrestle", "player", { n: gained, hp: c.hp, max: MAX_HP.jacob });
+      break;
+    }
+    case "sea":
+      // The waters returned, and covered the chariots (Exodus 14:28).
+      s.seaUsed = true;
+      break;
+    case "blessing": {
+      // The LORD bless thee, and keep thee (Numbers 6:24).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.blessingHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      log(s, "v2.log.blessing", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      addShield(s, ally, R.blessingShield);
+      break;
+    }
+    case "fleece": {
+      // Let it now be dry only upon the fleece (Judges 6:39): a sign, and Faith to go on.
+      const gained = Math.min(R.fleeceFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      log(s, "v2.log.fleece", "player", { n: gained });
+      draw(s, R.fleeceDraw, rng);
+      break;
+    }
+    case "torches":
+      // They blew the trumpets and brake the pitchers: the LORD set every man's sword against his fellow (Judges 7:22).
+      s.torchesUsed = true;
+      if (s.result === "ongoing") {
+        s.goliath.stunned = true;
+        log(s, "v2.log.torches", "player");
+      }
+      break;
+    case "upToday":
+      // Up; for this is the day in which the LORD hath delivered Sisera into thine hand (Judges 4:14).
+      s.energy.attack += R.upTodayAttack;
+      log(s, "v2.log.upToday", "player", { n: R.upTodayAttack });
+      break;
+    case "starsFought":
+      // The stars in their courses fought against Sisera (Judges 5:20).
+      s.starsFoughtUsed = true;
+      break;
+    case "hideSpies": {
+      // She hid them with the stalks of flax (Joshua 2:6).
+      const ally = target as CharacterId;
+      s.party[ally].shaken = false;
+      log(s, "v2.log.hideSpies", "player", { char: ally });
+      addShield(s, ally, R.hideShield);
+      break;
+    }
+    case "scarletCord":
+      s.cordUsed = true;
+      s.cordReady = true;
+      log(s, "v2.log.scarletCord", "player");
+      break;
+    case "jericho":
+      // The people shouted, and the wall fell down flat (Joshua 6:20): the shield bearer falls with it.
+      s.jerichoUsed = true;
+      if (enemyAlive(s, "bearer")) {
+        s.enemies.bearer.hp = 0;
+        log(s, "v2.log.wallsFall", "player");
+        log(s, "v2.log.enemyFalls", "system", { enemy: "bearer" });
+      }
+      break;
+    case "tenWords": {
+      // God spake all these words (Exodus 20:1).
+      log(s, "v2.log.tenWords", "player");
+      living(s).forEach((id) => addShield(s, id, R.tenWordsShield));
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.tenWordsFaith);
+      break;
+    }
+    case "faceShone":
+      // The skin of his face shone; and they were afraid to come nigh him (Exodus 34:30).
+      s.goliath.stunned = true;
+      s.shoneUsed = true;
+      log(s, "v2.log.faceShone", "player");
+      break;
+    case "song": {
+      // Miriam took a timbrel, and all the women went out after her (Exodus 15:20).
+      const gained = Math.min(R.songFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      log(s, "v2.log.song", "player", { n: gained });
+      break;
+    }
+    case "breastplate":
+      s.breastplate = true;
+      log(s, "v2.log.breastplate", "player");
+      break;
+    case "handsUp":
+      s.handsUp = true;
+      log(s, "v2.log.handsUp", "player", { n: R.handsBonus });
+      break;
+    case "granary":
+      // Joseph gathered corn as the sand of the sea (Genesis 41:49).
+      log(s, "v2.log.granary", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.granaryHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+        addShield(s, id, R.granaryShield);
+      });
+      break;
+    case "meantForGood": {
+      // Ye thought evil against me; but God meant it unto good (Genesis 50:20).
+      s.goodUsed = true;
+      const boss = bossOf(s);
+      const n = goodDamage(s);
+      const e = s.enemies[boss];
+      e.hp = Math.max(0, e.hp - n);
+      log(s, "v2.log.meantForGood", "player", { enemy: boss, n, hp: e.hp });
+      afterEnemyHit(s, boss);
+      break;
+    }
+    case "ladder":
+      // Angels ascending and descending on it (Genesis 28:12): everyone who has acted may act again.
+      s.ladderUsed = true;
+      log(s, "v2.log.ladder", "player");
+      s.lineup.filter((id) => id !== "jacob" && isAlive(s, id)).forEach((id) => (s.party[id].acted = false));
+      break;
+    case "ram":
+      s.ramUsed = true;
+      s.ramReady = true;
+      log(s, "v2.log.ram", "player");
+      break;
     case "shieldUp":
       log(s, "v2.log.shieldUp", "player", { char: target });
       addShield(s, target as CharacterId, R.shieldUpAmount);
@@ -409,6 +665,18 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       s.goliath.stunned = true;
       s.beguileUsed = true;
       log(s, "v2.log.beguile", "player");
+      break;
+    case "offering": {
+      // Cain brought of the fruit of the ground an offering (Genesis 4:3).
+      const gained = Math.min(R.offeringFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      log(s, "v2.log.offering", "player", { n: gained });
+      break;
+    }
+    case "mark":
+      s.markUsed = true;
+      s.marked = true;
+      log(s, "v2.log.mark", "player", { n: R.markRetaliate });
       break;
     case "helper": {
       s.party[target as CharacterId].acted = false;
@@ -523,6 +791,11 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
   const s = clone(state);
   s.turn += 1;
   s.energy.attack = 0;
+  s.marked = false;
+  s.ramReady = false;
+  s.cordReady = false;
+  s.handsUp = false;
+  s.breastplate = false;
   for (const id of PARTY_ORDER) {
     s.party[id].shield = 0;
     s.party[id].acted = false;
