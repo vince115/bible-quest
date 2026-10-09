@@ -12,6 +12,7 @@ import {
   CHARACTER_SKILLS,
   ENEMY_ELEMENT,
   ENEMY_HP,
+  ENEMY_ORDER,
   MAX_HP,
   RULES_V2 as R,
   SKILLS,
@@ -23,6 +24,8 @@ import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
 import { useT } from "@/game/locale";
+import { CharacterCardFace, hasArt } from "@/components/cards/CharacterCardFace";
+import { HoloCard } from "@/components/cards/HoloCard";
 
 type T = ReturnType<typeof useT>;
 type Pending = { skill: SkillId; targets: Target[] };
@@ -32,11 +35,6 @@ const ENERGY_RING: Record<EnergyKind, string> = {
   faith: "border-amber-300 bg-amber-500/25 text-amber-100",
   attack: "border-red-400 bg-red-600/25 text-red-100",
   guard: "border-emerald-400 bg-emerald-600/25 text-emerald-100",
-};
-const SKILL_TONE: Record<EnergyKind, string> = {
-  faith: "border-amber-400/70 bg-amber-950/70 enabled:hover:border-amber-300",
-  attack: "border-red-500/70 bg-red-950/70 enabled:hover:border-red-400",
-  guard: "border-emerald-500/70 bg-emerald-950/70 enabled:hover:border-emerald-400",
 };
 const ELEMENT_ICON: Record<Element, string> = { water: "💧", fire: "🔥", wood: "🌿", light: "☀️", dark: "🌑" };
 /** Card frame and art colours by element. */
@@ -57,8 +55,11 @@ const PORTRAIT: Record<CharacterId | EnemyId, string> = {
 };
 const SUPPORT_AMOUNT: Partial<Record<SkillId, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield };
 
-/** Card widths: phones get narrow cards so a whole side fits in one row. */
-const CARD_WIDTH = { large: "w-[9.5rem] sm:w-64", small: "w-[6.25rem] sm:w-56" };
+/** Card widths: phones get narrow cards so a whole side fits in one row. Every card uses the TCG ratio 63:88. */
+const CARD_WIDTH = { large: "w-24 sm:w-36", small: "w-20 sm:w-28" };
+/** Our characters are shown as their printed cards. */
+const CHAR_WIDTH = { large: "w-28 sm:w-40", small: "w-[5.5rem] sm:w-32" };
+const CARD_RATIO = "aspect-[63/88]";
 
 /** HP bar: green only at full HP, yellow above 50%, orange from 20% to 50%, red at 20% or less; Shield as a translucent layer. */
 function HpBar({ value, max, shield = 0 }: { value: number; max: number; shield?: number }) {
@@ -106,13 +107,14 @@ function IntentRow({ label, intent, front, t, dim }: { label: string; intent: In
   return <AttackRow label={label} name={name} tag={actionTag(t, intent.action, front)} dim={dim} />;
 }
 
+/** Name on its own line (narrow TCG-ratio cards), HP below it on the right. */
 function CardHeader({ name, element, hp, shield, size }: { name: string; element: Element; hp: number; shield?: number; size: "large" | "small" }) {
   return (
-    <div className="flex items-baseline justify-between gap-1">
-      <span className={`truncate font-bold ${size === "large" ? "text-xs sm:text-base" : "text-[10px] sm:text-sm"}`}>
+    <div className="flex flex-col leading-none">
+      <span className={`truncate font-bold ${size === "large" ? "text-[11px] sm:text-sm" : "text-[10px] sm:text-xs"}`}>
         {ELEMENT_ICON[element]} {name}
       </span>
-      <span className={`shrink-0 font-black ${size === "large" ? "text-base sm:text-2xl" : "text-xs sm:text-lg"}`}>
+      <span className={`self-end font-black ${size === "large" ? "text-sm sm:text-xl" : "text-xs sm:text-base"}`}>
         <span className="mr-0.5 text-[8px] font-bold sm:text-[10px]">HP</span>
         {hp}
         {!!shield && <span className="ml-0.5 text-[9px] font-bold text-sky-200 sm:text-xs">🛡️{shield}</span>}
@@ -149,20 +151,34 @@ function EnemyCard({
   const mult = owner ? elementMultiplier(CHARACTER_ELEMENT[owner], ENEMY_ELEMENT[id]) : 1;
   return (
     <div
-      className={`relative flex shrink-0 flex-col gap-1 rounded-xl border-[3px] bg-gradient-to-b p-1.5 shadow-2xl transition sm:gap-1.5 sm:border-4 sm:p-2 ${
+      onClick={
+        isTarget
+          ? (e) => {
+              e.stopPropagation();
+              onTarget();
+            }
+          : undefined
+      }
+      className={`relative flex shrink-0 flex-col gap-1 overflow-hidden rounded-md border-[3px] ${isTarget ? "cursor-pointer" : ""} bg-gradient-to-b p-1.5 shadow-2xl transition sm:gap-1.5 sm:border-4 sm:p-2 ${CARD_RATIO} ${
         ELEMENT_FRAME[ENEMY_ELEMENT[id]]
       } ${CARD_WIDTH[size]} ${!alive ? "opacity-40 grayscale" : ""} ${isTarget ? "ring-4 ring-amber-300" : ""} ${className}`}
     >
       <CardHeader name={t(`v2.enemy.${id}.name`)} element={ENEMY_ELEMENT[id]} hp={hp} size={size} />
       <HpBar value={hp} max={ENEMY_HP[id]} />
-      <div className={`flex items-center justify-center rounded-lg bg-black/30 ${size === "large" ? "h-10 text-3xl sm:h-16 sm:text-5xl" : "h-8 text-2xl sm:h-10 sm:text-3xl"}`}>
+      <div className={`flex min-h-0 flex-1 items-center justify-center rounded bg-black/30 ${size === "large" ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
         {PORTRAIT[id]}
       </div>
       <div className="flex flex-wrap gap-1 empty:hidden">
         {id === "goliath" && g.enraged && <span className="rounded bg-red-700 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.enraged")}</span>}
         {id === "goliath" && g.stunned && <span className="rounded bg-sky-600 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.stunned")}</span>}
         {id === "goliath" && g.charging && <span className="rounded bg-orange-600 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.charging")}</span>}
-        {id === "goliath" && enemyAlive(b, "bearer") && <span className="rounded bg-amber-700/80 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.protected")}</span>}
+        {id === "goliath" && enemyAlive(b, "bearer") && (
+          <span title={t("v2.ui.protected")} className="rounded bg-amber-700/80 px-1 text-[9px] font-bold sm:text-[10px]">
+            {/* Phones: the shield icon only, so the portrait keeps its room */}
+            <span className="sm:hidden">🛡</span>
+            <span className="hidden sm:inline">{t("v2.ui.protected")}</span>
+          </span>
+        )}
         {!alive && <span className="rounded bg-stone-700 px-1 text-[9px] sm:text-[10px]">{t("v2.enemy.fallen")}</span>}
       </div>
       {alive && id === "goliath" && (
@@ -196,154 +212,196 @@ function EnemyCard({
   );
 }
 
-/** A character's skills as attack rows (cost · name · amount), like a TCG card. */
-function SkillList({ board, id, t, locked, pending, onSkill }: { board: Board; id: CharacterId; t: T; locked: boolean; pending: Pending | null; onSkill: (skill: SkillId) => void }) {
-  const b = board.battle;
+/** HP badge hung on the card's top-right corner (outside the art), Pokémon TCG Pocket style. */
+function HpBadge({ hp, max, shield = 0, big }: { hp: number; max: number; shield?: number; big?: boolean }) {
+  const pct = Math.max(0, (hp / max) * 100);
+  const color = pct >= 100 ? "bg-emerald-400" : pct > 50 ? "bg-yellow-400" : pct > 20 ? "bg-orange-500" : "bg-red-600";
   return (
-    <>
-      {CHARACTER_SKILLS[id].map((skill) => {
-        const def = SKILLS[skill];
-        const reason = boardBlockReason(board, skill);
-        const ready = !locked && !pending && !reason;
-        const pay = payment(b, skill);
-        const viaFaith = !!pay && pay.faith > 0 && def.kind !== "faith";
-        const cost = pay ? ENERGY_ICON[def.kind].repeat(def.cost - pay.faith) + ENERGY_ICON.faith.repeat(pay.faith) : ENERGY_ICON[def.kind].repeat(def.cost);
-        const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? "goliath" : undefined) : SUPPORT_AMOUNT[skill];
-        const special = skill === "slingStone" && !reason;
-        return (
-          <button
-            key={skill}
-            onClick={() => onSkill(skill)}
-            disabled={!ready}
-            title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
-            className={`flex items-center gap-2 rounded-md border px-2 py-1 text-left disabled:cursor-not-allowed ${
-              special ? "border-amber-300 bg-amber-500/30 shadow-[0_0_12px] shadow-amber-400/60" : SKILL_TONE[viaFaith ? "faith" : def.kind]
-            } ${ready ? "" : "opacity-50"}`}
-          >
-            <span className="w-11 shrink-0 text-xs">{cost}</span>
-            <span className="flex-1 text-sm font-bold">{t(`v2.skill.${skill}.name`)}</span>
-            <span className="text-sm font-black">{def.damage ? amount : `+${amount}`}</span>
-            {reason && reason !== "v2.reason.over" && <span className="text-[9px] text-rose-200 sm:hidden">{t(reason)}</span>}
-          </button>
-        );
-      })}
-    </>
+    <div className="pointer-events-none flex items-start gap-1">
+      {shield > 0 && <span className="mt-0.5 rounded-full bg-sky-500 px-1.5 text-[10px] font-black text-white shadow sm:text-xs">🛡️{shield}</span>}
+      {/* The bar is exactly as wide as the number above it. */}
+      <div className="inline-flex flex-col items-stretch gap-0.5">
+        <span
+          className={`text-center font-black leading-none text-slate-800 [-webkit-text-stroke:3px_white] [paint-order:stroke_fill] drop-shadow ${big ? "text-4xl" : "text-xl sm:text-2xl"}`}
+        >
+          {hp}
+        </span>
+        <div className={`w-full overflow-hidden rounded-full bg-slate-900/70 ring-2 ring-black/50 ${big ? "h-2.5" : "h-1.5 sm:h-2"}`}>
+          <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </div>
   );
 }
 
-/** Character card. On phones the skills are hidden here and shown in the action bar instead. */
-function CharacterCard({
+/**
+ * One of our characters: the printed card (untouched), the front-line label above it, the HP badge on its corner and
+ * status chips on the other. Clicking it opens the skill view, picks it as a target, or promotes it to the front line.
+ */
+function CharacterSlot({
   board,
   id,
   t,
   size,
   className = "",
-  selected,
-  locked,
-  pending,
-  onSkill,
-  onTarget,
-  onSelect,
-  onSwap,
+  highlight,
+  onClick,
 }: {
   board: Board;
   id: CharacterId;
   t: T;
   size: "large" | "small";
   className?: string;
-  selected: boolean;
-  locked: boolean;
-  pending: Pending | null;
-  onSkill: (skill: SkillId) => void;
-  onTarget: () => void;
-  onSelect: () => void;
-  onSwap: () => void;
+  /** A valid target or a candidate for the empty front line. */
+  highlight: boolean;
+  onClick: () => void;
 }) {
   const b = board.battle;
   const c = b.party[id];
-  const isFront = board.front === id;
-  const promote = needsFront(board);
-  const swappable = !locked && !pending && canSwap(board, id);
   const alive = isAlive(b, id);
-  const isTarget = !!pending?.targets.includes(id);
   return (
-    <div
-      onClick={onSelect}
-      className={`relative flex shrink-0 cursor-pointer flex-col gap-1 rounded-xl border-[3px] bg-gradient-to-b p-1.5 shadow-2xl sm:cursor-default sm:gap-1.5 sm:border-4 sm:p-2 ${
-        ELEMENT_FRAME[CHARACTER_ELEMENT[id]]
-      } ${CARD_WIDTH[size]} ${!alive ? "opacity-50 grayscale" : canAct(b, id) ? "" : "opacity-80"} ${
-        isTarget ? "ring-4 ring-emerald-300" : selected ? "ring-2 ring-white/80 sm:ring-0" : ""
-      } ${className}`}
-    >
-      {c.shield > 0 && alive && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-1 animate-pulse rounded-2xl border-2 border-sky-300/70 bg-sky-400/10 shadow-[inset_0_0_24px] shadow-sky-300/40 sm:-inset-1.5"
-        />
-      )}
-      {isFront && (
-        <span className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow sm:text-[10px]">
-          {t("v3.ui.front")}
-        </span>
-      )}
-      <CardHeader name={t(`char.${id}.name`)} element={CHARACTER_ELEMENT[id]} hp={c.hp} shield={alive ? c.shield : 0} size={size} />
-      <HpBar value={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} />
-      <div className={`relative flex items-center justify-center rounded-lg bg-black/30 ${size === "large" ? "h-10 text-3xl sm:h-14 sm:text-4xl" : "h-8 text-2xl sm:h-10 sm:text-3xl"}`}>
-        {alive ? PORTRAIT[id] : "✝"}
-        {c.shaken && alive && <span className="absolute left-0.5 top-0.5 rounded bg-purple-800/90 px-1 text-[8px] font-semibold sm:text-[10px]">😨</span>}
-        {c.acted && alive && <span className="absolute right-0.5 top-0.5 rounded bg-black/60 px-1 text-[8px] sm:text-[10px]">✓</span>}
-        {!isFront && alive && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSwap();
-            }}
-            disabled={!swappable}
-            className={`absolute inset-x-1 bottom-0.5 rounded-md border px-1 py-0.5 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs ${
-              promote ? "animate-pulse border-red-300 bg-red-600 text-white" : "border-sky-300/70 bg-stone-950/80 text-sky-100 enabled:hover:bg-sky-900"
-            }`}
-          >
-            {promote ? t("v3.ui.promote") : board.swapped ? t("v3.ui.swapUsed") : t("v3.ui.swap")}
-          </button>
+    <div className={`relative flex shrink-0 flex-col items-center gap-2 ${CHAR_WIDTH[size]} ${className}`}>
+      <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
+        {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        aria-label={t(`char.${id}.name`)}
+        className={`relative w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
+          highlight ? "animate-pulse ring-4 ring-emerald-300" : "hover:-translate-y-1"
+        }`}
+      >
+        {c.shield > 0 && alive && (
+          <span aria-hidden className="pointer-events-none absolute -inset-1.5 z-10 rounded-lg border-2 border-sky-300/70 bg-sky-400/10 shadow-[0_0_14px] shadow-sky-300/60" />
         )}
-      </div>
-
-      <div className="hidden gap-1 sm:grid">
-        <SkillList board={board} id={id} t={t} locked={locked} pending={pending} onSkill={onSkill} />
-      </div>
-      {size === "large" && id === "david" && (
-        <div className="hidden text-[10px] leading-tight text-amber-100/80 sm:block">
-          {t("v2.passive.david")}
-          {b.energy.faith >= R.giantFaith && alive && <span className="ml-1 font-bold text-amber-300">· {t("v2.ui.giantOn")}</span>}
-        </div>
-      )}
-      {isTarget && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTarget();
-          }}
-          className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-emerald-400 py-1 text-xs font-black text-stone-950 shadow-lg sm:inset-x-2 sm:bottom-2 sm:py-1.5 sm:text-sm"
+        <span
+          className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "grayscale" : !canAct(b, id) ? "brightness-75" : ""}`}
+          style={{ fontSize: "4.67cqw" }}
         >
-          ✓ {t(`char.${id}.name`)}
-        </button>
-      )}
+          <CharacterCardFace id={id} />
+        </span>
+        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow">✝</span>}
+        <span className="absolute -right-2 -top-4 z-20">
+          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} />
+        </span>
+        {alive && (c.shaken || c.acted) && (
+          <span className="absolute -left-2 -top-3 z-20 flex gap-0.5 text-xs">
+            {c.shaken && <span className="rounded-full bg-purple-700 px-1.5 py-0.5 shadow">😨</span>}
+            {c.acted && <span className="rounded-full bg-stone-700 px-1.5 py-0.5 text-white shadow">✓</span>}
+          </span>
+        )}
+      </button>
     </div>
   );
 }
 
-function Pile({ label, count, faceDown }: { label: string; count: number; faceDown?: boolean }) {
+/**
+ * Skill view (Pokémon TCG Pocket style): the card enlarged in the middle of the screen, its skills as bars laid over
+ * the printed rows, the swap-to-front bar like "Retreat", and advantage tags against the enemies above the card.
+ */
+function SkillFocus({
+  board,
+  id,
+  t,
+  locked,
+  onSkill,
+  onSwap,
+  onClose,
+}: {
+  board: Board;
+  id: CharacterId;
+  t: T;
+  locked: boolean;
+  onSkill: (skill: SkillId) => void;
+  onSwap: () => void;
+  onClose: () => void;
+}) {
+  const b = board.battle;
+  const c = b.party[id];
+  const alive = isAlive(b, id);
+  const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
   return (
-    <div className="hidden flex-col items-center gap-1 sm:flex">
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+    >
       <div
-        className={`relative flex h-20 w-14 items-center justify-center rounded-lg border-2 text-2xl font-black shadow-[4px_4px_0_rgba(0,0,0,0.4)] ${
-          faceDown ? "border-amber-300/70 bg-gradient-to-br from-indigo-900 to-stone-950 text-amber-200" : "border-stone-500 bg-stone-800/80 text-stone-300"
-        }`}
+        onClick={(e) => e.stopPropagation()}
+        className="relative [--w:min(300px,68vw,calc((100dvh-9rem)*63/88))]"
+        style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
       >
-        {faceDown ? "✝" : ""}
-        <span className="absolute bottom-1 right-1.5 text-sm">{count}</span>
+        {/* Advantage against the enemies on the field */}
+        <div className="absolute bottom-full left-0 mb-3 flex flex-wrap gap-1.5 text-xs font-black">
+          {tags.map(({ e, mult }) => (
+            <span key={e} className={`rounded-full px-3 py-1 shadow-lg ${mult > 1 ? "bg-gradient-to-r from-orange-400 to-red-500 text-white" : "bg-slate-500 text-slate-100"}`}>
+              {mult > 1 ? t("v3.focus.advantage") : t("v3.focus.disadvantage")} · {t(`v2.enemy.${e}.name`)} ×{mult}
+            </span>
+          ))}
+        </div>
+        <div className="absolute -right-4 -top-6 z-30">
+          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} big />
+        </div>
+
+        <HoloCard element={CHARACTER_ELEMENT[id]} foil={hasArt(id) ? 0.08 : 0.25} touchTilt={false}>
+          <CharacterCardFace id={id} />
+        </HoloCard>
+
+        {/* Skill bars over the printed skill rows, wider than the card */}
+        <div className="absolute left-1/2 top-[56%] z-20 flex w-[118%] -translate-x-1/2 flex-col gap-2">
+          {CHARACTER_SKILLS[id].map((skill) => {
+            const def = SKILLS[skill];
+            const reason = boardBlockReason(board, skill);
+            const ready = !locked && !reason;
+            const pay = payment(b, skill);
+            const cost = pay ? ENERGY_ICON[def.kind].repeat(def.cost - pay.faith) + ENERGY_ICON.faith.repeat(pay.faith) : ENERGY_ICON[def.kind].repeat(def.cost);
+            const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? "goliath" : undefined) : (SUPPORT_AMOUNT[skill] ?? 0);
+            const boosted = !!def.damage && amount > def.damage;
+            return (
+              <button
+                key={skill}
+                onClick={() => onSkill(skill)}
+                disabled={!ready}
+                title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
+                className="group flex items-center gap-3 rounded-xl border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-3 py-2 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 enabled:hover:from-white disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
+              >
+                <span className="w-14 shrink-0 text-sm tracking-tighter">{cost}</span>
+                <span className="flex-1">
+                  <span className="block text-base font-black">{t(`v2.skill.${skill}.name`)}</span>
+                  {reason && reason !== "v2.reason.over" && <span className="block text-[10px] font-semibold text-red-700">{t(reason)}</span>}
+                </span>
+                <span className="text-2xl font-black">
+                  {def.damage ? amount : `+${amount}`}
+                  {boosted && <span className="ml-0.5 text-base text-amber-500">▲</span>}
+                </span>
+              </button>
+            );
+          })}
+          {board.front !== id && alive && (
+            <button
+              onClick={onSwap}
+              disabled={locked || !canSwap(board, id)}
+              className="ml-auto flex w-3/4 items-center justify-between gap-3 rounded-xl border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-3 py-1.5 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
+            >
+              <span className="text-xs font-bold text-slate-600">{board.swapped && !needsFront(board) ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
+              <span className="text-base font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          aria-label={t("v3.ui.close")}
+          className="absolute -left-3 -top-3 z-30 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-700 text-white shadow-lg hover:bg-slate-600"
+        >
+          ✕
+        </button>
       </div>
-      <span className="text-[10px] uppercase tracking-widest text-stone-300">{label}</span>
     </div>
   );
 }
@@ -359,49 +417,48 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
   const toggle = (id: CharacterId) => setLineup(lineup.includes(id) ? lineup.filter((x) => x !== id) : [...lineup, id]);
 
   return (
-    <div className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-4 bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 px-4 py-6">
-      <div className="text-center">
+    <div className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-3 bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 py-4 sm:gap-4 sm:py-6">
+      <div className="px-4 text-center">
         <div className="text-[10px] uppercase tracking-widest text-stone-300/70 sm:text-[11px]">{t("v3.ui.title")}</div>
         <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{t("v3.lineup.title")}</h1>
         <p className="mt-1 max-w-md text-sm text-stone-300">{t("v3.lineup.hint")}</p>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+      {/* Full character cards; on phones the row scrolls sideways. */}
+      <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 pt-3 sm:gap-5 sm:overflow-visible">
         {PARTY_ORDER.map((id) => {
           const on = chosen.includes(id);
           return (
-            <div
-              key={id}
-              className={`relative flex w-[6.5rem] flex-col gap-1.5 rounded-xl border-[3px] bg-gradient-to-b p-2 transition sm:w-44 sm:border-4 ${ELEMENT_FRAME[CHARACTER_ELEMENT[id]]} ${
-                on ? "" : "opacity-40 grayscale"
-              }`}
-            >
-              {on && lead === id && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white sm:text-[10px]">
-                  {t("v3.ui.front")}
-                </span>
-              )}
-              <button onClick={() => toggle(id)} className="flex flex-col gap-1.5 text-left">
-                <CardHeader name={t(`char.${id}.name`)} element={CHARACTER_ELEMENT[id]} hp={MAX_HP[id]} size="small" />
-                <div className="flex h-10 items-center justify-center rounded-lg bg-black/30 text-3xl sm:h-14 sm:text-4xl">{PORTRAIT[id]}</div>
-                <div className="grid gap-0.5 text-[10px] text-stone-200 sm:text-xs">
-                  {CHARACTER_SKILLS[id].map((skill) => (
-                    <span key={skill} className="truncate">
-                      {ENERGY_ICON[SKILLS[skill].kind]} {t(`v2.skill.${skill}.name`)}
-                    </span>
-                  ))}
-                </div>
-                <span className={`rounded-md py-0.5 text-center text-xs font-bold ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}>
-                  {on ? t("v3.lineup.in") : t("v3.lineup.out")}
-                </span>
-              </button>
+            <div key={id} className="flex shrink-0 snap-center flex-col items-center gap-2">
               <button
-                onClick={() => setFront(id)}
-                disabled={!on || lead === id}
-                className="rounded-md border border-red-400/70 py-0.5 text-[10px] font-bold text-red-100 enabled:hover:bg-red-900/50 disabled:opacity-30 sm:text-xs"
+                onClick={() => toggle(id)}
+                aria-pressed={on}
+                className={`relative w-[220px] text-left text-[10.3px] transition sm:w-[230px] sm:text-[10.8px] lg:w-[250px] lg:text-[11.7px] ${on ? "" : "opacity-45 grayscale"}`}
               >
-                {t("v3.lineup.setFront")}
+                <HoloCard element={CHARACTER_ELEMENT[id]} foil={hasArt(id) ? 0.08 : 0.25} touchTilt={false}>
+                  <CharacterCardFace id={id} />
+                </HoloCard>
+                {on && lead === id && (
+                  <span className="absolute -top-2.5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-700 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow sm:text-xs">
+                    {t("v3.ui.front")}
+                  </span>
+                )}
               </button>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => toggle(id)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
+                >
+                  {on ? t("v3.lineup.in") : t("v3.lineup.out")}
+                </button>
+                <button
+                  onClick={() => setFront(id)}
+                  disabled={!on || lead === id}
+                  className="rounded-full border border-red-400/70 px-3 py-1 text-xs font-bold text-red-100 enabled:hover:bg-red-900/50 disabled:opacity-30"
+                >
+                  {t("v3.lineup.setFront")}
+                </button>
+              </div>
             </div>
           );
         })}
@@ -415,22 +472,17 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
         {chosen.length === 1 ? t("v3.lineup.startSolo") : chosen.length ? t("v3.lineup.start") : t("v3.lineup.need")}
       </button>
 
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-black/30 p-3">
-        <div className="mb-2 text-xs font-bold uppercase tracking-widest text-stone-400">{t("v3.ach.title")}</div>
-        <div className="grid gap-1.5">
-          {ACHIEVEMENTS.map((id: AchievementId) => {
-            const got = unlocked.includes(id);
-            return (
-              <div key={id} className={`flex items-center gap-2 text-sm ${got ? "text-amber-100" : "text-stone-500"}`}>
-                <span className="text-lg">{got ? "🏆" : "🔒"}</span>
-                <div className="min-w-0">
-                  <div className="font-semibold">{t(`v3.ach.${id}.name`)}</div>
-                  <div className="text-[11px] text-stone-400">{t(`v3.ach.${id}.desc`)}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* Achievements, one compact line each (details on hover) */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-xs">
+        <span className="font-bold uppercase tracking-widest text-stone-400">{t("v3.ach.title")}</span>
+        {ACHIEVEMENTS.map((id: AchievementId) => {
+          const got = unlocked.includes(id);
+          return (
+            <span key={id} title={t(`v3.ach.${id}.desc`)} className={got ? "text-amber-100" : "text-stone-500"}>
+              {got ? "🏆" : "🔒"} {t(`v3.ach.${id}.name`)} <span className="text-stone-500">· {t(`v3.ach.${id}.desc`)}</span>
+            </span>
+          );
+        })}
       </div>
 
       <Link href="/" className="text-xs text-stone-400 underline">
@@ -444,7 +496,12 @@ export function BattleV3Screen() {
   const t = useT();
   const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, cast, swap, endTurn, newAchievements } = useBattleV3Store();
   const [pending, setPending] = useState<Pending | null>(null);
-  const [picked, setPicked] = useState<CharacterId | null>(null);
+  /** The character whose skill view is open. */
+  const [acting, setActing] = useState<CharacterId | null>(null);
+  /** The hand card being previewed. */
+  const [preview, setPreview] = useState<number | null>(null);
+  /** Character whose full card is shown enlarged. */
+  const [viewing, setViewing] = useState<CharacterId | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [showResult, setShowResult] = useState(true);
   const logRef = useRef<HTMLDivElement>(null);
@@ -454,16 +511,28 @@ export function BattleV3Screen() {
   useEffect(() => {
     void useAchievementStore.persist.rehydrate();
   }, []);
+  // Esc closes whatever is open: the enlarged card, the action panel, or targeting.
+  useEffect(() => {
+    const close = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setViewing(null);
+      setActing(null);
+      setPending(null);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, []);
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [b?.log.length, showLog]);
 
   if (!board || !b) return <LineupPicker t={t} onStart={start} />;
 
-  const selected = picked && board.lineup.includes(picked) ? picked : board.front;
   const locked = resolving || auto || b.result !== "ongoing";
   const promote = needsFront(board);
+  const open = acting && board.lineup.includes(acting) && !locked && !pending ? acting : null;
   const onSkill = (skill: SkillId) => {
+    setActing(null);
     const targets = boardSkillTargets(board, skill);
     if (targets.length) setPending({ skill, targets });
     else cast(skill);
@@ -472,61 +541,152 @@ export function BattleV3Screen() {
     if (pending) cast(pending.skill, target);
     setPending(null);
   };
-  const charProps = (id: CharacterId) => ({
-    board,
-    id,
-    t,
-    locked,
-    pending,
-    onSkill,
-    selected: selected === id,
-    onTarget: () => onTarget(id),
-    onSelect: () => setPicked(id),
-    onSwap: () => {
-      setPending(null);
-      swap(id);
-    },
-  });
+  const onCharacter = (id: CharacterId) => {
+    if (pending?.targets.includes(id)) return onTarget(id);
+    if (pending) return;
+    if (promote && canSwap(board, id)) return swap(id);
+    setActing(open === id ? null : id);
+  };
+  const slot = (id: CharacterId, size: "large" | "small", order: string) => (
+    <CharacterSlot
+      key={id}
+      board={board}
+      id={id}
+      t={t}
+      size={size}
+      className={order}
+      highlight={!!pending?.targets.includes(id) || (promote && canSwap(board, id))}
+      onClick={() => onCharacter(id)}
+    />
+  );
+  // Hand: a mouse previews on hover and plays on click; a finger previews on the first tap and plays from the preview.
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
+  const previewed = b.hand.find((c) => c.uid === preview);
   const bench = board.lineup.filter((id) => id !== board.front);
   const lastHit = [...b.log].reverse().find((l) => l.key === "v2.log.attack" || l.key === "v2.log.slingStone");
   const order: EnergyKind[] = ["faith", "attack", "guard"];
   const hand = [...b.hand].sort((x, y) => order.indexOf(CARDS_V2[x.card].energy) - order.indexOf(CARDS_V2[y.card].energy));
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 pb-12 sm:pb-6">
-      <div className="px-3 pt-2 text-[10px] uppercase tracking-widest text-stone-300/70 sm:px-4 sm:pt-3 sm:text-[11px]">{t("v3.ui.title")}</div>
+    <div
+      onClick={() => {
+        setActing(null);
+        setPreview(null);
+      }}
+      className="relative flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 sm:flex-row"
+    >
+      {/* ---------- Board: enemies, message, our characters, hand ---------- */}
+      <main className="flex min-w-0 flex-1 flex-col">
+        <div className="px-3 pt-2 text-[10px] uppercase tracking-widest text-stone-300/70 sm:px-4 sm:text-[11px]">{t("v3.ui.title")}</div>
 
-      {/* Enemy side — phone: archer · Goliath · shield bearer in one row; desktop: bench above the front line.
-          Each half takes an equal share of any extra height and centres its cards, so the board sits in the middle. */}
-      <section className="flex flex-1 flex-col items-center justify-center gap-1 px-2 pt-1 sm:px-4">
-        <div className="flex items-start justify-center gap-1.5 sm:gap-4">
-          {/* In a duel the shield bearer and the archer stand aside. */}
-          <div className={isDuel(board) ? "hidden" : "contents"}>
-            <EnemyCard b={b} front={board.front} id="archer" t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget("archer")} />
-            <EnemyCard b={b} front={board.front} id="bearer" t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget("bearer")} />
+        <section className="flex flex-1 items-center justify-center px-2 pt-1 sm:px-4">
+          <div className="flex items-start justify-center gap-2 sm:gap-5">
+            {/* In a duel the shield bearer and the archer stand aside. */}
+            <div className={isDuel(board) ? "hidden" : "contents"}>
+              <EnemyCard b={b} front={board.front} id="archer" t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget("archer")} />
+              <EnemyCard b={b} front={board.front} id="bearer" t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget("bearer")} />
+            </div>
+            <EnemyCard b={b} front={board.front} id="goliath" t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget("goliath")} />
           </div>
-          <EnemyCard b={b} front={board.front} id="goliath" t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget("goliath")} />
-        </div>
-      </section>
+        </section>
 
-      {/* Middle band: energy zone, last hit, auto, end turn */}
-      <section className="my-2 flex flex-wrap items-center justify-center gap-2 border-y border-white/10 bg-black/30 px-2 py-2 sm:gap-4 sm:px-4">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="hidden text-[10px] uppercase tracking-widest text-stone-400 sm:inline">{t("v3.ui.energyZone")}</span>
+        {/* What is happening / what to do next */}
+        <div className="mx-auto my-1 min-h-6 max-w-xl px-3 text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
+          {promote ? (
+            <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
+          ) : pending ? (
+            <span className="text-emerald-200">
+              {t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPending(null);
+                }}
+                className="ml-2 text-xs text-stone-300 underline"
+              >
+                {t("v2.ui.cancel")}
+              </button>
+            </span>
+          ) : lastHit ? (
+            t(lastHit.key, lastHit.params)
+          ) : (
+            <span className="text-stone-300">{t("v3.ui.tapCharacter")}</span>
+          )}
+        </div>
+
+        <section className="flex flex-1 items-center justify-center px-2 sm:px-4">
+          <div className="flex items-start justify-center gap-2 sm:gap-5">
+            {slot(board.front, "large", "order-2")}
+            {bench.map((id, i) => slot(id, "small", i === 0 ? "order-1" : "order-3"))}
+          </div>
+        </section>
+
+        {/* Hand: Scripture cards fanned along the bottom edge */}
+        <section className="flex justify-center px-2 pb-2 pt-3 sm:pb-3">
+          {hand.map((inst, i) => {
+            const kind = CARDS_V2[inst.card].energy;
+            const tilt = (i - (hand.length - 1) / 2) * 5;
+            return (
+              <button
+                key={inst.uid}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (canHover || preview === inst.uid) {
+                    play(inst.uid);
+                    setPreview(null);
+                  } else setPreview(inst.uid);
+                }}
+                onMouseEnter={() => setPreview(inst.uid)}
+                onMouseLeave={() => canHover && setPreview(null)}
+                disabled={locked || !!pending}
+                style={{ transform: `rotate(${tilt}deg) translateY(${(preview === inst.uid ? -14 : 0) + Math.abs(tilt) * 0.6}px)` }}
+                className={`-ml-3 flex h-[4.5rem] ${CARD_RATIO} shrink-0 ${preview === inst.uid ? "z-10 ring-2 ring-white" : ""} flex-col items-center justify-between rounded-md border-2 bg-stone-900 p-1 text-center shadow-xl transition first:ml-0 enabled:hover:z-10 enabled:hover:-translate-y-3 disabled:opacity-50 sm:h-24 sm:p-1.5 ${ENERGY_RING[kind]}`}
+              >
+                <span className="text-xl sm:text-3xl">{ENERGY_ICON[kind]}</span>
+                <span className="text-[9px] font-bold sm:text-[10px]">{t(`v2.energy.${kind}.name`)} +1</span>
+                <span className="hidden text-[9px] leading-tight text-stone-300 sm:block">{t(`v2.card.${inst.card}.ref`)}</span>
+              </button>
+            );
+          })}
+        </section>
+      </main>
+
+      {/* ---------- Controls: side rail on desktop, bottom bar on phones ---------- */}
+      <aside
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-2 border-t border-white/10 bg-black/40 px-2 py-2 sm:w-44 sm:flex-col sm:items-stretch sm:justify-center sm:gap-3 sm:border-l sm:border-t-0 sm:px-3"
+      >
+        <div className="flex gap-1.5 sm:justify-between">
           {order.map((k) => (
-            <div key={k} title={t(`v2.energy.${k}.desc`)} className={`flex h-9 w-9 flex-col items-center justify-center rounded-full border-2 sm:h-12 sm:w-12 ${ENERGY_RING[k]}`}>
+            <div key={k} title={t(`v2.energy.${k}.desc`)} className={`flex h-9 w-9 flex-col items-center justify-center rounded-full border-2 sm:h-11 sm:w-11 ${ENERGY_RING[k]}`}>
               <span className="text-[11px] leading-none sm:text-sm">{ENERGY_ICON[k]}</span>
-              <span className="text-sm font-black leading-none sm:text-base">{b.energy[k]}</span>
+              <span className="text-sm font-black leading-none">{b.energy[k]}</span>
             </div>
           ))}
         </div>
+        <button
+          onClick={playAll}
+          disabled={locked || !b.hand.length}
+          className="hidden rounded-full border border-stone-400 px-3 py-1 text-xs text-stone-200 enabled:hover:bg-white/10 disabled:opacity-40 sm:block"
+        >
+          {t("v2.ui.playAll")}
+        </button>
+        <div className="hidden justify-between text-[11px] text-stone-400 sm:flex">
+          <span>
+            {t("v3.ui.deck")} {b.deck.length}
+          </span>
+          <span>
+            {t("v3.ui.discard")} {b.discard.length}
+          </span>
+        </div>
+        <div className="flex-1 sm:hidden" />
         <button
           onClick={() => {
             setPending(null);
             setAuto(!auto);
           }}
           disabled={b.result !== "ongoing"}
-          className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold disabled:opacity-40 sm:order-3 sm:px-4 sm:py-2 sm:text-sm ${
+          className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold disabled:opacity-40 sm:text-sm ${
             auto ? "border-sky-300 bg-sky-500 text-stone-950" : "border-sky-300 text-sky-100 hover:bg-sky-900/60"
           }`}
         >
@@ -535,100 +695,94 @@ export function BattleV3Screen() {
         <button
           onClick={() => {
             setPending(null);
+            setActing(null);
             endTurn();
           }}
           disabled={locked || promote}
-          className="rounded-full bg-red-700 px-4 py-1.5 text-sm font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40 sm:order-4 sm:px-6 sm:py-2.5 sm:text-base"
+          className="rounded-full bg-red-700 px-4 py-1.5 text-sm font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40 sm:py-2.5 sm:text-base"
         >
           {resolving ? t("v2.ui.resolving") : t("v2.ui.endTurn")}
         </button>
-        <div className="w-full text-center text-[11px] font-semibold leading-tight text-amber-100 sm:order-2 sm:w-auto sm:min-w-48 sm:flex-1 sm:text-sm">
-          {promote ? (
-            <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
-          ) : pending ? (
-            <span className="text-emerald-200">
-              {t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}{" "}
-              <button onClick={() => setPending(null)} className="ml-2 text-xs text-stone-300 underline">
-                {t("v2.ui.cancel")}
-              </button>
-            </span>
-          ) : lastHit ? (
-            t(lastHit.key, lastHit.params)
-          ) : (
-            <span className="text-stone-300">{t("v2.ui.goal")}</span>
+        <button onClick={() => setShowLog(!showLog)} className="rounded-full border border-stone-500 px-2.5 py-1.5 text-xs text-stone-200 hover:bg-white/10">
+          {showLog ? t("v3.ui.hideLog") : t("v3.ui.showLog")}
+        </button>
+      </aside>
+
+      {/* Skill view for the selected character */}
+      {open && (
+        <SkillFocus
+          board={board}
+          id={open}
+          t={t}
+          locked={locked}
+          onSkill={onSkill}
+          onSwap={() => {
+            setActing(null);
+            swap(open);
+          }}
+          onClose={() => setActing(null)}
+        />
+      )}
+
+      {/* Hand card preview, above the hand */}
+      {previewed && !locked && !pending && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={`fixed bottom-36 left-1/2 z-40 w-40 -translate-x-1/2 sm:bottom-40 sm:w-48 ${canHover ? "pointer-events-none" : ""}`}
+        >
+          <div className={`flex ${CARD_RATIO} flex-col items-center justify-between rounded-xl border-4 bg-stone-900 p-3 text-center shadow-2xl ${ENERGY_RING[CARDS_V2[previewed.card].energy]}`}>
+            <span className="text-[11px] font-semibold text-stone-300">{t(`v2.card.${previewed.card}.ref`)}</span>
+            <span className="text-5xl">{ENERGY_ICON[CARDS_V2[previewed.card].energy]}</span>
+            <span className="text-sm font-black leading-snug text-white">「{t(`v2.card.${previewed.card}.name`)}」</span>
+            <span className="text-xs font-bold">→ {t(`v2.energy.${CARDS_V2[previewed.card].energy}.name`)} +1</span>
+            <span className="text-[10px] leading-tight text-stone-300">{t(`v2.energy.${CARDS_V2[previewed.card].energy}.desc`)}</span>
+          </div>
+          {!canHover && (
+            <button
+              onClick={() => {
+                play(previewed.uid);
+                setPreview(null);
+              }}
+              className="mt-2 w-full rounded-full bg-amber-500 py-1.5 text-sm font-black text-stone-950 shadow-lg"
+            >
+              {t("v3.focus.play")}
+            </button>
           )}
         </div>
-      </section>
+      )}
 
-      {/* Hand (above our characters): deck pile · fanned energy cards · discard pile */}
-      <section className="flex items-end justify-center gap-4 px-2 pb-1 sm:px-4 sm:pb-3">
-        <Pile label={t("v3.ui.deck")} count={b.deck.length} faceDown />
-        <div className="flex min-w-0 flex-col items-center gap-1.5 sm:gap-2">
-          <div className="flex justify-center pt-2">
-            {hand.map((inst, i) => {
-              const kind = CARDS_V2[inst.card].energy;
-              const tilt = (i - (hand.length - 1) / 2) * 5;
-              return (
-                <button
-                  key={inst.uid}
-                  onClick={() => play(inst.uid)}
-                  disabled={locked || !!pending}
-                  style={{ transform: `rotate(${tilt}deg) translateY(${Math.abs(tilt) * 0.6}px)` }}
-                  className={`-ml-4 flex h-20 w-14 shrink-0 flex-col items-center justify-between rounded-lg border-2 bg-stone-900 p-1 text-center shadow-xl transition first:ml-0 enabled:hover:z-10 enabled:hover:-translate-y-3 disabled:opacity-50 sm:-ml-3 sm:h-24 sm:w-[4.5rem] sm:p-1.5 ${ENERGY_RING[kind]}`}
-                >
-                  <span className="text-xl sm:text-3xl">{ENERGY_ICON[kind]}</span>
-                  <span className="text-[9px] font-bold sm:text-[10px]">{t(`v2.energy.${kind}.name`)} +1</span>
-                  <span className="hidden text-[9px] leading-tight text-stone-300 sm:block">{t(`v2.card.${inst.card}.ref`)}</span>
-                </button>
-              );
-            })}
+      {/* Enlarged full card */}
+      {viewing && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewing(null);
+          }}
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/80 p-4"
+        >
+          {/* Sized to fit both the width and the height of the screen; the text scales with the card. */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="[--w:min(340px,82vw,calc((100dvh-5rem)*63/88))]"
+            style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
+          >
+            <HoloCard element={CHARACTER_ELEMENT[viewing]} foil={hasArt(viewing) ? 0.08 : 0.25}>
+              <CharacterCardFace id={viewing} />
+            </HoloCard>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-stone-400 sm:hidden">
-              {t("v3.ui.deck")} {b.deck.length} · {t("v3.ui.discard")} {b.discard.length}
-            </span>
-            <button
-              onClick={playAll}
-              disabled={locked || !b.hand.length}
-              className="rounded-full border border-stone-400 px-3 py-1 text-xs text-stone-200 enabled:hover:bg-white/10 disabled:opacity-40"
-            >
-              {t("v2.ui.playAll")}
-            </button>
-          </div>
+          <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+            ✕ {t("v3.ui.close")}
+          </button>
         </div>
-        <Pile label={t("v3.ui.discard")} count={b.discard.length} />
-      </section>
+      )}
 
-      {/* Our side — phone: Samuel · David · Jonathan in one row; desktop: front line above the bench */}
-      <section className="flex flex-1 flex-col items-center justify-center gap-1 px-2 sm:px-4">
-        <div className="flex items-start justify-center gap-1.5 pt-1 sm:gap-4">
-          <CharacterCard {...charProps(board.front)} size="large" className="order-2" />
-          {bench.map((id, i) => (
-            <CharacterCard key={id} {...charProps(id)} size="small" className={i === 0 ? "order-1" : "order-3"} />
-          ))}
-        </div>
-
-        {/* Phone action bar: the selected character's skills */}
-        <div className="w-full max-w-sm rounded-xl border border-white/15 bg-black/40 p-2 sm:hidden">
-          <div className="mb-1 text-[11px] font-semibold text-stone-200">
-            {ELEMENT_ICON[CHARACTER_ELEMENT[selected]]} {t(`char.${selected}.name`)}
-            {selected === "david" && b.energy.faith >= R.giantFaith && isAlive(b, "david") && <span className="ml-1 text-amber-300">· {t("v2.ui.giantOn")}</span>}
-          </div>
-          <div className="grid gap-1">
-            <SkillList board={board} id={selected} t={t} locked={locked} pending={pending} onSkill={onSkill} />
-          </div>
-        </div>
-      </section>
-
-      {/* Battle log drawer */}
-      <button
-        onClick={() => setShowLog(!showLog)}
-        className="fixed bottom-3 left-3 z-40 rounded-full border border-stone-500 bg-stone-900/90 px-3 py-1.5 text-xs text-stone-200"
-      >
-        {showLog ? t("v3.ui.hideLog") : t("v3.ui.showLog")}
-      </button>
+      {/* Battle log */}
       {showLog && (
-        <div ref={logRef} className="fixed bottom-12 left-3 right-3 z-40 max-h-[50vh] overflow-y-auto rounded-xl border border-stone-600 bg-stone-950/95 p-3 text-xs sm:right-auto sm:w-80">
+        <div
+          ref={logRef}
+          onClick={(e) => e.stopPropagation()}
+          className="fixed bottom-16 left-3 right-3 z-40 max-h-[50vh] overflow-y-auto rounded-xl border border-stone-600 bg-stone-950/95 p-3 text-xs sm:bottom-4 sm:left-auto sm:right-48 sm:w-80"
+        >
           {b.log.map((l) => (
             <div key={l.id} className={l.kind === "enemy" ? "text-red-300" : l.kind === "player" ? "text-amber-100" : "text-stone-400"}>
               {t(l.key, l.params)}
