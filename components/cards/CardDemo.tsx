@@ -1,6 +1,6 @@
 "use client";
 
-// /card-demo: every card, highest rarity first, to compare frames and effects. Click a card to view it full size.
+// /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size.
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
@@ -70,11 +70,11 @@ export function CardDemo() {
         <h1 className="text-xl font-bold">{t("v3.demo.title")}</h1>
         <p className="mt-1 text-sm text-stone-400">{t("v3.demo.hint")}</p>
       </div>
-      <div className="flex max-w-full snap-x snap-mandatory gap-6 overflow-x-auto px-2 py-4">
+      <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
         {CARDS.map((card) => (
-          <div key={card.id} className="flex shrink-0 snap-center flex-col items-center gap-2">
+          <div key={card.id} className="flex flex-col items-center gap-2">
             <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
-              <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} className="w-[280px] text-[13px] sm:w-[300px] sm:text-[14px]">
+              <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} className="w-[220px] text-[10.3px]">
                 <CardFace {...card} />
               </HoloCard>
             </button>
@@ -86,11 +86,11 @@ export function CardDemo() {
       <div className="text-center">
         <h2 className="text-lg font-bold">{t("v3.demo.rarities")}</h2>
       </div>
-      <div className="flex max-w-full snap-x snap-mandatory gap-6 overflow-x-auto px-2 py-4">
+      <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
         {RARITY_ORDER.map((r) => (
-          <div key={r} className="flex shrink-0 snap-center flex-col items-center gap-2">
+          <div key={r} className="flex flex-col items-center gap-2">
             <button type="button" onClick={() => setViewing({ id: "david", rarity: r })} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
-              <HoloCard element={CHARACTER_ELEMENT.david} effects={effects} rarity={r} className="w-[220px] text-[10.3px] sm:w-[240px] sm:text-[11.2px]">
+              <HoloCard element={CHARACTER_ELEMENT.david} effects={effects} rarity={r} className="w-[220px] text-[10.3px]">
                 <CharacterCardFace id="david" rarity={r} />
               </HoloCard>
             </button>

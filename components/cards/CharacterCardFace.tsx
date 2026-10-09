@@ -14,7 +14,6 @@ import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
-export const ELEMENT_ICON: Record<Element, string> = { metal: "🪙", wood: "🌿", water: "💧", fire: "🔥", earth: "⛰️", light: "☀️", dark: "🌙" };
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
 const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
 const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
