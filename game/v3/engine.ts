@@ -5,7 +5,7 @@
 // - Once per turn the front line may be swapped for free. When the front line falls, the player picks
 //   who steps up (also free) before doing anything else.
 // Everything else is the v2 engine, unchanged.
-import { PARTY_ORDER } from "../v2/data";
+import { NEVER_FALLS, PARTY_ORDER } from "../v2/data";
 import {
   castSkill,
   createBattle,
@@ -82,7 +82,8 @@ export function swapFront(board: Board, id: CharacterId, rng: Rng = Math.random)
  */
 function aim(b: Board, rng: Rng): Board {
   const s = b.battle;
-  const front = isAlive(s, b.front) ? b.front : null;
+  // Cards that never fall can stand at the front, but the blows land on the next ally in line.
+  const front = isAlive(s, b.front) && !NEVER_FALLS.has(b.front) ? b.front : (standing(b).find((id) => !NEVER_FALLS.has(id)) ?? null);
   for (const intent of s.intents) {
     if (["spear", "crush", "fang", "coil"].includes(intent.action)) intent.targets = front ? [front] : [];
     if (intent.action === "defy" && intent.targets.some((id) => !isAlive(s, id))) {

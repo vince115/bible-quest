@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "leper" | "gethsemane" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -198,6 +198,26 @@ export interface BattleState {
   magnificatUsed: boolean;
   /** Joseph of Nazareth's Warned in a Dream can be used once per battle. */
   dreamUsed: boolean;
+  /** Jesus: Five Loaves and Two Fish, and Walking on Water, can each be used once per battle. */
+  loavesUsed: boolean;
+  walkUsed: boolean;
+  gethsemaneUsed: boolean;
+  /** Andrew's Come and See can be used once per battle. */
+  comeAndSeeUsed: boolean;
+  /** James has drunk the cup: every ally's attacks are stronger for the rest of the battle. */
+  cupDrunk: boolean;
+  /** Thomas has seen and believed: My Lord and My God is unlocked. */
+  thomasBelieves: boolean;
+  /** Mary Magdalene's I Have Seen the Lord can be used once per battle. */
+  seenUsed: boolean;
+  /** Martha's Thy Brother Shall Rise Again: "ready" waits for the next ally to fall, then holds who comes back next turn. */
+  riseAgain: "unused" | "ready" | CharacterId | "used";
+  /** Zacchaeus is up the sycamore this turn (out of reach); Restore Fourfold can be used once per battle. */
+  inTree: boolean;
+  fourfoldUsed: boolean;
+  /** Jesus (UR) rises once: the turn he rises on while in the tomb, else null; risenUsed after that. */
+  tomb: number | null;
+  risenUsed: boolean;
   /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
   lineup: CharacterId[];
   log: LogEntry[];

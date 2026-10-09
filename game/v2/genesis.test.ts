@@ -975,3 +975,214 @@ describe("John the Baptist", () => {
     expect(s.energy.faith).toBe(1);
   });
 });
+
+describe("Jesus", () => {
+  it("the special card never falls: never targeted, never hurt, and not counted for defeat", () => {
+    let s = createBattle(seeded(), ["jesus", "david"]);
+    s.archerTarget = null;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.jesus.hp).toBe(MAX_HP.jesus);
+    expect(s.party.david.hp).toBe(MAX_HP.david - R.swing);
+    for (let i = 0; i < 20; i++) expect(s.intents.flatMap((x) => x.targets)).not.toContain("jesus");
+    s.party.david.hp = 0;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.result).toBe("defeat");
+  });
+
+  it("the special card cleanses the leper, and prays in Gethsemane once per battle", () => {
+    const s0 = createBattle(seeded(), ["jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    s0.party.david.hp = 30;
+    s0.party.david.shaken = true;
+    const healed = castSkill(s0, "leper", "david");
+    expect([healed.party.david.hp, healed.party.david.shaken]).toEqual([30 + R.leperHeal, false]);
+    const s = castSkill(s0, "gethsemane");
+    expect(s.party.david.shield).toBe(R.gethsemaneShield);
+    expect(s.energy.faith).toBe(R.gethsemaneFaith);
+    expect(s.gethsemaneUsed).toBe(true);
+  });
+
+  it("the UR card walks on water and feeds the five thousand", () => {
+    const s0 = createBattle(seeded(), ["jesusUR", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 5, attack: 0, guard: 0 };
+    s0.party.david.hp = 30;
+    const fed = castSkill(s0, "loaves", undefined, seeded());
+    expect(fed.party.david.hp).toBe(30 + R.loavesHeal);
+    expect(fed.hand).toHaveLength(R.loavesDraw);
+    let s = castSkill(s0, "walkOnWater");
+    s.archerTarget = null;
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(30);
+    expect(personOf("jesusUR")).toBe(personOf("jesus"));
+  });
+});
+
+describe("Jesus (UR): risen on the third day", () => {
+  it("falls, lies in the tomb for a turn, and rises with full HP on the third day, once", () => {
+    let s = createBattle(seeded(), ["jesusUR", "david"]);
+    s.archerTarget = null;
+    s.party.jesusUR.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["jesusUR"] };
+    s = endTurn(s, seeded()); // falls on turn 1
+    expect(s.party.jesusUR.hp).toBe(0);
+    s.intents[0] = { action: "defy", targets: [] };
+    s = endTurn(s, seeded()); // turn 3: risen
+    expect(s.turn).toBe(3);
+    expect(s.party.jesusUR.hp).toBe(MAX_HP.jesusUR);
+    expect(s.risenUsed).toBe(true);
+  });
+
+  it("the battle is not lost while Jesus lies in the tomb", () => {
+    let s = createBattle(seeded(), ["jesusUR"]);
+    s.archerTarget = null;
+    s.party.jesusUR.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["jesusUR"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.jesusUR.hp).toBe(0);
+    expect(s.result).toBe("ongoing");
+  });
+});
+
+describe("Peter", () => {
+  it("the Great Catch draws 2 and gives Attack; Drawing the Sword hits harder with Jesus", () => {
+    const s0 = createBattle(seeded(), ["peter", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const s = castSkill(s0, "greatCatch", undefined, seeded());
+    expect(s.hand).toHaveLength(R.catchDraw);
+    expect(s.energy.attack).toBe(R.catchAttack);
+    expect(skillDamage(s0, "drawSword", "archer")).toBe(50); // earth → fire ×1
+    expect(skillDamage(createBattle(seeded(), ["peter", "jesus"]), "drawSword", "archer")).toBe(50 + R.peterWithJesus);
+  });
+});
+
+describe("Andrew", () => {
+  it("Come and See lets an ally act again once; A Lad Here draws 2 and gives Faith", () => {
+    let s = createBattle(seeded(), ["andrew", "peter"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 2, guard: 3 };
+    s = castSkill(s, "drawSword", "archer");
+    expect(skillTargets(s, "comeAndSee")).toEqual(["peter"]);
+    s = castSkill(s, "comeAndSee", "peter");
+    expect(s.party.peter.acted).toBe(false);
+    expect(s.comeAndSeeUsed).toBe(true);
+    const lad = castSkill({ ...s, party: { ...s.party, andrew: { ...s.party.andrew, acted: false } } }, "aLadHere", undefined, seeded());
+    expect(lad.hand).toHaveLength(R.ladDraw);
+    expect(lad.energy.faith).toBe(R.ladFaith);
+  });
+});
+
+describe("John the Apostle", () => {
+  it("Love One Another heals and shields everyone, double with Jesus", () => {
+    const mk = (lineup: CharacterId[]) => {
+      const s = createBattle(seeded(), lineup);
+      s.hand = [];
+      s.energy = { faith: 0, attack: 1, guard: 2 };
+      s.party.johnApostle.hp = 50;
+      return s;
+    };
+    const plain = castSkill(mk(["johnApostle", "david"]), "loveOneAnother");
+    expect([plain.party.johnApostle.hp, plain.party.david.shield]).toEqual([50 + R.loveHeal, R.loveShield]);
+    const withJesus = castSkill(mk(["johnApostle", "jesus"]), "loveOneAnother");
+    expect([withJesus.party.johnApostle.hp, withJesus.party.johnApostle.shield]).toEqual([50 + R.loveHeal * 2, R.loveShield * 2]);
+    expect(skillDamage(mk(["johnApostle", "david"]), "thunder", "goliath")).toBe(40); // fire → metal ×1.5 = 45 → 40
+  });
+});
+
+describe("Matthew", () => {
+  it("Leaving the Tax Booth gives 2 Attack; the Feast heals everyone and draws a card", () => {
+    const s0 = createBattle(seeded(), ["matthew", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    expect(castSkill(s0, "taxBooth").energy).toMatchObject({ attack: R.taxBoothAttack, guard: 1 });
+    s0.party.david.hp = 50;
+    const s = castSkill(s0, "feast", undefined, seeded());
+    expect(s.party.david.hp).toBe(50 + R.feastHeal);
+    expect(s.hand).toHaveLength(R.feastDraw);
+  });
+});
+
+describe("James son of Zebedee", () => {
+  it("Boanerges hits harder with John; when James falls, every attack +10", () => {
+    const pair = createBattle(seeded(), ["jamesZeb", "johnApostle", "david"]);
+    expect(skillDamage(pair, "boanerges", "archer")).toBe(30 + R.boanergesWithJohn); // fire → fire ×1
+    let s = createBattle(seeded(), ["jamesZeb", "david"]);
+    s.archerTarget = null;
+    s.party.jamesZeb.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["jamesZeb"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.cupDrunk).toBe(true);
+    expect(skillDamage(s, "sling", "archer")).toBe(30 + R.cupBonus);
+  });
+});
+
+describe("Thomas", () => {
+  it("can't say My Lord and My God until he has reached out his finger and believed", () => {
+    let s = createBattle(seeded(), ["thomas", "david"]);
+    s.hand = [];
+    s.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(skillBlockReason(s, "myLord")).toBe("v2.reason.unbelief");
+    s = castSkill(s, "reachFinger");
+    expect(s.thomasBelieves).toBe(true);
+    s = { ...s, party: { ...s.party, thomas: { ...s.party.thomas, acted: false } } };
+    s = castSkill(s, "myLord");
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 30); // metal beats wood: 50 × 0.75 = 37 → 30
+  });
+});
+
+describe("Mary Magdalene", () => {
+  it("I Have Seen the Lord raises a fallen ally with 60, or Jesus in the tomb at once in full", () => {
+    const s0 = createBattle(seeded(), ["maryMagdalene", "david", "jesusUR"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 0 };
+    s0.party.david.hp = 0;
+    expect(castSkill(s0, "seenTheLord", "david").party.david.hp).toBe(R.seenHp);
+    s0.party.jesusUR.hp = 0;
+    s0.tomb = s0.turn + R.riseAfter;
+    s0.risenUsed = true;
+    const s = castSkill(s0, "seenTheLord", "jesusUR");
+    expect(s.party.jesusUR.hp).toBe(MAX_HP.jesusUR);
+    expect(s.tomb).toBeNull();
+    expect(s.seenUsed).toBe(true);
+  });
+});
+
+describe("Martha", () => {
+  it("Much Serving gives 2 Guard; Thy Brother Shall Rise Again brings the next fallen ally back once", () => {
+    let s = createBattle(seeded(), ["martha", "david"]);
+    s.hand = [];
+    s.energy = { faith: 2, attack: 1, guard: 0 };
+    expect(castSkill(s, "serving").energy.guard).toBe(R.servingGuard);
+    s = castSkill(s, "riseAgain");
+    s.archerTarget = null;
+    s.party.david.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = endTurn(s, seeded());
+    expect(s.party.david.hp).toBe(R.riseAgainHp);
+    expect(s.riseAgain).toBe("used");
+  });
+});
+
+describe("Zacchaeus", () => {
+  it("up the sycamore he is out of reach for a turn; Restore Fourfold gives 2 Attack and 2 Faith once", () => {
+    let s = createBattle(seeded(), ["zacchaeus", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 2 };
+    s = castSkill(s, "sycamore");
+    s.archerTarget = null;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.zacchaeus.hp).toBe(MAX_HP.zacchaeus);
+    expect(s.party.david.hp).toBe(MAX_HP.david - R.swing);
+    s = startNextTurn(s, seeded());
+    expect(s.inTree).toBe(false);
+    s.energy = { faith: 0, attack: 0, guard: 1 };
+    s = castSkill(s, "fourfold");
+    expect(s.energy).toMatchObject({ attack: R.fourfoldAttack, faith: R.fourfoldFaith });
+  });
+});

@@ -19,7 +19,7 @@ import {
   SKILLS,
 } from "@/game/v2/data";
 import { bossOf, canAct, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, payment, skillDamage, type Target } from "@/game/v2/engine";
-import { PARTY_ORDER, personOf } from "@/game/v2/data";
+import { NEVER_FALLS, PARTY_ORDER, personOf } from "@/game/v2/data";
 import type { BattleState, CharacterId, EnemyId, EnergyKind, Intent, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
@@ -187,8 +187,8 @@ function EnemyCard({
 }
 
 /** HP badge hung on the card's top-right corner (outside the art), Pokémon TCG Pocket style. */
-function HpBadge({ hp, max, shield = 0, big }: { hp: number; max: number; shield?: number; big?: boolean }) {
-  const pct = Math.max(0, (hp / max) * 100);
+function HpBadge({ hp, max, shield = 0, big, endless }: { hp: number; max: number; shield?: number; big?: boolean; endless?: boolean }) {
+  const pct = endless ? 100 : Math.max(0, (hp / max) * 100);
   const color = pct >= 100 ? "bg-emerald-400" : pct > 50 ? "bg-yellow-400" : pct > 20 ? "bg-orange-500" : "bg-red-600";
   return (
     <div className="pointer-events-none flex items-start gap-1">
@@ -198,7 +198,7 @@ function HpBadge({ hp, max, shield = 0, big }: { hp: number; max: number; shield
         <span
           className={`text-center font-black leading-none text-slate-800 [-webkit-text-stroke:3px_white] [paint-order:stroke_fill] drop-shadow ${big ? "text-4xl" : "text-xl sm:text-2xl"}`}
         >
-          {hp}
+          {endless ? "∞" : hp}
         </span>
         <div className={`w-full overflow-hidden rounded-full bg-slate-900/70 ring-2 ring-black/50 ${big ? "h-2.5" : "h-1.5 sm:h-2"}`}>
           <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
@@ -256,7 +256,7 @@ function CharacterSlot({
         </span>
         {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow">✝</span>}
         <span className="absolute -right-2 -top-4 z-20">
-          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} />
+          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} endless={NEVER_FALLS.has(id)} />
         </span>
         {alive && (c.shaken || c.acted || b.coiled === id) && (
           <span className="absolute -left-2 -top-3 z-20 flex gap-0.5 text-xs">
@@ -398,7 +398,7 @@ function SkillFocus({
           ))}
         </div>
         <div className="absolute -right-4 -top-6 z-30">
-          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} big />
+          <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} big endless={NEVER_FALLS.has(id)} />
         </div>
 
         <div className="relative">

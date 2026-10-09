@@ -135,6 +135,45 @@ export const RULES_V2 = {
   carpenterHeal: 20,
   /** John the Baptist: the Axe hits wood enemies double; Baptism heals every ally (+1 Faith with Zechariah). */
   baptismHeal: 30,
+  /** Jesus: Cleansing the Leper heals one ally; Gethsemane shields every ally and gives Faith; the Loaves feed everyone. */
+  leperHeal: 50,
+  gethsemaneShield: 40,
+  gethsemaneFaith: 2,
+  loavesHeal: 40,
+  loavesDraw: 3,
+  loavesFaith: 1,
+  /** Jesus (UR) rises on the third day: two turns after the turn he falls, with full HP. */
+  riseAfter: 2,
+  /** Peter: the Great Catch draws cards and gives Attack; his attacks are stronger with Jesus beside him. */
+  catchDraw: 2,
+  catchAttack: 1,
+  peterWithJesus: 20,
+  /** Andrew's A Lad Here draws cards and gives Faith. */
+  ladDraw: 2,
+  ladFaith: 1,
+  /** John the Apostle's Love One Another heals and shields every ally (double with Jesus beside him). */
+  loveHeal: 20,
+  loveShield: 20,
+  /** Matthew: Leaving the Tax Booth turns Guard into Attack; the Feast heals every ally and draws a card. */
+  taxBoothAttack: 2,
+  feastHeal: 30,
+  feastDraw: 1,
+  /** James: Mending the Nets heals one ally; Boanerges hits harder with John; when he falls, every attack +10. */
+  mendHeal: 30,
+  boanergesWithJohn: 20,
+  cupBonus: 10,
+  /** Thomas: Reach Hither Thy Finger gives Faith and makes him believe. */
+  fingerFaith: 1,
+  /** Mary Magdalene: Spices heal one ally; I Have Seen the Lord raises a fallen ally (Jesus at once, in full). */
+  spicesHeal: 30,
+  seenHp: 60,
+  /** Martha: Serving turns Attack into Guard; Thy Brother Shall Rise Again brings the next fallen ally back with this HP. */
+  servingGuard: 2,
+  riseAgainHp: 50,
+  /** Zacchaeus: the Sycamore gives Faith; Restore Fourfold gives Attack and Faith. */
+  sycamoreFaith: 1,
+  fourfoldAttack: 2,
+  fourfoldFaith: 2,
 
   /** Eve's Mother of All Living: heals every ally. */
   motherHeal: 40,
@@ -207,6 +246,17 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   mary: "wood",
   josephNaz: "wood",
   johnBaptist: "water",
+  jesus: "light",
+  jesusUR: "light",
+  peter: "earth",
+  andrew: "water",
+  johnApostle: "fire",
+  matthew: "metal",
+  jamesZeb: "fire",
+  thomas: "wood",
+  maryMagdalene: "wood",
+  martha: "earth",
+  zacchaeus: "metal",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
@@ -216,11 +266,14 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark" };
 
 /** Cards that show the same person: a line-up holds only one of them. */
-export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses" };
+export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses", jesusUR: "jesus" };
+
+/** Cards that never fall: never targeted, never hurt, and not counted when deciding defeat. */
+export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -236,7 +289,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -318,6 +371,28 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   dreamWarning: { id: "dreamWarning", owner: "josephNaz", kind: "faith", cost: 2 },
   axe: { id: "axe", owner: "johnBaptist", kind: "attack", cost: 2, damage: 40 },
   baptism: { id: "baptism", owner: "johnBaptist", kind: "guard", cost: 2 },
+  leper: { id: "leper", owner: "jesus", kind: "guard", cost: 1 },
+  gethsemane: { id: "gethsemane", owner: "jesus", kind: "guard", cost: 2 },
+  walkOnWater: { id: "walkOnWater", owner: "jesusUR", kind: "faith", cost: 2 },
+  loaves: { id: "loaves", owner: "jesusUR", kind: "faith", cost: 3 },
+  greatCatch: { id: "greatCatch", owner: "peter", kind: "guard", cost: 1 },
+  drawSword: { id: "drawSword", owner: "peter", kind: "attack", cost: 2, damage: 50 },
+  comeAndSee: { id: "comeAndSee", owner: "andrew", kind: "guard", cost: 2 },
+  aLadHere: { id: "aLadHere", owner: "andrew", kind: "guard", cost: 1 },
+  thunder: { id: "thunder", owner: "johnApostle", kind: "attack", cost: 1, damage: 30 },
+  loveOneAnother: { id: "loveOneAnother", owner: "johnApostle", kind: "guard", cost: 2 },
+  taxBooth: { id: "taxBooth", owner: "matthew", kind: "guard", cost: 1 },
+  feast: { id: "feast", owner: "matthew", kind: "guard", cost: 2 },
+  mendNets: { id: "mendNets", owner: "jamesZeb", kind: "guard", cost: 1 },
+  boanerges: { id: "boanerges", owner: "jamesZeb", kind: "attack", cost: 1, damage: 30 },
+  reachFinger: { id: "reachFinger", owner: "thomas", kind: "guard", cost: 1 },
+  myLord: { id: "myLord", owner: "thomas", kind: "faith", cost: 2, damage: 50 },
+  spices: { id: "spices", owner: "maryMagdalene", kind: "guard", cost: 1 },
+  seenTheLord: { id: "seenTheLord", owner: "maryMagdalene", kind: "faith", cost: 2 },
+  serving: { id: "serving", owner: "martha", kind: "attack", cost: 1 },
+  riseAgain: { id: "riseAgain", owner: "martha", kind: "faith", cost: 2 },
+  sycamore: { id: "sycamore", owner: "zacchaeus", kind: "guard", cost: 1 },
+  fourfold: { id: "fourfold", owner: "zacchaeus", kind: "guard", cost: 1 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -366,6 +441,17 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   mary: ["handmaid", "magnificat"],
   josephNaz: ["carpenter", "dreamWarning"],
   johnBaptist: ["axe", "baptism"],
+  jesus: ["leper", "gethsemane"],
+  jesusUR: ["walkOnWater", "loaves"],
+  peter: ["greatCatch", "drawSword"],
+  andrew: ["comeAndSee", "aLadHere"],
+  johnApostle: ["thunder", "loveOneAnother"],
+  matthew: ["taxBooth", "feast"],
+  jamesZeb: ["mendNets", "boanerges"],
+  thomas: ["reachFinger", "myLord"],
+  maryMagdalene: ["spices", "seenTheLord"],
+  martha: ["serving", "riseAgain"],
+  zacchaeus: ["sycamore", "fourfold"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],

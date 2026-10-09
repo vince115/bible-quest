@@ -2,7 +2,7 @@
 
 // Full-size character card face (TCG layout): name/HP, art, skills, passive, weakness/resistance, verse.
 // With an illustration the card is full-art; without one it uses an art window with the character's emoji.
-import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, NEVER_FALLS, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
 import { baseSupportAmount, elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -15,8 +15,8 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -26,6 +26,17 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
+  zacchaeus: { src: "/cards/zacchaeus.jpg", figure: { cx: 0.52, head: 0.22, feet: 0.957 } },
+  martha: { src: "/cards/martha.jpg", figure: { cx: 0.46, head: 0.18, feet: 0.98 } },
+  maryMagdalene: { src: "/cards/mary-magdalene.jpg", figure: { cx: 0.5, head: 0.2, feet: 0.967 } },
+  thomas: { src: "/cards/thomas.jpg", figure: { cx: 0.48, head: 0.156, feet: 0.962 } },
+  jamesZeb: { src: "/cards/james-zebedee.jpg", figure: { cx: 0.48, head: 0.161, feet: 0.972 } },
+  matthew: { src: "/cards/matthew.jpg", figure: { cx: 0.5, head: 0.19, feet: 0.962 } },
+  johnApostle: { src: "/cards/john-apostle.jpg", figure: { cx: 0.51, head: 0.171, feet: 0.972 } },
+  andrew: { src: "/cards/andrew.jpg", figure: { cx: 0.5, head: 0.18, feet: 0.952 } },
+  peter: { src: "/cards/peter.jpg", figure: { cx: 0.52, head: 0.164, feet: 0.977 } },
+  jesus: { src: "/cards/jesus.jpg", figure: { cx: 0.49, head: 0.146, feet: 0.962 } },
+  jesusUR: { src: "/cards/jesus-ur.jpg", figure: { cx: 0.49, head: 0.145, feet: 0.972 } },
   johnBaptist: { src: "/cards/john-baptist.jpg", figure: { cx: 0.48, head: 0.164, feet: 0.962 } },
   josephNaz: { src: "/cards/joseph-nazareth.jpg", figure: { cx: 0.47, head: 0.193, feet: 0.972 } },
   mary: { src: "/cards/mary.jpg", figure: { cx: 0.46, head: 0.164, feet: 0.967 } },
@@ -116,7 +127,7 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
       {/* HP and element sit in the face's top-right corner, where the battle HP badge covers them. */}
       <div className="absolute right-[2%] top-[calc(2.2%+10px)] flex items-baseline gap-1">
         <span className="text-[0.6em] font-bold">HP</span>
-        <span className="text-[1.6em] font-black leading-none">{MAX_HP[id]}</span>
+        <span className="text-[1.6em] font-black leading-none">{NEVER_FALLS.has(id) ? "∞" : MAX_HP[id]}</span>
         <span className="relative -top-[3px] text-[1.3em] leading-none"><ElementIcon element={CHARACTER_ELEMENT[id]} /></span>
       </div>
     </div>
@@ -127,11 +138,12 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
 function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rarity: Rarity }) {
   const t = useT();
   const element = CHARACTER_ELEMENT[id];
-  const weak = ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
-  const resist = ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
+  // A card that never falls takes no damage, so it has no weakness or resistance to show.
+  const weak = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
+  const resist = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {(id === "david" || id === "abel" || id === "jonah") && (
+      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t(`v2.passive.${id}`)}
