@@ -174,6 +174,40 @@ export const RULES_V2 = {
   sycamoreFaith: 1,
   fourfoldAttack: 2,
   fourfoldFaith: 2,
+  /** Mary of Bethany: At His Feet gives Faith (+1 Guard with Martha); Spikenard heals and shields every ally. */
+  feetFaith: 2,
+  spikenardHeal: 30,
+  spikenardShield: 30,
+  /** Lazarus: Loose Him shields and steadies one ally; Many Believed gives Faith and heals everyone a little. */
+  looseShield: 30,
+  believedFaith: 1,
+  believedHeal: 10,
+  /** Stephen's Heavens Opened heals every ally and lifts Shaken. */
+  heavensHeal: 40,
+  /** Philip: Here Is Water heals and steadies one ally; Preaching in Samaria hits every enemy and gives Faith. */
+  waterHeal: 30,
+  samariaFaith: 1,
+  /** Paul: the Armour of God shields and steadies every ally; the Sword of the Spirit gives Faith; weak, he is strong. */
+  armourShield: 30,
+  swordFaith: 1,
+  strongWhenWeak: 20,
+  /** Barnabas: Encouragement steadies everyone and gives Attack (and shields Paul); Sold His Field gives Faith once. */
+  encourageAttack: 1,
+  encouragePaulShield: 30,
+  fieldFaith: 3,
+  /** Silas: Hymns at Midnight steady everyone and give Faith (more with Paul). */
+  hymnsFaith: 1,
+  hymnsPaulFaith: 2,
+  /** Timothy: Be an Example strengthens every attack this turn; Stir Up the Gift hits harder with Paul. */
+  exampleBonus: 10,
+  stirWithPaul: 20,
+  /** Lydia: Purple Cloth shields one ally and gives Faith; Abide in My House heals everyone (+1 Faith with Paul or Silas). */
+  purpleShield: 30,
+  purpleFaith: 1,
+  abideHeal: 30,
+  /** Priscilla: Tentmaking shields every ally; Expounding the Way strengthens one ally's attacks this turn. */
+  tentShield: 20,
+  expoundBonus: 30,
 
   /** Eve's Mother of All Living: heals every ally. */
   motherHeal: 40,
@@ -257,6 +291,16 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   maryMagdalene: "wood",
   martha: "earth",
   zacchaeus: "metal",
+  maryBethany: "wood",
+  lazarus: "earth",
+  stephen: "light",
+  philip: "water",
+  paul: "metal",
+  barnabas: "earth",
+  silas: "metal",
+  timothy: "fire",
+  lydia: "water",
+  priscilla: "wood",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
@@ -273,7 +317,7 @@ export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -289,7 +333,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -393,6 +437,26 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   riseAgain: { id: "riseAgain", owner: "martha", kind: "faith", cost: 2 },
   sycamore: { id: "sycamore", owner: "zacchaeus", kind: "guard", cost: 1 },
   fourfold: { id: "fourfold", owner: "zacchaeus", kind: "guard", cost: 1 },
+  atHisFeet: { id: "atHisFeet", owner: "maryBethany", kind: "guard", cost: 1 },
+  spikenard: { id: "spikenard", owner: "maryBethany", kind: "faith", cost: 2 },
+  looseHim: { id: "looseHim", owner: "lazarus", kind: "guard", cost: 1 },
+  manyBelieved: { id: "manyBelieved", owner: "lazarus", kind: "guard", cost: 1 },
+  gracePower: { id: "gracePower", owner: "stephen", kind: "attack", cost: 1, damage: 30 },
+  heavensOpened: { id: "heavensOpened", owner: "stephen", kind: "faith", cost: 2 },
+  hereIsWater: { id: "hereIsWater", owner: "philip", kind: "guard", cost: 1 },
+  samaria: { id: "samaria", owner: "philip", kind: "attack", cost: 2, damage: 20 },
+  armourOfGod: { id: "armourOfGod", owner: "paul", kind: "guard", cost: 2 },
+  swordOfSpirit: { id: "swordOfSpirit", owner: "paul", kind: "attack", cost: 2, damage: 50 },
+  encourage: { id: "encourage", owner: "barnabas", kind: "guard", cost: 1 },
+  soldField: { id: "soldField", owner: "barnabas", kind: "guard", cost: 1 },
+  midnightHymns: { id: "midnightHymns", owner: "silas", kind: "guard", cost: 1 },
+  prisonOpened: { id: "prisonOpened", owner: "silas", kind: "faith", cost: 2, damage: 30 },
+  example: { id: "example", owner: "timothy", kind: "guard", cost: 1 },
+  stirUpGift: { id: "stirUpGift", owner: "timothy", kind: "attack", cost: 1, damage: 30 },
+  purpleCloth: { id: "purpleCloth", owner: "lydia", kind: "guard", cost: 1 },
+  abideHouse: { id: "abideHouse", owner: "lydia", kind: "guard", cost: 2 },
+  tentmaking: { id: "tentmaking", owner: "priscilla", kind: "guard", cost: 1 },
+  expound: { id: "expound", owner: "priscilla", kind: "guard", cost: 1 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -452,6 +516,16 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   maryMagdalene: ["spices", "seenTheLord"],
   martha: ["serving", "riseAgain"],
   zacchaeus: ["sycamore", "fourfold"],
+  maryBethany: ["atHisFeet", "spikenard"],
+  lazarus: ["looseHim", "manyBelieved"],
+  stephen: ["gracePower", "heavensOpened"],
+  philip: ["hereIsWater", "samaria"],
+  paul: ["armourOfGod", "swordOfSpirit"],
+  barnabas: ["encourage", "soldField"],
+  silas: ["midnightHymns", "prisonOpened"],
+  timothy: ["example", "stirUpGift"],
+  lydia: ["purpleCloth", "abideHouse"],
+  priscilla: ["tentmaking", "expound"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],

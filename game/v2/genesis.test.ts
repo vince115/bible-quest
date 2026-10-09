@@ -1186,3 +1186,153 @@ describe("Zacchaeus", () => {
     expect(s.energy).toMatchObject({ attack: R.fourfoldAttack, faith: R.fourfoldFaith });
   });
 });
+
+describe("Mary of Bethany", () => {
+  it("At His Feet gives 2 Faith (+1 Guard with Martha); Spikenard heals and shields everyone once", () => {
+    const solo = createBattle(seeded(), ["maryBethany", "david"]);
+    solo.hand = [];
+    solo.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(solo, "atHisFeet").energy).toMatchObject({ faith: R.feetFaith, guard: 0 });
+    const sisters = createBattle(seeded(), ["maryBethany", "martha"]);
+    sisters.hand = [];
+    sisters.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(sisters, "atHisFeet").energy).toMatchObject({ faith: R.feetFaith, guard: 1 });
+    solo.energy = { faith: 2, attack: 0, guard: 0 };
+    solo.party.david.hp = 50;
+    const s = castSkill(solo, "spikenard");
+    expect([s.party.david.hp, s.party.david.shield]).toEqual([50 + R.spikenardHeal, R.spikenardShield]);
+  });
+});
+
+describe("Lazarus", () => {
+  const fall = (lineup: CharacterId[]) => {
+    const s = createBattle(seeded(), lineup);
+    s.archerTarget = null;
+    s.party.lazarus.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["lazarus"] };
+    return endTurn(s, seeded());
+  };
+
+  it("comes forth with full HP the turn after he falls — only with Jesus in the line-up", () => {
+    expect(fall(["lazarus", "jesus"]).party.lazarus.hp).toBe(MAX_HP.lazarus);
+    expect(fall(["lazarus", "david"]).party.lazarus.hp).toBe(0);
+  });
+});
+
+describe("Stephen", () => {
+  it("Full of Grace and Power deals 30; the Heavens Opened heal and steady everyone once", () => {
+    const s0 = createBattle(seeded(), ["stephen", "david"], "eden");
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 1, guard: 0 };
+    expect(skillDamage(s0, "gracePower", "serpent")).toBe(40); // light → dark ×1.5 = 45 → 40
+    s0.party.david.hp = 50;
+    s0.party.david.shaken = true;
+    const s = castSkill(s0, "heavensOpened");
+    expect([s.party.david.hp, s.party.david.shaken]).toEqual([50 + R.heavensHeal, false]);
+    expect(s.heavensUsed).toBe(true);
+  });
+});
+
+describe("Philip", () => {
+  it("Here Is Water heals and steadies one ally; Preaching in Samaria hits every enemy and gives Faith", () => {
+    const s0 = createBattle(seeded(), ["philip", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 2, guard: 1 };
+    s0.party.david.hp = 50;
+    s0.party.david.shaken = true;
+    const h = castSkill(s0, "hereIsWater", "david");
+    expect([h.party.david.hp, h.party.david.shaken]).toEqual([50 + R.waterHeal, false]);
+    const s = castSkill(s0, "samaria");
+    expect(s.enemies.bearer.hp).toBe(ENEMY_HP.bearer - 20);
+    expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 30); // water → fire ×1.5
+    expect(s.energy.faith).toBe(R.samariaFaith);
+  });
+});
+
+describe("Paul", () => {
+  it("the Armour of God shields and steadies everyone; the Sword of the Spirit is stronger when he is weak", () => {
+    const s0 = createBattle(seeded(), ["paul", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 2, guard: 2 };
+    s0.party.david.shaken = true;
+    const a = castSkill(s0, "armourOfGod");
+    expect([a.party.david.shield, a.party.david.shaken]).toEqual([R.armourShield, false]);
+    expect(skillDamage(s0, "swordOfSpirit", "archer")).toBe(30); // fire beats metal: 50 × 0.75 = 37 → 30
+    s0.party.paul.hp = 60;
+    expect(skillDamage(s0, "swordOfSpirit", "archer")).toBe(50); // (50 + 20) × 0.75 = 52 → 50
+    expect(castSkill(s0, "swordOfSpirit", "archer").energy.faith).toBe(R.swordFaith);
+  });
+});
+
+describe("Barnabas", () => {
+  it("Encouragement steadies everyone, gives Attack and shields Paul; Sold His Field gives 3 Faith once", () => {
+    const s0 = createBattle(seeded(), ["barnabas", "paul"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    s0.party.paul.shaken = true;
+    const e = castSkill(s0, "encourage");
+    expect([e.party.paul.shaken, e.party.paul.shield, e.energy.attack]).toEqual([false, R.encouragePaulShield, R.encourageAttack]);
+    const f = castSkill(s0, "soldField");
+    expect(f.energy.faith).toBe(R.fieldFaith);
+    expect(f.fieldSold).toBe(true);
+  });
+});
+
+describe("Silas", () => {
+  it("Hymns at Midnight steady everyone and give Faith (2 with Paul); the Prison Doors Opened shake every enemy once", () => {
+    const solo = createBattle(seeded(), ["silas", "david"]);
+    solo.hand = [];
+    solo.energy = { faith: 0, attack: 0, guard: 1 };
+    solo.party.david.shaken = true;
+    const h = castSkill(solo, "midnightHymns");
+    expect([h.party.david.shaken, h.energy.faith]).toEqual([false, R.hymnsFaith]);
+    const pair = createBattle(seeded(), ["silas", "paul"]);
+    pair.hand = [];
+    pair.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(pair, "midnightHymns").energy.faith).toBe(R.hymnsPaulFaith);
+    solo.energy = { faith: 2, attack: 0, guard: 0 };
+    const p = castSkill(solo, "prisonOpened");
+    expect(p.enemies.bearer.hp).toBe(ENEMY_HP.bearer - 40); // metal → wood ×1.5 = 45 → 40
+    expect(p.prisonOpened).toBe(true);
+  });
+});
+
+describe("Timothy", () => {
+  it("Be an Example adds 10 to every attack this turn; Stir Up the Gift hits harder with Paul", () => {
+    let s = createBattle(seeded(), ["timothy", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 1 };
+    s = castSkill(s, "example");
+    expect(skillDamage(s, "sling", "archer")).toBe(30 + R.exampleBonus);
+    s = startNextTurn(resolveGoliath(s, seeded()), seeded());
+    expect(skillDamage(s, "sling", "archer")).toBe(30);
+    expect(skillDamage(createBattle(seeded(), ["timothy", "paul"]), "stirUpGift", "bearer")).toBe(50); // fire → wood ×1
+  });
+});
+
+describe("Lydia", () => {
+  it("Purple Cloth shields one ally and gives Faith; Abide in My House heals everyone, +1 Faith with Paul", () => {
+    const s0 = createBattle(seeded(), ["lydia", "paul"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    const p = castSkill(s0, "purpleCloth", "paul");
+    expect([p.party.paul.shield, p.energy.faith]).toEqual([R.purpleShield, R.purpleFaith]);
+    s0.party.paul.hp = 50;
+    const a = castSkill(s0, "abideHouse");
+    expect([a.party.paul.hp, a.energy.faith]).toEqual([50 + R.abideHeal, 1]);
+  });
+});
+
+describe("Priscilla", () => {
+  it("Tentmaking shields everyone; Expounding the Way makes one ally hit harder this turn", () => {
+    const s0 = createBattle(seeded(), ["priscilla", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 1, guard: 2 };
+    expect(castSkill(s0, "tentmaking").party.david.shield).toBe(R.tentShield);
+    expect(skillTargets(s0, "expound")).toEqual(["david"]);
+    let s = castSkill(s0, "expound", "david");
+    expect(skillDamage(s, "sling", "archer")).toBe(30 + R.expoundBonus);
+    s = startNextTurn(resolveGoliath(s, seeded()), seeded());
+    expect(s.taught).toBeNull();
+  });
+});

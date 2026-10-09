@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "leper" | "gethsemane" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "leper" | "gethsemane" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold" | "atHisFeet" | "spikenard" | "looseHim" | "manyBelieved" | "gracePower" | "heavensOpened" | "hereIsWater" | "samaria" | "armourOfGod" | "swordOfSpirit" | "encourage" | "soldField" | "midnightHymns" | "prisonOpened" | "example" | "stirUpGift" | "purpleCloth" | "abideHouse" | "tentmaking" | "expound"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -215,6 +215,20 @@ export interface BattleState {
   /** Zacchaeus is up the sycamore this turn (out of reach); Restore Fourfold can be used once per battle. */
   inTree: boolean;
   fourfoldUsed: boolean;
+  /** Mary of Bethany's Spikenard can be used once per battle. */
+  spikenardUsed: boolean;
+  /** Lazarus, come forth: "ready" until he falls beside Jesus, "tomb" until next turn, then "raised". */
+  lazarus: "ready" | "tomb" | "raised";
+  /** Stephen's Heavens Opened can be used once per battle. */
+  heavensUsed: boolean;
+  /** Barnabas' Sold His Field can be used once per battle. */
+  fieldSold: boolean;
+  /** Silas' Prison Doors Opened can be used once per battle. */
+  prisonOpened: boolean;
+  /** Timothy is an example to the believers this turn: every attack is a little stronger. */
+  example: boolean;
+  /** The ally Priscilla has taught this turn: their attacks are stronger. */
+  taught: CharacterId | null;
   /** Jesus (UR) rises once: the turn he rises on while in the tomb, else null; risenUsed after that. */
   tomb: number | null;
   risenUsed: boolean;

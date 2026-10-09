@@ -15,8 +15,8 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -26,6 +26,16 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
+  priscilla: { src: "/cards/priscilla.jpg", figure: { cx: 0.5, head: 0.151, feet: 0.972 } },
+  lydia: { src: "/cards/lydia.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.98 } },
+  timothy: { src: "/cards/timothy.jpg", figure: { cx: 0.46, head: 0.151, feet: 0.972 } },
+  silas: { src: "/cards/silas.jpg", figure: { cx: 0.47, head: 0.18, feet: 0.977 } },
+  barnabas: { src: "/cards/barnabas.jpg", figure: { cx: 0.49, head: 0.132, feet: 0.967 } },
+  paul: { src: "/cards/paul.jpg", figure: { cx: 0.48, head: 0.166, feet: 0.967 } },
+  philip: { src: "/cards/philip.jpg", figure: { cx: 0.49, head: 0.168, feet: 0.977 } },
+  stephen: { src: "/cards/stephen.jpg", figure: { cx: 0.5, head: 0.142, feet: 0.962 } },
+  lazarus: { src: "/cards/lazarus.jpg", figure: { cx: 0.5, head: 0.151, feet: 0.967 } },
+  maryBethany: { src: "/cards/mary-bethany.jpg", figure: { cx: 0.48, head: 0.174, feet: 0.977 } },
   zacchaeus: { src: "/cards/zacchaeus.jpg", figure: { cx: 0.52, head: 0.22, feet: 0.957 } },
   martha: { src: "/cards/martha.jpg", figure: { cx: 0.46, head: 0.18, feet: 0.98 } },
   maryMagdalene: { src: "/cards/mary-magdalene.jpg", figure: { cx: 0.5, head: 0.2, feet: 0.967 } },
@@ -143,7 +153,7 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
   const resist = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb") && (
+      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t(`v2.passive.${id}`)}
