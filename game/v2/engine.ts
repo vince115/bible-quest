@@ -191,7 +191,7 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   return baseSupportAmount(skill);
 }
 
-/** Damage an enemy deals to an ally, with elements (e.g. dark Goliath hits light David ×1.5). */
+/** Damage an enemy deals to an ally, with elements (e.g. metal Goliath hits wood Eve ×1.5). */
 export function enemyDamage(enemy: EnemyId, ally: CharacterId, base: number): number {
   return toTens(base * elementMultiplier(ENEMY_ELEMENT[enemy], CHARACTER_ELEMENT[ally]));
 }

@@ -93,8 +93,8 @@ describe("skills and payment", () => {
     let s = castSkill(s0, "sling", "goliath");
     s = castSkill(s, "sword", "goliath");
     s = castSkill(s, "rebuke", "archer");
-    // light David → dark Goliath ×1.5 (45 → 40); fire Jonathan → dark ×1; water Samuel → fire archer ×1.5
-    expect(hpLost(s0, s)).toBe(40 + 30);
+    // light David → metal Goliath ×1; fire Jonathan → metal ×1.5 (45 → 40); water Samuel → fire archer ×1.5
+    expect(hpLost(s0, s)).toBe(30 + 40);
     expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 30);
     expect(s.energy.attack).toBe(0);
   });
@@ -135,8 +135,8 @@ describe("skills and payment", () => {
 describe("David: Against the Giant and Sling Stone", () => {
   it("holding 3+ Faith makes David's attacks +20 (only David's)", () => {
     const s0 = battle([], { faith: 3, attack: 2 }, noBearer);
-    expect(hpLost(s0, castSkill(s0, "sling", "goliath"))).toBe(70); // (30 + 20) × 1.5 = 75 → 70
-    expect(hpLost(s0, castSkill(s0, "sword", "goliath"))).toBe(30);
+    expect(hpLost(s0, castSkill(s0, "sling", "goliath"))).toBe(50); // 30 + 20, light → metal ×1
+    expect(hpLost(s0, castSkill(s0, "sword", "goliath"))).toBe(40); // no +20; fire → metal 30 × 1.5 = 45 → 40
   });
 
   it("Sling Stone: always 140 (no bonus, no element), Stuns, spends 3 Faith, makes Goliath Enraged", () => {
@@ -232,7 +232,7 @@ describe("Goliath", () => {
     const s = battle([], {}, (s) => (s.intents[0] = { action: "crush", targets: ["jonathan"] }));
     expect(resolveGoliath(s, seeded()).party.jonathan.hp).toBe(MAX_HP.jonathan);
     s.goliath.charging = true;
-    expect(resolveGoliath(s, seeded()).party.jonathan.hp).toBe(MAX_HP.jonathan - R.crush);
+    expect(resolveGoliath(s, seeded()).party.jonathan.hp).toBe(MAX_HP.jonathan - enemyDamage("goliath", "jonathan", R.crush));
   });
 
   it("follows the phase 1 cycle", () => {
@@ -292,17 +292,19 @@ describe("enemy line-up", () => {
 });
 
 describe("elements", () => {
-  it("are switched on: light David and dark Goliath hit each other ×1.5", () => {
+  it("are switched on: metal Goliath hits wood Eve ×1.5 and fire Jonathan ×0.75", () => {
     expect(R.elements.enabled).toBe(true);
     expect(elementMultiplier("light", "dark")).toBe(1.5);
-    expect(enemyDamage("goliath", "david", R.crush)).toBe(180);
-    expect(enemyDamage("goliath", "jonathan", R.crush)).toBe(R.crush);
+    expect(enemyDamage("goliath", "eve", 100)).toBe(150);
+    expect(enemyDamage("goliath", "david", 100)).toBe(100);
+    expect(enemyDamage("goliath", "jonathan", 100)).toBe(70); // 75, rounded down to tens
   });
 
-  it("follow water → fire → wood → water and light ⇄ dark once switched on", () => {
+  it("follow the five phases' overcoming cycle and light ⇄ dark once switched on", () => {
     const on = (a: Parameters<typeof elementMultiplier>[0], d: Parameters<typeof elementMultiplier>[1]) => elementMultiplier(a, d, true);
-    expect([on("water", "fire"), on("fire", "wood"), on("wood", "water")]).toEqual([1.5, 1.5, 1.5]);
-    expect([on("fire", "water"), on("wood", "fire"), on("water", "wood")]).toEqual([0.75, 0.75, 0.75]);
+    expect([on("wood", "earth"), on("earth", "water"), on("water", "fire"), on("fire", "metal"), on("metal", "wood")]).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
+    expect([on("earth", "wood"), on("water", "earth"), on("fire", "water"), on("metal", "fire"), on("wood", "metal")]).toEqual([0.75, 0.75, 0.75, 0.75, 0.75]);
+    expect([on("wood", "water"), on("fire", "wood"), on("metal", "earth")]).toEqual([1, 1, 1]); // generating, not overcoming
     expect(on("light", "dark")).toBe(1.5);
     expect(on("dark", "light")).toBe(1.5); // light and dark counter each other
     expect([on("light", "water"), on("dark", "fire")]).toEqual([1, 1]);

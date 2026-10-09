@@ -13,8 +13,8 @@ import { CARD_RARITY, RARITY, type Rarity } from "./rarity";
 import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
 
-export const ELEMENTS: Element[] = ["water", "fire", "wood", "light", "dark"];
-export const ELEMENT_ICON: Record<Element, string> = { water: "💧", fire: "🔥", wood: "🌿", light: "☀️", dark: "🌙" };
+export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
+export const ELEMENT_ICON: Record<Element, string> = { metal: "🪙", wood: "🌿", water: "💧", fire: "🔥", earth: "⛰️", light: "☀️", dark: "🌙" };
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
 const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
 const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
@@ -23,7 +23,7 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.41, head: 0.176, feet: 0.947 } },
   samuel: { src: "/cards/samuel.jpg", figure: { cx: 0.435, head: 0.112, feet: 0.952 } },
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
-  adam: { src: "/cards/adam.jpg", figure: { cx: 0.405, head: 0.171, feet: 0.945 } },
+  adam: { src: "/cards/adam.jpg", figure: { cx: 0.43, head: 0.223, feet: 0.963 } },
   eve: { src: "/cards/eve.jpg", figure: { cx: 0.44, head: 0.215, feet: 0.928 } },
   // Enemy cards drawn by the player: same art as their enemy versions, except the Serpent.
   goliathP: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943 } },
@@ -58,6 +58,16 @@ export const THEME: Record<Element, { frame: string; panel: string; art: string 
     frame: "from-emerald-800 via-emerald-950 to-stone-950",
     panel: "from-lime-50 to-emerald-100 text-stone-900",
     art: "radial-gradient(circle at 50% 35%, #ecfccb 0%, #4ade80 35%, #064e3b 100%)",
+  },
+  metal: {
+    frame: "from-slate-500 via-slate-800 to-zinc-950",
+    panel: "from-slate-50 to-zinc-200 text-stone-900",
+    art: "radial-gradient(circle at 50% 35%, #f8fafc 0%, #cbd5e1 30%, #475569 70%, #0f172a 100%)",
+  },
+  earth: {
+    frame: "from-yellow-800 via-stone-800 to-stone-950",
+    panel: "from-amber-50 to-stone-200 text-stone-900",
+    art: "radial-gradient(circle at 50% 35%, #fef3c7 0%, #d6a35c 35%, #78350f 75%, #292524 100%)",
   },
 };
 

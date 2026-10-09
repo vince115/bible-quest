@@ -30,7 +30,7 @@ describe("story bonuses", () => {
 
   it("no story bonus outside their story", () => {
     const s = createBattle(seeded(), ["david", "adam", "eve"]);
-    expect(skillDamage(s, "till", "bearer")).toBe(30);
+    expect(skillDamage(s, "till", "archer")).toBe(30); // earth Adam → fire archer ×1
     expect(supportAmount(s, "mother")).toBe(R.motherHeal);
   });
 

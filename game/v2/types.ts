@@ -33,7 +33,7 @@ export type CardId =
  * 💧 water → 🔥 fire → 🌿 wood → 💧 water, and ✨ light ⇄ 🌑 dark (they counter each other).
  * Any side may use any element (PvP opponents can field dark cards); enemies simply tend to be dark.
  */
-export type Element = "water" | "fire" | "wood" | "light" | "dark";
+export type Element = "metal" | "wood" | "water" | "fire" | "earth" | "light" | "dark";
 
 /** The enemy line-up: Goliath, his shield bearer (1 Sam 17:7) and a Philistine archer. */
 export type EnemyId = "bearer" | "goliath" | "archer" | "serpent";

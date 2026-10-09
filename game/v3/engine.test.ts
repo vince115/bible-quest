@@ -95,11 +95,11 @@ describe("front line", () => {
   });
 
   it("the front line decides elemental damage", () => {
-    // Dark Goliath hits light David ×1.5, fire Jonathan normally.
+    // Metal Goliath hits light David normally; fire Jonathan resists metal (×0.75).
     const david = resolveBoard(spearTurn(["david", "jonathan"], "david"));
     const jonathan = resolveBoard(spearTurn(["david", "jonathan"], "jonathan"));
-    expect(120 - david.battle.party.david.hp).toBe(60);
-    expect(140 - jonathan.battle.party.jonathan.hp).toBe(40);
+    expect(120 - david.battle.party.david.hp).toBe(40);
+    expect(140 - jonathan.battle.party.jonathan.hp).toBe(30);
   });
 
   it("allows one free swap per turn", () => {

@@ -28,6 +28,12 @@ export const ELEMENT_FOIL: Record<Element, string> = {
   // 🔥 fire: embers
   fire: `repeating-linear-gradient(60deg, rgb(255 200 120 / 0) 0 10px, rgb(255 180 90 / 0.45) 12px, rgb(255 200 120 / 0) 16px),
     linear-gradient(120deg, hsl(10 95% 60%), hsl(40 100% 60%), hsl(350 90% 55%), hsl(25 100% 60%))`,
+  // 🪙 metal: brushed steel with a moving glint
+  metal: `repeating-linear-gradient(90deg, rgb(255 255 255 / 0) 0 3px, rgb(255 255 255 / 0.35) 4px, rgb(255 255 255 / 0) 6px),
+    linear-gradient(115deg, hsl(210 15% 55%), hsl(45 30% 80%), hsl(200 20% 65%), hsl(220 15% 85%), hsl(210 15% 55%))`,
+  // ⛰️ earth: strata
+  earth: `repeating-linear-gradient(170deg, rgb(255 230 180 / 0) 0 9px, rgb(255 220 160 / 0.45) 11px, rgb(255 230 180 / 0) 15px),
+    linear-gradient(120deg, hsl(35 70% 50%), hsl(25 60% 40%), hsl(45 80% 60%), hsl(30 60% 45%))`,
   // 🌿 wood: leaf veins
   wood: `repeating-linear-gradient(-45deg, rgb(200 255 180 / 0) 0 8px, rgb(200 255 180 / 0.45) 10px, rgb(200 255 180 / 0) 14px),
     linear-gradient(120deg, hsl(100 70% 55%), hsl(150 70% 50%), hsl(70 80% 55%), hsl(130 70% 50%))`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_HP, RULES_V2 as R } from "./data";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R } from "./data";
 import { castSkill, createBattle, skillBlockReason, skillTargets } from "./engine";
 import type { BattleState } from "./types";
 
@@ -39,8 +39,8 @@ describe("line-up", () => {
 
 describe("Adam", () => {
   it("Till the Ground deals 30 damage", () => {
-    const s = castSkill(battle({ attack: 1 }), "till", "bearer");
-    expect(s.enemies.bearer.hp).toBe(60 - 30);
+    const s = castSkill(battle({ attack: 1 }), "till", "archer");
+    expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 30); // earth → fire ×1
   });
 
   it("Keep the Garden gives Adam a Shield of 50", () => {

@@ -16,7 +16,7 @@ export const RULES_V2 = {
   /** Victory when Goliath falls; the others flee (1 Sam 17:51). */
   archerDamage: 30,
   spear: 40,
-  crush: 120,
+  crush: 100,
   swing: 50,
   defyTargets: 2,
 
@@ -60,28 +60,34 @@ export const RULES_V2 = {
   stepDelay: 800,
 } as const;
 
-/** Which elements each element beats. Light and dark counter each other (balanced for PvP). */
+/**
+ * Which elements each element beats: the five phases' overcoming cycle (wood → earth → water → fire → metal → wood),
+ * plus light and dark countering each other. Every element beats one and is beaten by one; light and dark are
+ * neutral to the five phases.
+ */
 export const ELEMENT_BEATS: Record<Element, Element[]> = {
+  wood: ["earth"],
+  earth: ["water"],
   water: ["fire"],
-  fire: ["wood"],
-  wood: ["water"],
+  fire: ["metal"],
+  metal: ["wood"],
   light: ["dark"],
   dark: ["light"],
 };
 
-/** Provisional assignments, to be decided with the designer before elements are switched on. */
+/** Adam is earth (formed from the dust, Genesis 2:7); Goliath is metal (bronze armour, 1 Samuel 17:5-7). */
 export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   david: "light",
   samuel: "water",
   jonathan: "fire",
-  adam: "wood",
+  adam: "earth",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
-  goliathP: "dark",
+  goliathP: "metal",
   serpentP: "dark",
 };
-export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "dark", archer: "fire", serpent: "dark" };
+export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark" };
 
 /** Every playable character, in display order. */
 export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "goliathP", "serpentP", "bearerP", "archerP"];
@@ -100,7 +106,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 320 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, archerP: 70, bearerP: 110, goliathP: 120, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
