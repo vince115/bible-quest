@@ -6,6 +6,7 @@ import { elementMultiplier } from "@/game/v2/engine";
 import type { EnemyId, GoliathActionId } from "@/game/v2/types";
 import { useT } from "@/game/locale";
 import { CardFrame } from "./CardFrame";
+import { frameFigure, type Figure } from "./framing";
 import { ELEMENTS, THEME } from "./CharacterCardFace";
 import { ElementIcon } from "./ElementIcon";
 import { Foil } from "./HoloCard";
@@ -22,38 +23,11 @@ const CARD_NO: Record<EnemyId, string> = {
   bearer: "E02",
   archer: "E03",
 };
-/** scale: zoom into the illustration (1 = fit) around `origin` (defaults to the crop position); shiftX/shiftY: extra nudge in px (negative = left/up). */
-const ART: Partial<
-  Record<
-    EnemyId,
-    {
-      src: string;
-      position: string;
-      scale?: number;
-      origin?: string;
-      shiftX?: number;
-      shiftY?: number;
-    }
-  >
-> = {
-  goliath: {
-    src: "/cards/goliath.jpg",
-    position: "30% 50%",
-    scale: 1.2,
-    origin: "50% 38%",
-  },
-  archer: {
-    src: "/cards/archer.jpg",
-    position: "50% 89%",
-    scale: 1.15,
-    shiftY: 10,
-  },
-  bearer: {
-    src: "/cards/bearer.jpg",
-    position: "54% 94%",
-    scale: 1.15,
-    shiftY: 10,
-  },
+/** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
+const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
+  goliath: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943, size: 1.15 } },
+  archer: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
+  bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
 };
 
 /** The moves printed on each enemy's card: [name key, amount]. */
@@ -174,11 +148,7 @@ export function EnemyCardFace({ id }: { id: EnemyId }) {
               alt={t(`v2.enemy.${id}.name`)}
               draggable={false}
               className="absolute inset-0 h-full w-full object-cover"
-              style={{
-                objectPosition: art.position,
-                transform: `translate(${art.shiftX ?? 0}px, ${art.shiftY ?? 0}px) scale(${art.scale ?? 1})`,
-                transformOrigin: art.origin ?? art.position,
-              }}
+              style={frameFigure(art.figure)}
             />
             {lookOf(id).foil > 0 && <Foil element={element} strength={0.12} />}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 via-black/25 to-transparent px-[3%] pb-[8%] pt-[5%]">

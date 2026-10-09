@@ -7,6 +7,7 @@ import { elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
 import { CardFrame, type Ornament } from "./CardFrame";
+import { frameFigure, type Figure } from "./framing";
 import { Foil } from "./HoloCard";
 import { CARD_RARITY, lookOf } from "./rarity";
 import { ElementIcon } from "./ElementIcon";
@@ -18,11 +19,11 @@ const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️
 const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝" };
 const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003" };
 /** Card illustrations in /public/cards; characters without one show their emoji. */
-/** scale: zoom into the illustration around `origin` (defaults to the crop position); shiftX: nudge as % of the card width (negative = left), so it scales with the card. */
-const ART: Partial<Record<CharacterId, { src: string; position: string; scale?: number; origin?: string; shiftX?: number }>> = {
-  david: { src: "/cards/david.jpg", position: "20% 50%" },
-  samuel: { src: "/cards/samuel.jpg", position: "40% 50%" },
-  jonathan: { src: "/cards/jonathan.jpg", position: "6% 50%", scale: 1.2, origin: "30% 45%", shiftX: -10 },
+/** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
+const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
+  david: { src: "/cards/david.jpg", figure: { cx: 0.41, head: 0.176, feet: 0.947 } },
+  samuel: { src: "/cards/samuel.jpg", figure: { cx: 0.435, head: 0.112, feet: 0.952 } },
+  jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
 };
 
 /** Card colours per element: outer frame (deep, so the gold ornaments stand out), inner panel, art backdrop. */
@@ -163,7 +164,7 @@ export function CharacterCardFace({ id, ornament }: { id: CharacterId; ornament?
             alt={t(`char.${id}.name`)}
             draggable={false}
             className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: art.position, transform: `translateX(${art.shiftX ?? 0}%) scale(${art.scale ?? 1})`, transformOrigin: art.origin ?? art.position }}
+            style={frameFigure(art.figure)}
           />
           {/* Real art gets a light foil so the illustration stays readable. */}
           {lookOf(id).foil > 0 && <Foil element={element} strength={0.12} />}
