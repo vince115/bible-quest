@@ -12,7 +12,7 @@ export const ACHIEVEMENTS: AchievementId[] = ["solo-david"];
 
 /** Achievements a finished battle earns: David's duel with Goliath. */
 export function earnedBy(b: Board): AchievementId[] {
-  return b.battle.result === "victory" && b.lineup.length === 1 && b.lineup[0] === "david" ? ["solo-david"] : [];
+  return b.battle.result === "victory" && b.battle.stage === "goliath" && b.lineup.length === 1 && b.lineup[0] === "david" ? ["solo-david"] : [];
 }
 
 interface AchievementStore {

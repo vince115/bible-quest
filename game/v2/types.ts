@@ -1,12 +1,15 @@
 // Bible Quest v2 battle model (energy-card version). Independent of the v1 engine in game/engine.ts.
 // Scripture cards are energy; characters act through skills paid with that energy.
 
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve";
+/** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
-export type SkillId = "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper";
+export type SkillId =
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper"
+  | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
   // ✨ Faith
@@ -33,11 +36,15 @@ export type CardId =
 export type Element = "water" | "fire" | "wood" | "light" | "dark";
 
 /** The enemy line-up: Goliath, his shield bearer (1 Sam 17:7) and a Philistine archer. */
-export type EnemyId = "bearer" | "goliath" | "archer";
+export type EnemyId = "bearer" | "goliath" | "archer" | "serpent";
+
+/** Which battle is being fought: Goliath with his shield bearer and archer, or the Serpent of Eden alone. */
+export type StageId = "goliath" | "eden";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
-export type TargetKind = "none" | "ally" | "fallenAlly" | "actedAlly" | "enemy";
+/** anyEnemy: any standing enemy, ignoring the shield bearer's protection (the archer's Volley). */
+export type TargetKind = "none" | "ally" | "fallenAlly" | "actedAlly" | "enemy" | "anyEnemy";
 
 export interface SkillDef {
   id: SkillId;
@@ -68,7 +75,8 @@ export interface CharacterState {
   acted: boolean;
 }
 
-export type GoliathActionId = "defy" | "spear" | "raise" | "crush" | "swing";
+/** The boss's actions: Goliath's, then the Serpent's (tempt, fang, coil). */
+export type GoliathActionId = "defy" | "spear" | "raise" | "crush" | "swing" | "tempt" | "fang" | "coil";
 
 export interface Intent {
   action: GoliathActionId;
@@ -105,7 +113,11 @@ export interface BattleState {
   energy: EnergyPool;
   party: Record<CharacterId, CharacterState>;
   enemies: Record<EnemyId, EnemyState>;
+  /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
   goliath: GoliathState;
+  stage: StageId;
+  /** The ally the Serpent coiled around: they can't be swapped out of the front line this turn. */
+  coiled: CharacterId | null;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
   /** Who the archer will shoot this turn. */
@@ -117,6 +129,8 @@ export interface BattleState {
   ariseUsed: boolean;
   /** Eve's Helper can be used once per battle. */
   helperUsed: boolean;
+  /** The Serpent card's Beguile can be used once per battle. */
+  beguileUsed: boolean;
   /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
   lineup: CharacterId[];
   log: LogEntry[];

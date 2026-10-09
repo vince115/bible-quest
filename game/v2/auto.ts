@@ -26,7 +26,8 @@ function underThreat(s: BattleState): boolean {
   if (s.goliath.stunned) return false;
   if (action === "swing") return true;
   if (action === "crush" && s.goliath.charging) return true;
-  if (action === "defy") return targets.some((id) => isAlive(s, id) && s.party[id].shield === 0);
+  if (action === "defy" || action === "tempt") return targets.some((id) => isAlive(s, id) && s.party[id].shield === 0);
+  if (action === "fang" || action === "coil") return true;
   return false;
 }
 
@@ -37,6 +38,7 @@ function attackTarget(s: BattleState, skill: SkillId): EnemyId | undefined {
   if (options.includes("archer") && s.enemies.archer.hp <= dmg) return "archer";
   if (options.includes("bearer")) return "bearer";
   if (options.includes("goliath")) return "goliath";
+  if (options.includes("serpent")) return "serpent";
   return options[0];
 }
 
@@ -62,10 +64,19 @@ export function nextAutoAction(s: BattleState): AutoAction {
   // 4. Answer the telegraphed threat.
   if (underThreat(s) && canCast(s, "covshield")) return { type: "cast", skill: "covshield" };
   if (underThreat(s) && canCast(s, "keep")) return { type: "cast", skill: "keep" };
+  if (underThreat(s) && canCast(s, "beguile")) return { type: "cast", skill: "beguile" };
+  if (underThreat(s)) {
+    const cover = s.lineup.filter((id) => isAlive(s, id) && s.party[id].shield === 0).sort((a, b) => s.party[a].hp - s.party[b].hp)[0];
+    if (cover && canCast(s, "shieldUp", cover)) return { type: "cast", skill: "shieldUp", target: cover };
+  }
+
+  // Defiance when two or more enemies stand.
+  if (attackableEnemies(s).length + (enemyAlive(s, "goliath") && enemyAlive(s, "bearer") ? 1 : 0) >= 2 && canCast(s, "taunt")) return { type: "cast", skill: "taunt" };
 
   // 4b. Eve's Mother of All Living when two or more allies are hurt enough to use the full heal.
   const hurt = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.motherHeal);
-  if (hurt.length >= 2 && canCast(s, "mother")) return { type: "cast", skill: "mother" };
+  const shaken = s.lineup.filter((id) => isAlive(s, id) && s.party[id].shaken && !s.party[id].acted);
+  if ((hurt.length >= 2 || shaken.length >= 1) && canCast(s, "mother")) return { type: "cast", skill: "mother" };
 
   // 5. Heal whoever is in danger.
   const low = s.lineup.filter((id) => isAlive(s, id) && s.party[id].hp <= 6).sort((a, b) => s.party[a].hp - s.party[b].hp)[0];
@@ -78,7 +89,10 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (again) return { type: "cast", skill: "helper", target: again };
 
   // 6. Attack with whatever 🗡️ is left.
-  for (const skill of ["sling", "sword", "till", "rebuke"] as SkillId[]) {
+  // The archer's Volley ignores the shield bearer: go straight for the boss.
+  const boss = s.stage === "eden" ? "serpent" : "goliath";
+  if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
+  for (const skill of ["sling", "spearThrust", "venom", "sword", "till", "bash", "rebuke"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
   }

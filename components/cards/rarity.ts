@@ -15,6 +15,11 @@ export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
   adam: "SSR",
   eve: "SSR",
   goliath: "SSR",
+  archerP: "N",
+  bearerP: "N",
+  goliathP: "SSR",
+  serpentP: "SSR",
+  serpent: "SSR",
 };
 
 export interface RarityLook {

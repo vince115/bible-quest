@@ -20,6 +20,8 @@ function incoming(b: Board, id: CharacterId): number {
   if (!s.goliath.stunned) {
     if (action === "spear") n += enemyDamage("goliath", id, R.spear);
     if (action === "crush" && s.goliath.charging) n += enemyDamage("goliath", id, R.crush);
+    if (action === "fang") n += enemyDamage("serpent", id, s.goliath.enraged ? R.fangShed : R.fang);
+    if (action === "coil") n += enemyDamage("serpent", id, R.coil);
   }
   return n;
 }

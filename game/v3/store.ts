@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { RULES_V2 } from "../v2/data";
 import type { Target } from "../v2/engine";
-import type { CharacterId, SkillId } from "../v2/types";
+import type { CharacterId, SkillId, StageId } from "../v2/types";
 import { earnedBy, useAchievementStore, type AchievementId } from "./achievements";
 import { nextBoardAutoAction } from "./auto";
 import { castOnBoard, createBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
@@ -15,13 +15,13 @@ interface BattleV3Store {
   /** null while the player picks a line-up. */
   board: Board | null;
   /** The last line-up, preselected when picking again. */
-  lastLineup: { lineup: CharacterId[]; front: CharacterId };
+  lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId };
   resolving: boolean;
   auto: boolean;
   runId: number;
   /** Achievements unlocked by the battle that just ended. */
   newAchievements: AchievementId[];
-  start: (lineup: CharacterId[], front: CharacterId) => void;
+  start: (lineup: CharacterId[], front: CharacterId, stage: StageId) => void;
   restart: () => void;
   pickLineup: () => void;
   play: (uid: number) => void;
@@ -67,21 +67,21 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
 
   return {
     board: null,
-    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david" },
+    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath" },
     resolving: false,
     auto: false,
     runId: 0,
     newAchievements: [],
-    start: (lineup, front) =>
+    start: (lineup, front, stage) =>
       set((st) => ({
-        board: createBoard(lineup, front),
-        lastLineup: { lineup, front },
+        board: createBoard(lineup, front, Math.random, stage),
+        lastLineup: { lineup, front, stage },
         resolving: false,
         auto: false,
         runId: st.runId + 1,
         newAchievements: [],
       })),
-    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front),
+    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage),
     pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] })),
     play: (uid) => act((b) => playCardOnBoard(b, uid)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),

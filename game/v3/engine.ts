@@ -19,7 +19,7 @@ import {
   type Rng,
   type Target,
 } from "../v2/engine";
-import type { BattleState, CharacterId, SkillId } from "../v2/types";
+import type { BattleState, CharacterId, SkillId, StageId } from "../v2/types";
 
 export interface Board {
   battle: BattleState;
@@ -45,11 +45,11 @@ export const isDuel = (b: Board) => b.lineup.length === 1;
 /** The front line has fallen and someone must step up before anything else happens. */
 export const needsFront = (b: Board) => b.battle.result === "ongoing" && !isAlive(b.battle, b.front) && standing(b).length > 0;
 
-export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random): Board {
+export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath"): Board {
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   if (!chosen.length) throw new Error("line-up needs at least one character");
-  const battle = createBattle(rng, chosen);
-  if (chosen.length === 1) {
+  const battle = createBattle(rng, chosen, stage);
+  if (chosen.length === 1 && stage === "goliath") {
     battle.enemies.bearer.hp = 0;
     battle.enemies.archer.hp = 0;
     log(battle, "v3.log.duel", { char: chosen[0] });
@@ -61,7 +61,9 @@ export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0
 /** Can `id` be moved to the front line right now? (A fallen front line is replaced for free.) */
 export function canSwap(b: Board, id: CharacterId): boolean {
   if (b.battle.result !== "ongoing" || id === b.front || !b.lineup.includes(id) || !isAlive(b.battle, id)) return false;
-  return needsFront(b) || !b.swapped;
+  if (needsFront(b)) return true;
+  // The Serpent's Coil holds the front line in place this turn.
+  return !b.swapped && b.battle.coiled !== b.front;
 }
 
 export function swapFront(board: Board, id: CharacterId, rng: Rng = Math.random): Board {
@@ -82,7 +84,7 @@ function aim(b: Board, rng: Rng): Board {
   const s = b.battle;
   const front = isAlive(s, b.front) ? b.front : null;
   for (const intent of s.intents) {
-    if (intent.action === "spear" || intent.action === "crush") intent.targets = front ? [front] : [];
+    if (["spear", "crush", "fang", "coil"].includes(intent.action)) intent.targets = front ? [front] : [];
     if (intent.action === "defy" && intent.targets.some((id) => !isAlive(s, id))) {
       const pool = [...standing(b)];
       intent.targets = [];

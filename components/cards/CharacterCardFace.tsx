@@ -2,7 +2,7 @@
 
 // Full-size character card face (TCG layout): name/HP, art, skills, passive, weakness/resistance, verse.
 // With an illustration the card is full-art; without one it uses an art window with the character's emoji.
-import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, RULES_V2 as R, SKILLS } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
 import { elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -16,8 +16,8 @@ import { RarityMark } from "./RarityMark";
 export const ELEMENTS: Element[] = ["water", "fire", "wood", "light", "dark"];
 export const ELEMENT_ICON: Record<Element, string> = { water: "💧", fire: "🔥", wood: "🌿", light: "☀️", dark: "🌙" };
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.41, head: 0.176, feet: 0.947 } },
@@ -25,6 +25,11 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
   adam: { src: "/cards/adam.jpg", figure: { cx: 0.405, head: 0.171, feet: 0.945 } },
   eve: { src: "/cards/eve.jpg", figure: { cx: 0.44, head: 0.215, feet: 0.928 } },
+  // Enemy cards drawn by the player: same art as their enemy versions.
+  goliathP: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943 } },
+  serpentP: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  archerP: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
+  bearerP: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
 };
 
 /** Card colours per element: outer frame (deep, so the gold ornaments stand out), inner panel, art backdrop. */
@@ -89,6 +94,13 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t("v2.passive.david")}
+        </div>
+      )}
+      {/* Story bonus: what this character gains in their own Bible story */}
+      {STORY[id] && (
+        <div className="rounded-md border border-amber-600/40 bg-amber-50/70 px-[3%] py-[1.2%] text-[0.58em] leading-snug">
+          <span className="mr-1 rounded bg-amber-600 px-1 font-bold text-white">{t("v3.story.label")}</span>
+          {t(`v3.story.${id}`)}
         </div>
       )}
 

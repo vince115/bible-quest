@@ -49,7 +49,7 @@ describe("setup", () => {
     expect(totalCards(s)).toBe(15);
     expect(s.hand).toHaveLength(R.openingHand);
     expect(s.energy).toEqual({ faith: 0, attack: 0, guard: 0 });
-    expect(s.enemies).toEqual({ bearer: { hp: ENEMY_HP.bearer }, goliath: { hp: ENEMY_HP.goliath }, archer: { hp: ENEMY_HP.archer } });
+    expect(s.enemies).toEqual({ bearer: { hp: ENEMY_HP.bearer }, goliath: { hp: ENEMY_HP.goliath }, archer: { hp: ENEMY_HP.archer }, serpent: { hp: 0 } });
     expect(s.archerTarget).not.toBeNull();
     expect(s.intents.map((i) => i.action)).toEqual(["defy", "spear"]);
   });

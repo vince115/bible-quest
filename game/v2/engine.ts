@@ -13,6 +13,10 @@ import {
   PARTY_ORDER,
   PHASE1_CYCLE,
   PHASE2_CYCLE,
+  SERPENT_CYCLE,
+  STAGE_BOSS,
+  STAGE_ENEMIES,
+  STORY,
   RULES_V2 as R,
   SKILLS,
 } from "./data";
@@ -27,6 +31,7 @@ import type {
   Intent,
   LogEntry,
   SkillId,
+  StageId,
   TargetKind,
 } from "./types";
 
@@ -54,7 +59,9 @@ function log(s: BattleState, key: string, kind: LogEntry["kind"], params?: LogEn
 
 export const isAlive = (s: BattleState, id: CharacterId) => s.party[id].hp > 0;
 const living = (s: BattleState) => s.lineup.filter((id) => isAlive(s, id));
-const cycleOf = (s: BattleState) => (s.goliath.enraged ? PHASE2_CYCLE : PHASE1_CYCLE);
+const cycleOf = (s: BattleState) => (s.stage === "eden" ? SERPENT_CYCLE : s.goliath.enraged ? PHASE2_CYCLE : PHASE1_CYCLE);
+/** This stage's boss (Goliath, or the Serpent). */
+export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 export const enemyAlive = (s: BattleState, id: EnemyId) => s.enemies[id].hp > 0;
 const randomAlly = (s: BattleState, rng: Rng) => {
   const alive = living(s);
@@ -90,7 +97,7 @@ function draw(s: BattleState, n: number, rng: Rng) {
 
 function makeIntent(s: BattleState, action: GoliathActionId, rng: Rng): Intent {
   const alive = living(s);
-  if (action === "spear" || action === "crush") {
+  if (action === "spear" || action === "crush" || action === "fang" || action === "coil" || action === "tempt") {
     return { action, targets: alive.length ? [alive[Math.floor(rng() * alive.length)]] : [] };
   }
   if (action === "defy") return { action, targets: shuffle(alive, rng).slice(0, R.defyTargets) };
@@ -98,10 +105,11 @@ function makeIntent(s: BattleState, action: GoliathActionId, rng: Rng): Intent {
 }
 
 function checkVictory(s: BattleState) {
-  if (s.result === "ongoing" && s.enemies.goliath.hp <= 0) {
-    s.enemies.goliath.hp = 0;
+  const boss = bossOf(s);
+  if (s.result === "ongoing" && s.enemies[boss].hp <= 0) {
+    s.enemies[boss].hp = 0;
     s.result = "victory";
-    log(s, "v2.log.victory", "system");
+    log(s, s.stage === "eden" ? "v2.log.victoryEden" : "v2.log.victory", "system");
   }
 }
 
@@ -149,13 +157,32 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  * Damage of an attack skill, with David's "Against the Giant" (Faith ≥ 3) and, when switched on, elements.
  * Sling Stone is a fixed number: no bonuses, no element.
  */
+/** Is this character fighting in their own Bible story (story bonus on)? */
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === s.stage && s.lineup.includes(id);
+
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
-  if (skill === "slingStone") return def.damage ?? 0;
-  const giant = def.owner === "david" && s.energy.faith >= R.giantFaith ? R.giantBonus : 0;
-  const base = (def.damage ?? 0) + giant;
+  // Sling Stone is fixed: 140 against Goliath, an ordinary 80 anywhere else.
+  if (skill === "slingStone") return s.stage === "goliath" ? (def.damage ?? 0) : R.slingStoneElsewhere;
+  const giant = def.owner === "david" && inStory(s, "david") && s.energy.faith >= R.giantFaith ? R.giantBonus : 0;
+  const till = skill === "till" && inStory(s, "adam") ? R.edenTillBonus : 0;
+  // Eve in Eden: her seed shall bruise the serpent's head — every attack on the Serpent +20.
+  const seed = target === "serpent" && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
+  const base = (def.damage ?? 0) + giant + till + seed;
   if (!target) return base;
   return toTens(base * elementMultiplier(CHARACTER_ELEMENT[def.owner], ENEMY_ELEMENT[target]));
+}
+
+/** Heal or Shield amount of a support skill, with story bonuses. */
+export function supportAmount(s: BattleState, skill: SkillId): number {
+  if (skill === "heal") return R.healAmount;
+  if (skill === "arise") return R.ariseHp;
+  if (skill === "covshield") return R.covShield;
+  if (skill === "keep") return R.keepShield + (inStory(s, "adam") ? R.edenKeepBonus : 0);
+  if (skill === "mother") return R.motherHeal + (inStory(s, "eve") ? R.edenMotherBonus : 0);
+  if (skill === "helper" || skill === "beguile") return 1;
+  if (skill === "shieldUp") return R.shieldUpAmount;
+  return 0;
 }
 
 /** Damage an enemy deals to an ally, with elements (e.g. dark Goliath hits light David ×1.5). */
@@ -166,7 +193,7 @@ export function enemyDamage(enemy: EnemyId, ally: CharacterId, base: number): nu
 // ---------- setup ----------
 
 /** lineup: who fights; everyone else sits the battle out (HP 0). */
-export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEFAULT_LINEUP): BattleState {
+export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEFAULT_LINEUP, stage: StageId = "goliath"): BattleState {
   const deck = shuffle(
     DECK_V2.map((card, i): CardInstance => ({ uid: i + 1, card })),
     rng,
@@ -179,7 +206,10 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     ) as BattleState["party"],
     lineup: PARTY_ORDER.filter((id) => lineup.includes(id)),
     helperUsed: false,
-    enemies: { bearer: { hp: ENEMY_HP.bearer }, goliath: { hp: ENEMY_HP.goliath }, archer: { hp: ENEMY_HP.archer } },
+    beguileUsed: false,
+    enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
+    stage,
+    coiled: null,
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },
     archerTarget: null,
     intents: [
@@ -194,10 +224,11 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     seq: 0,
     result: "ongoing",
   };
-  s.intents = [makeIntent(s, PHASE1_CYCLE[0], rng), makeIntent(s, PHASE1_CYCLE[1], rng)];
-  s.archerTarget = randomAlly(s, rng);
+  const cycle = cycleOf(s);
+  s.intents = [makeIntent(s, cycle[0], rng), makeIntent(s, cycle[1], rng)];
+  s.archerTarget = enemyAlive(s, "archer") ? randomAlly(s, rng) : null;
   draw(s, R.openingHand, rng);
-  log(s, "v2.log.start", "system");
+  log(s, stage === "eden" ? "v2.log.startEden" : "v2.log.start", "system");
   log(s, "v2.log.turn", "system", { n: 1 });
   return s;
 }
@@ -234,7 +265,9 @@ export function playCard(state: BattleState, uid: number): BattleState {
 
 export function skillTargetKind(skill: SkillId): TargetKind {
   if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till") return "enemy";
-  if (skill === "heal") return "ally";
+  if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
+  if (skill === "volley") return "anyEnemy";
+  if (skill === "heal" || skill === "shieldUp") return "ally";
   if (skill === "arise") return "fallenAlly";
   if (skill === "helper") return "actedAlly";
   return "none";
@@ -243,6 +276,7 @@ export function skillTargetKind(skill: SkillId): TargetKind {
 export function skillTargets(s: BattleState, skill: SkillId): Target[] {
   const kind = skillTargetKind(skill);
   if (kind === "enemy") return attackableEnemies(s);
+  if (kind === "anyEnemy") return ENEMY_ORDER.filter((id) => enemyAlive(s, id));
   if (kind === "ally") return living(s);
   if (kind === "fallenAlly") return s.lineup.filter((id) => !isAlive(s, id));
   if (kind === "actedAlly") {
@@ -261,6 +295,7 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (s.party[def.owner].acted) return "v2.reason.acted";
   if (skill === "arise" && s.ariseUsed) return "v2.reason.ariseUsed";
   if (skill === "helper" && s.helperUsed) return "v2.reason.ariseUsed";
+  if (skill === "beguile" && s.beguileUsed) return "v2.reason.ariseUsed";
   if (!payment(s, skill)) return def.kind === "faith" ? "v2.reason.needFaith" : "v2.reason.energy";
   if (skillTargetKind(skill) !== "none") {
     const valid = skillTargets(s, skill);
@@ -281,7 +316,12 @@ function hitEnemy(s: BattleState, skill: SkillId, enemy: EnemyId) {
     n: dmg,
     hp: e.hp,
   });
-  if (e.hp === 0 && enemy !== "goliath") {
+  // The Serpent sheds its skin at half HP: its fang hits harder from then on.
+  if (s.stage === "eden" && enemy === "serpent" && e.hp > 0 && !s.goliath.enraged && e.hp <= ENEMY_HP.serpent / 2) {
+    s.goliath.enraged = true;
+    log(s, "v2.log.shed", "enemy");
+  }
+  if (e.hp === 0 && enemy !== bossOf(s)) {
     log(s, "v2.log.enemyFalls", "system", { enemy });
     if (enemy === "archer") s.archerTarget = null;
   }
@@ -298,7 +338,9 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
   const def = SKILLS[skill];
   s.party[def.owner].acted = true;
   // Against the Giant reads the Faith held before paying. Sling Stone flies over the shield into Goliath.
-  if (def.damage) hitEnemy(s, skill, skill === "slingStone" ? "goliath" : (target as EnemyId));
+  // Taunt hits every enemy; other attacks hit their target (Sling Stone always the boss).
+  if (skill === "taunt") ENEMY_ORDER.filter((id) => enemyAlive(s, id)).forEach((id) => s.result === "ongoing" && hitEnemy(s, skill, id));
+  else if (def.damage) hitEnemy(s, skill, skill === "slingStone" ? bossOf(s) : (target as EnemyId));
   s.energy.faith -= pay.faith;
   s.energy.attack -= pay.attack;
   s.energy.guard -= pay.guard;
@@ -306,8 +348,10 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
 
   switch (skill) {
     case "slingStone":
-      s.goliath.stunned = true;
-      if (s.result === "ongoing" && !s.goliath.enraged) {
+      // Only Goliath is Stunned: the stone was made for him (1 Sam 17:49).
+      if (s.stage === "goliath") s.goliath.stunned = true;
+      // Goliath rises Enraged after the first Sling Stone (the Serpent sheds its skin by HP instead).
+      if (s.stage === "goliath" && s.result === "ongoing" && !s.goliath.enraged) {
         s.goliath.enraged = true;
         s.goliath.cycle = -1; // phase 2 begins after the (skipped) current action
         s.intents[1] = makeIntent(s, PHASE2_CYCLE[0], rng);
@@ -338,16 +382,27 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "keep":
       log(s, "v2.log.keep", "player");
-      addShield(s, "adam", R.keepShield);
+      addShield(s, "adam", supportAmount(s, "keep"));
       break;
     case "mother":
       log(s, "v2.log.mother", "player");
       living(s).forEach((id) => {
         const c = s.party[id];
-        const healed = Math.min(R.motherHeal, MAX_HP[id] - c.hp);
+        const healed = Math.min(supportAmount(s, "mother"), MAX_HP[id] - c.hp);
+        // Comfort: lifts Shaken (Goliath's Defy, the Serpent's Temptation).
+        c.shaken = false;
         c.hp += healed;
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
+      break;
+    case "shieldUp":
+      log(s, "v2.log.shieldUp", "player", { char: target });
+      addShield(s, target as CharacterId, R.shieldUpAmount);
+      break;
+    case "beguile":
+      s.goliath.stunned = true;
+      s.beguileUsed = true;
+      log(s, "v2.log.beguile", "player");
       break;
     case "helper": {
       s.party[target as CharacterId].acted = false;
@@ -366,7 +421,9 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
   if (state.result !== "ongoing") return state;
   const s = clone(state);
   PARTY_ORDER.forEach((id) => (s.party[id].shaken = false));
+  s.coiled = null;
   const g = s.goliath;
+  const boss = bossOf(s);
   const intent = s.intents[0];
   const target = () => {
     const t = intent.targets[0];
@@ -386,9 +443,9 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
   if (g.stunned) {
     g.stunned = false;
     g.charging = false;
-    log(s, "v2.log.stunned", "enemy", { action: intent.action });
+    log(s, s.stage === "eden" ? "v2.log.serpentStunned" : "v2.log.stunned", "enemy", { action: intent.action });
   } else {
-    log(s, "v2.log.goliathUses", "enemy", { action: intent.action });
+    log(s, s.stage === "eden" ? "v2.log.serpentUses" : "v2.log.goliathUses", "enemy", { action: intent.action });
     switch (intent.action) {
       case "defy":
         // A Shield steadies an ally: they can't be Shaken.
@@ -420,6 +477,34 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       case "swing":
         living(s).forEach((id) => damageAlly(s, id, R.swing, "goliath"));
         break;
+      case "tempt": {
+        // The fruit of the tree: the target can't act next turn and the party loses Faith (a Shield holds firm).
+        const t = target();
+        if (!t) break;
+        if (s.party[t].shield > 0) log(s, "v2.log.shieldHolds", "detail", { char: t });
+        else {
+          s.party[t].shaken = true;
+          const lost = Math.min(R.temptFaith, s.energy.faith);
+          s.energy.faith -= lost;
+          log(s, "v2.log.tempted", "detail", { char: t, n: lost });
+        }
+        break;
+      }
+      case "fang": {
+        const t = target();
+        if (t) damageAlly(s, t, g.enraged ? R.fangShed : R.fang, boss);
+        break;
+      }
+      case "coil": {
+        // Coils around everyone; the target (the front line) is held in place.
+        const t = target();
+        living(s).forEach((id) => damageAlly(s, id, R.coil, boss));
+        if (t && isAlive(s, t)) {
+          s.coiled = t;
+          log(s, "v2.log.coiled", "detail", { char: t });
+        }
+        break;
+      }
     }
   }
   checkDefeat(s);

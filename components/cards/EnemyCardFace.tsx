@@ -17,17 +17,21 @@ const PORTRAIT: Record<EnemyId, string> = {
   goliath: "🗿",
   bearer: "🛡️",
   archer: "🏹",
+  serpent: "🐍",
 };
 const CARD_NO: Record<EnemyId, string> = {
   goliath: "E01",
   bearer: "E02",
   archer: "E03",
+  serpent: "E04",
 };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   goliath: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943, size: 1.15 } },
   archer: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
+  // The serpent is coiled up the tree: frame the head and the tree, looking left.
+  serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
 };
 
 /** The moves printed on each enemy's card: [name key, amount]. */
@@ -42,6 +46,11 @@ const MOVES: Record<
   ],
   archer: [{ key: "v3.action.arrow", amount: String(R.archerDamage) }],
   bearer: [{ key: "v3.ui.protects", amount: "🛡️" }],
+  serpent: [
+    { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
+    { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
+  ],
 };
 
 function Header({ id, light }: { id: EnemyId; light?: boolean }) {
