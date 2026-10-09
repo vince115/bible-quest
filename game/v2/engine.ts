@@ -4,6 +4,7 @@ import {
   CARDS_V2,
   CHARACTER_ELEMENT,
   DECK_V2,
+  DEFAULT_LINEUP,
   ELEMENT_BEATS,
   ENEMY_ELEMENT,
   ENEMY_HP,
@@ -52,7 +53,7 @@ function log(s: BattleState, key: string, kind: LogEntry["kind"], params?: LogEn
 }
 
 export const isAlive = (s: BattleState, id: CharacterId) => s.party[id].hp > 0;
-const living = (s: BattleState) => PARTY_ORDER.filter((id) => isAlive(s, id));
+const living = (s: BattleState) => s.lineup.filter((id) => isAlive(s, id));
 const cycleOf = (s: BattleState) => (s.goliath.enraged ? PHASE2_CYCLE : PHASE1_CYCLE);
 export const enemyAlive = (s: BattleState, id: EnemyId) => s.enemies[id].hp > 0;
 const randomAlly = (s: BattleState, rng: Rng) => {
@@ -164,7 +165,8 @@ export function enemyDamage(enemy: EnemyId, ally: CharacterId, base: number): nu
 
 // ---------- setup ----------
 
-export function createBattle(rng: Rng = Math.random): BattleState {
+/** lineup: who fights; everyone else sits the battle out (HP 0). */
+export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEFAULT_LINEUP): BattleState {
   const deck = shuffle(
     DECK_V2.map((card, i): CardInstance => ({ uid: i + 1, card })),
     rng,
@@ -172,11 +174,11 @@ export function createBattle(rng: Rng = Math.random): BattleState {
   const s: BattleState = {
     turn: 1,
     energy: { faith: 0, attack: 0, guard: 0 },
-    party: {
-      david: { hp: MAX_HP.david, shield: 0, shaken: false, acted: false },
-      samuel: { hp: MAX_HP.samuel, shield: 0, shaken: false, acted: false },
-      jonathan: { hp: MAX_HP.jonathan, shield: 0, shaken: false, acted: false },
-    },
+    party: Object.fromEntries(
+      PARTY_ORDER.map((id) => [id, { hp: lineup.includes(id) ? MAX_HP[id] : 0, shield: 0, shaken: false, acted: false }]),
+    ) as BattleState["party"],
+    lineup: PARTY_ORDER.filter((id) => lineup.includes(id)),
+    helperUsed: false,
     enemies: { bearer: { hp: ENEMY_HP.bearer }, goliath: { hp: ENEMY_HP.goliath }, archer: { hp: ENEMY_HP.archer } },
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },
     archerTarget: null,
@@ -231,9 +233,10 @@ export function playCard(state: BattleState, uid: number): BattleState {
 // ---------- skills ----------
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "sling" || skill === "sword" || skill === "rebuke") return "enemy";
+  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till") return "enemy";
   if (skill === "heal") return "ally";
   if (skill === "arise") return "fallenAlly";
+  if (skill === "helper") return "actedAlly";
   return "none";
 }
 
@@ -241,7 +244,11 @@ export function skillTargets(s: BattleState, skill: SkillId): Target[] {
   const kind = skillTargetKind(skill);
   if (kind === "enemy") return attackableEnemies(s);
   if (kind === "ally") return living(s);
-  if (kind === "fallenAlly") return PARTY_ORDER.filter((id) => !isAlive(s, id));
+  if (kind === "fallenAlly") return s.lineup.filter((id) => !isAlive(s, id));
+  if (kind === "actedAlly") {
+    const owner = SKILLS[skill].owner;
+    return s.lineup.filter((id) => id !== owner && isAlive(s, id) && s.party[id].acted && !s.party[id].shaken);
+  }
   return [];
 }
 
@@ -253,6 +260,7 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (s.party[def.owner].shaken) return "v2.reason.shaken";
   if (s.party[def.owner].acted) return "v2.reason.acted";
   if (skill === "arise" && s.ariseUsed) return "v2.reason.ariseUsed";
+  if (skill === "helper" && s.helperUsed) return "v2.reason.ariseUsed";
   if (!payment(s, skill)) return def.kind === "faith" ? "v2.reason.needFaith" : "v2.reason.energy";
   if (skillTargetKind(skill) !== "none") {
     const valid = skillTargets(s, skill);
@@ -328,6 +336,25 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       log(s, "v2.log.covshield", "player");
       living(s).forEach((id) => addShield(s, id, R.covShield));
       break;
+    case "keep":
+      log(s, "v2.log.keep", "player");
+      addShield(s, "adam", R.keepShield);
+      break;
+    case "mother":
+      log(s, "v2.log.mother", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.motherHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    case "helper": {
+      s.party[target as CharacterId].acted = false;
+      s.helperUsed = true;
+      log(s, "v2.log.helper", "player", { char: target });
+      break;
+    }
   }
   return s;
 }

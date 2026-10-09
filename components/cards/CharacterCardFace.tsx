@@ -9,21 +9,22 @@ import { useT } from "@/game/locale";
 import { CardFrame, type Ornament } from "./CardFrame";
 import { frameFigure, type Figure } from "./framing";
 import { Foil } from "./HoloCard";
-import { CARD_RARITY, lookOf } from "./rarity";
+import { CARD_RARITY, RARITY, type Rarity } from "./rarity";
 import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["water", "fire", "wood", "light", "dark"];
 export const ELEMENT_ICON: Record<Element, string> = { water: "💧", fire: "🔥", wood: "🌿", light: "☀️", dark: "🌙" };
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003" };
-/** Card illustrations in /public/cards; characters without one show their emoji. */
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.41, head: 0.176, feet: 0.947 } },
   samuel: { src: "/cards/samuel.jpg", figure: { cx: 0.435, head: 0.112, feet: 0.952 } },
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
+  adam: { src: "/cards/adam.jpg", figure: { cx: 0.405, head: 0.171, feet: 0.945 } },
+  eve: { src: "/cards/eve.jpg", figure: { cx: 0.44, head: 0.215, feet: 0.928 } },
 };
 
 /** Card colours per element: outer frame (deep, so the gold ornaments stand out), inner panel, art backdrop. */
@@ -55,7 +56,7 @@ export const THEME: Record<Element, { frame: string; panel: string; art: string 
   },
 };
 
-const SUPPORT: Partial<Record<string, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield };
+const SUPPORT: Partial<Record<string, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield, keep: R.keepShield, mother: R.motherHeal, helper: 1 };
 
 /** Name, title, HP and element. */
 function Header({ id, light }: { id: CharacterId; light?: boolean }) {
@@ -77,7 +78,7 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
 }
 
 /** Passive, skills, weakness/resistance, verse and card number. */
-function Body({ id, compact }: { id: CharacterId; compact?: boolean }) {
+function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rarity: Rarity }) {
   const t = useT();
   const element = CHARACTER_ELEMENT[id];
   const weak = ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
@@ -139,14 +140,16 @@ function Body({ id, compact }: { id: CharacterId; compact?: boolean }) {
       <div className="flex justify-between px-[8%] text-[0.45em] opacity-60">
         <span>Bible Quest</span>
         <span>
-          BQ-{CARD_NO[id]} <b className={`font-black ${lookOf(id).mark}`}>{CARD_RARITY[id]}</b>
+          BQ-{CARD_NO[id]} <b className={`font-black ${RARITY[rarity].mark}`}>{rarity}</b>
         </span>
       </div>
     </>
   );
 }
 
-export function CharacterCardFace({ id, ornament }: { id: CharacterId; ornament?: Ornament }) {
+/** rarity: print the card at another rarity than its own (the card demo previews every rarity). */
+export function CharacterCardFace({ id, ornament, rarity: printed }: { id: CharacterId; ornament?: Ornament; rarity?: Rarity }) {
+  const rarity = printed ?? CARD_RARITY[id];
   const t = useT();
   const art = ART[id];
   const element = CHARACTER_ELEMENT[id];
@@ -156,7 +159,7 @@ export function CharacterCardFace({ id, ornament }: { id: CharacterId; ornament?
   if (art) {
     return (
       <>
-        <CardFrame frame={theme.frame} rarity={CARD_RARITY[id]} ornament={ornament}>
+        <CardFrame frame={theme.frame} rarity={rarity} ornament={ornament}>
         <div className="relative h-full overflow-hidden rounded-[0.6%]">
           {/* eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo */}
           <img
@@ -167,23 +170,23 @@ export function CharacterCardFace({ id, ornament }: { id: CharacterId; ornament?
             style={frameFigure(art.figure)}
           />
           {/* Real art gets a light foil so the illustration stays readable. */}
-          {lookOf(id).foil > 0 && <Foil element={element} strength={0.12} />}
+          {RARITY[rarity].foil > 0 && <Foil element={element} strength={0.12} />}
           <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 via-black/25 to-transparent px-[3%] pb-[8%] pt-[5%]">
             <Header id={id} light />
           </div>
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-[1.5%] bg-gradient-to-b from-transparent via-amber-50/85 to-amber-50/95 px-[4%] pb-[3%] pt-[12%] text-stone-900">
-            <Body id={id} compact />
+            <Body id={id} compact rarity={rarity} />
           </div>
         </div>
         </CardFrame>
-        <RarityMark rarity={CARD_RARITY[id]} element={element} className="left-[1.5%] top-[0.8%]" />
+        <RarityMark rarity={rarity} element={element} className="left-[1.5%] top-[0.8%]" />
       </>
     );
   }
 
   return (
     <>
-      <CardFrame frame={theme.frame} rarity={CARD_RARITY[id]} ornament={ornament}>
+      <CardFrame frame={theme.frame} rarity={rarity} ornament={ornament}>
       <div className={`relative flex h-full flex-col gap-[2%] rounded-[0.6%] bg-gradient-to-b p-[3%] ${theme.panel}`}>
         <Header id={id} />
 
@@ -195,14 +198,14 @@ export function CharacterCardFace({ id, ornament }: { id: CharacterId; ornament?
             style={{ background: "repeating-conic-gradient(from 0deg at 50% 38%, rgb(255 255 255 / 0.35) 0deg 6deg, transparent 6deg 18deg)" }}
           />
           <div className="absolute inset-0 flex items-center justify-center text-[4.2em] drop-shadow-[0_6px_10px_rgb(0_0_0/0.5)]">{PORTRAIT[id]}</div>
-          {lookOf(id).foil > 0 && <Foil element={element} strength={0.8} />}
+          {RARITY[rarity].foil > 0 && <Foil element={element} strength={0.8} />}
         </div>
         <div className="-mt-[1%] text-center text-[0.55em] italic opacity-70">{t(`v3.card.${id}.flavor`)}</div>
 
-        <Body id={id} />
+        <Body id={id} rarity={rarity} />
       </div>
       </CardFrame>
-      <RarityMark rarity={CARD_RARITY[id]} element={element} className="left-[1.5%] top-[0.8%]" />
+      <RarityMark rarity={rarity} element={element} className="left-[1.5%] top-[0.8%]" />
     </>
   );
 }

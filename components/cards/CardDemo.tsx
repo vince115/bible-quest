@@ -5,17 +5,20 @@ import { useState } from "react";
 import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
 import type { CharacterId, EnemyId } from "@/game/v2/types";
 import { useT } from "@/game/locale";
-import type { Ornament } from "./CardFrame";
 import { CharacterCardFace } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
 import { HoloCard } from "./HoloCard";
-import { CARD_RARITY } from "./rarity";
+import { CARD_RARITY, type Rarity } from "./rarity";
+
+const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR"];
 
 const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
   { id: "david" },
   { id: "goliath", enemy: true },
   { id: "samuel" },
   { id: "jonathan" },
+  { id: "adam" },
+  { id: "eve" },
   { id: "bearer", enemy: true },
   { id: "archer", enemy: true },
 ];
@@ -23,7 +26,6 @@ const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
 export function CardDemo() {
   const t = useT();
   const [effects, setEffects] = useState(true);
-  const [ornament, setOrnament] = useState<Ornament>("dove");
   return (
     <main className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-5 bg-[radial-gradient(circle_at_50%_30%,#3b2f1a_0%,#1c1917_55%,#0c0a09_100%)] px-4 py-8">
       <div className="text-center">
@@ -39,22 +41,27 @@ export function CardDemo() {
               rarity={CARD_RARITY[id]}
               className="w-[280px] text-[13px] sm:w-[300px] sm:text-[14px]"
             >
-              {enemy ? <EnemyCardFace id={id as EnemyId} /> : <CharacterCardFace id={id as CharacterId} ornament={ornament} />}
+              {enemy ? <EnemyCardFace id={id as EnemyId} /> : <CharacterCardFace id={id as CharacterId} />}
             </HoloCard>
             <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[id]}</span>
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {(["dove", "lily"] as Ornament[]).map((o) => (
-          <button
-            key={o}
-            onClick={() => setOrnament(o)}
-            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${ornament === o ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-300"}`}
-          >
-            {t(`v3.demo.frame.${o}`)}
-          </button>
+      {/* Every rarity on one card, including R and UR which no card uses yet */}
+      <div className="text-center">
+        <h2 className="text-lg font-bold">{t("v3.demo.rarities")}</h2>
+      </div>
+      <div className="flex max-w-full snap-x snap-mandatory gap-6 overflow-x-auto px-2 py-4">
+        {RARITY_ORDER.map((r) => (
+          <div key={r} className="flex shrink-0 snap-center flex-col items-center gap-2">
+            <HoloCard element={CHARACTER_ELEMENT.david} effects={effects} rarity={r} className="w-[220px] text-[10.3px] sm:w-[240px] sm:text-[11.2px]">
+              <CharacterCardFace id="david" rarity={r} />
+            </HoloCard>
+            <span className="text-sm font-black tracking-widest text-amber-200">{r}</span>
+          </div>
         ))}
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => setEffects(!effects)}
           className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${effects ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-300"}`}

@@ -32,3 +32,13 @@ body {
     animation: none !important;
   }
 }
+
+/* The neon ornaments need mask-box-image; elsewhere the gold ornaments underneath show instead. */
+.bq-neon-ornament {
+  display: none;
+}
+@supports (-webkit-mask-box-image: none) {
+  .bq-neon-ornament {
+    display: block;
+  }
+}

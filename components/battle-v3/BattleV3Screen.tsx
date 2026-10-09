@@ -39,7 +39,7 @@ const ENERGY_RING: Record<EnergyKind, string> = {
   attack: "border-red-400 bg-red-600/25 text-red-100",
   guard: "border-emerald-400 bg-emerald-600/25 text-emerald-100",
 };
-const SUPPORT_AMOUNT: Partial<Record<SkillId, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield };
+const SUPPORT_AMOUNT: Partial<Record<SkillId, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield, keep: R.keepShield, mother: R.motherHeal, helper: 1 };
 
 /** Card widths: phones get narrow cards so a whole side fits in one row. Every card uses the TCG ratio 63:88. */
 const CARD_WIDTH = { large: "w-[5.5rem] sm:w-32", small: "w-[5.5rem] sm:w-32" };
@@ -429,6 +429,9 @@ function SkillFocus({
 }
 
 /** Before battle: bring 1–3 characters and choose who starts on the front line. */
+/** How many characters can go to battle. */
+const MAX_LINEUP = 3;
+
 function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], front: CharacterId) => void }) {
   const last = useBattleV3Store((st) => st.lastLineup);
   const unlocked = useAchievementStore((st) => st.unlocked);
@@ -436,7 +439,12 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
   const [front, setFront] = useState<CharacterId>(last.front);
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   const lead = chosen.includes(front) ? front : chosen[0];
-  const toggle = (id: CharacterId) => setLineup(lineup.includes(id) ? lineup.filter((x) => x !== id) : [...lineup, id]);
+  // At most three characters go to battle.
+  const full = chosen.length >= MAX_LINEUP;
+  const toggle = (id: CharacterId) => {
+    if (lineup.includes(id)) setLineup(lineup.filter((x) => x !== id));
+    else if (!full) setLineup([...lineup, id]);
+  };
 
   return (
     <div className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-3 bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 py-4 sm:gap-4 sm:py-6">
@@ -447,7 +455,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
       </div>
 
       {/* Full character cards; on phones the row scrolls sideways. */}
-      <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 pt-3 sm:gap-5 sm:overflow-visible">
+      <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 pt-3 sm:gap-4">
         {PARTY_ORDER.map((id) => {
           const on = chosen.includes(id);
           return (
@@ -455,7 +463,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
               <button
                 onClick={() => toggle(id)}
                 aria-pressed={on}
-                className={`relative w-[220px] text-left text-[10.3px] transition sm:w-[230px] sm:text-[10.8px] lg:w-[250px] lg:text-[11.7px] ${on ? "" : "opacity-45 grayscale"}`}
+                className={`relative w-[220px] text-left text-[10.3px] transition sm:w-[200px] sm:text-[9.35px] lg:w-[220px] lg:text-[10.3px] ${on ? "" : "opacity-45 grayscale"}`}
               >
                 <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false}>
                   <CharacterCardFace id={id} />
@@ -469,7 +477,8 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
               <div className="flex gap-1.5">
                 <button
                   onClick={() => toggle(id)}
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
+                  disabled={!on && full}
+                  className={`rounded-full px-3 py-1 text-xs font-bold disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
                 >
                   {on ? t("v3.lineup.in") : t("v3.lineup.out")}
                 </button>

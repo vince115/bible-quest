@@ -23,6 +23,10 @@ export const RULES_V2 = {
   healAmount: 50,
   ariseHp: 70,
   covShield: 30,
+  /** Adam's Keep the Garden: Shield on himself. */
+  keepShield: 50,
+  /** Eve's Mother of All Living: heals every ally. */
+  motherHeal: 30,
 
   /** Elements are reserved for multi-stage play: switched off, so damage is unaffected for now. */
   elements: {
@@ -47,17 +51,20 @@ export const ELEMENT_BEATS: Record<Element, Element[]> = {
 };
 
 /** Provisional assignments, to be decided with the designer before elements are switched on. */
-export const CHARACTER_ELEMENT: Record<CharacterId, Element> = { david: "light", samuel: "water", jonathan: "fire" };
+export const CHARACTER_ELEMENT: Record<CharacterId, Element> = { david: "light", samuel: "water", jonathan: "fire", adam: "wood", eve: "wood" };
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "dark", archer: "fire" };
 
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan"];
+/** Every playable character, in display order. */
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve"];
+/** Who fights when no line-up is chosen (the v2 battle). */
+export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
 export const ENEMY_ORDER: EnemyId[] = ["bearer", "goliath", "archer"];
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -67,12 +74,18 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   arise: { id: "arise", owner: "samuel", kind: "guard", cost: 2 },
   sword: { id: "sword", owner: "jonathan", kind: "attack", cost: 1, damage: 30 },
   covshield: { id: "covshield", owner: "jonathan", kind: "guard", cost: 1 },
+  till: { id: "till", owner: "adam", kind: "attack", cost: 1, damage: 30 },
+  keep: { id: "keep", owner: "adam", kind: "guard", cost: 1 },
+  mother: { id: "mother", owner: "eve", kind: "guard", cost: 2 },
+  helper: { id: "helper", owner: "eve", kind: "guard", cost: 1 },
 };
 
 export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   david: ["sling", "slingStone"],
   samuel: ["rebuke", "heal", "arise"],
   jonathan: ["sword", "covshield"],
+  adam: ["till", "keep"],
+  eve: ["mother", "helper"],
 };
 
 export const CARDS_V2: Record<CardId, CardDef> = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENEMY_HP, MAX_HP, PARTY_ORDER, RULES_V2 as R } from "./data";
+import { DEFAULT_LINEUP as PARTY_ORDER, ENEMY_HP, MAX_HP, RULES_V2 as R } from "./data";
 import {
   attackableEnemies,
   canAct,

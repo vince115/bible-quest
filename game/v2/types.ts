@@ -1,12 +1,12 @@
 // Bible Quest v2 battle model (energy-card version). Independent of the v1 engine in game/engine.ts.
 // Scripture cards are energy; characters act through skills paid with that energy.
 
-export type CharacterId = "david" | "samuel" | "jonathan";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
-export type SkillId = "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield";
+export type SkillId = "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper";
 
 export type CardId =
   // ✨ Faith
@@ -36,7 +36,8 @@ export type Element = "water" | "fire" | "wood" | "light" | "dark";
 export type EnemyId = "bearer" | "goliath" | "archer";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
-export type TargetKind = "none" | "ally" | "fallenAlly" | "enemy";
+/** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
+export type TargetKind = "none" | "ally" | "fallenAlly" | "actedAlly" | "enemy";
 
 export interface SkillDef {
   id: SkillId;
@@ -114,6 +115,10 @@ export interface BattleState {
   discard: CardInstance[];
   /** Arise can be used once per battle. */
   ariseUsed: boolean;
+  /** Eve's Helper can be used once per battle. */
+  helperUsed: boolean;
+  /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
+  lineup: CharacterId[];
   log: LogEntry[];
   seq: number;
   result: BattleResult;

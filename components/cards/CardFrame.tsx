@@ -6,10 +6,12 @@
 import type { ReactNode } from "react";
 import { RARITY, type Rarity } from "./rarity";
 
-export type Ornament = "dove" | "lily";
+export type Ornament = "dove" | "lily" | "ur";
 
 /** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. */
 const SLICE = 34;
+/** UR: all seven neon colours across the card at once; the hues then keep cycling (bq-prism). */
+const NEON = "linear-gradient(125deg, #ff2fd0 0%, #ff8a00 16%, #ffe600 32%, #2dff6a 48%, #00e5ff 64%, #6a5cff 80%, #ff2fd0 100%)";
 /**
  * Face inset (padding, % of the card width), just inside the ornament's inner gold line (7.8% of the image).
  * cqw below is measured inside this padding, so it is scaled back to card widths.
@@ -101,7 +103,7 @@ export function CardFrame({
         <div
           aria-hidden
           className="bq-animated pointer-events-none absolute inset-0 mix-blend-color"
-          style={{ backgroundImage: "conic-gradient(from 0deg, #f87171, #facc15, #4ade80, #38bdf8, #a78bfa, #f472b6, #f87171)", animation: "bq-prism 6s linear infinite" }}
+          style={{ backgroundImage: NEON, animation: "bq-prism 4s linear infinite" }}
         />
       )}
       {/* SSR+: a gold sheen that keeps running along the frame */}
@@ -132,12 +134,28 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
+            opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
             borderWidth: cardW(look.ornamentSize),
-            borderImage: `url(/cards/frame-${art}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
+            // The lily frame comes in gold, silver and bronze; the dove frame only in gold.
+            borderImage: `url(/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
           }}
         />
+      )}
+      {/* UR: the same ornaments painted in flowing neon rainbow colours (the ornament image is used as a mask;
+          browsers without mask-box-image keep the gold ornaments underneath) */}
+      {art && look.prism && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 [filter:drop-shadow(0_0_1px_rgb(255_255_255/0.7))_drop-shadow(0_0_3px_rgb(190_120_255/0.6))]">
+          <div
+            className="bq-animated bq-neon-ornament absolute inset-0"
+            style={{
+              backgroundImage: NEON,
+              animation: "bq-prism 4s linear infinite",
+              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
+            }}
+          />
+        </div>
       )}
     </div>
   );

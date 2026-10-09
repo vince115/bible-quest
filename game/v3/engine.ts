@@ -48,10 +48,7 @@ export const needsFront = (b: Board) => b.battle.result === "ongoing" && !isAliv
 export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random): Board {
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   if (!chosen.length) throw new Error("line-up needs at least one character");
-  const battle = createBattle(rng);
-  for (const id of PARTY_ORDER) {
-    if (!chosen.includes(id)) battle.party[id].hp = 0;
-  }
+  const battle = createBattle(rng, chosen);
   if (chosen.length === 1) {
     battle.enemies.bearer.hp = 0;
     battle.enemies.archer.hp = 0;
