@@ -11,7 +11,9 @@ import { EnemyCardFace } from "./EnemyCardFace";
 import { HoloCard } from "./HoloCard";
 import { CARD_RARITY, type Rarity } from "./rarity";
 
-const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR"];
+/** Rarity filter tabs, highest first; the choice is remembered in this browser. */
+const RARITY_TABS: Rarity[] = ["UR", "SSR", "SR", "R", "N"];
+const FILTER_KEY = "bq-card-demo-rarity";
 
 const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
   { id: "david" },
@@ -102,6 +104,18 @@ export function CardDemo() {
   const t = useT();
   const [effects, setEffects] = useState(true);
   const [viewing, setViewing] = useState<Viewed | null>(null);
+  const [filter, setFilter] = useState<Rarity | "all">("all");
+  // Restored after mount (the server always renders "all"), so hydration stays in step.
+  useEffect(() => {
+    const saved = safeStorage.getItem(FILTER_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
+    if (saved && (RARITY_TABS as string[]).includes(saved)) setFilter(saved as Rarity);
+  }, []);
+  const choose = (f: Rarity | "all") => {
+    setFilter(f);
+    safeStorage.setItem(FILTER_KEY, f);
+  };
+  const shown = filter === "all" ? CARDS : CARDS.filter((c) => CARD_RARITY[c.id] === filter);
   // Read once on the client; the scale only shows in the viewer, which never renders on the server.
   const [scale, setScale] = useState(() => (typeof window === "undefined" ? 1 : Number(safeStorage.getItem(SCALE_KEY)) || SCALE_DEFAULT));
 
@@ -125,8 +139,24 @@ export function CardDemo() {
         <h1 className="text-xl font-bold">{t("v3.demo.title")}</h1>
         <p className="mt-1 text-sm text-stone-400">{t("v3.demo.hint")}</p>
       </div>
+      <div role="tablist" aria-label={t("v3.demo.filter")} className="flex flex-wrap justify-center gap-2">
+        {(["all", ...RARITY_TABS] as const).map((f) => {
+          const count = f === "all" ? CARDS.length : CARDS.filter((c) => CARD_RARITY[c.id] === f).length;
+          return (
+            <button
+              key={f}
+              role="tab"
+              aria-selected={filter === f}
+              onClick={() => choose(f)}
+              className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${filter === f ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+            >
+              {f === "all" ? t("v3.demo.all") : f} <span className="opacity-60">{count}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-        {CARDS.map((card) => (
+        {shown.map((card) => (
           <div key={card.id} className="flex flex-col items-center gap-2">
             <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
               <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} className="w-[220px] text-[10.3px]">
@@ -134,22 +164,6 @@ export function CardDemo() {
               </HoloCard>
             </button>
             <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[card.id]}</span>
-          </div>
-        ))}
-      </div>
-      {/* Every rarity on one card, including R and UR which no card uses yet */}
-      <div className="text-center">
-        <h2 className="text-lg font-bold">{t("v3.demo.rarities")}</h2>
-      </div>
-      <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-        {RARITY_ORDER.map((r) => (
-          <div key={r} className="flex flex-col items-center gap-2">
-            <button type="button" onClick={() => setViewing({ id: "david", rarity: r })} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
-              <HoloCard element={CHARACTER_ELEMENT.david} effects={effects} rarity={r} className="w-[220px] text-[10.3px]">
-                <CharacterCardFace id="david" rarity={r} />
-              </HoloCard>
-            </button>
-            <span className="text-sm font-black tracking-widest text-amber-200">{r}</span>
           </div>
         ))}
       </div>

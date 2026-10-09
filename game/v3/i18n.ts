@@ -335,7 +335,8 @@ export const enV3 = {
   "v3.demo.reset": "Reset",
   "v3.demo.effectsOn": "✨ Effects on",
   "v3.demo.effectsOff": "Effects off",
-  "v3.demo.rarities": "Every rarity (on David)",
+  "v3.demo.all": "All",
+  "v3.demo.filter": "Filter by rarity",
   "v3.demo.frame.dove": "Frame: dove & wheat",
   "v3.demo.frame.lily": "Frame: lily",
 };
@@ -677,7 +678,8 @@ export const zhV3: Record<V3Key, string> = {
   "v3.demo.reset": "重設",
   "v3.demo.effectsOn": "✨ 效果開啟",
   "v3.demo.effectsOff": "效果關閉",
-  "v3.demo.rarities": "各等級預覽（以大衛為例）",
+  "v3.demo.all": "全部",
+  "v3.demo.filter": "依稀有度篩選",
   "v3.demo.frame.dove": "邊框：鴿子與麥穗",
   "v3.demo.frame.lily": "邊框：百合",
 };
