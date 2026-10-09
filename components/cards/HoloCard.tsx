@@ -6,6 +6,7 @@
 import { motion, useMotionTemplate, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import type { PointerEvent, ReactNode } from "react";
 import type { Element } from "@/game/v2/types";
+import { RARITY, type Rarity } from "./rarity";
 
 const SPRING = { stiffness: 180, damping: 18, mass: 0.6 };
 /** Maximum tilt in degrees at the card's edge. */
@@ -16,7 +17,7 @@ export const ELEMENT_FOIL: Record<Element, string> = {
   // ☀️ light: golden rays from the pointer over a rainbow sheen
   light: `repeating-conic-gradient(from 0deg at var(--px) var(--py), rgb(255 240 180 / 0) 0deg, rgb(255 236 160 / 0.6) 3deg, rgb(255 240 180 / 0) 8deg),
     linear-gradient(115deg, hsl(0 90% 70%), hsl(45 100% 70%), hsl(110 80% 70%), hsl(190 90% 70%), hsl(270 80% 72%), hsl(330 90% 70%), hsl(0 90% 70%))`,
-  // 🌑 dark: violet star field
+  // 🌙 dark: violet star field
   dark: `radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.8) 0 1px, transparent 2px),
     radial-gradient(circle at 70% 60%, rgb(255 255 255 / 0.7) 0 1px, transparent 2px),
     radial-gradient(circle at 40% 80%, rgb(255 255 255 / 0.6) 0 1px, transparent 2px),
@@ -60,6 +61,7 @@ export function HoloCard({
   effects = true,
   foil = 0.25,
   touchTilt = true,
+  rarity,
 }: {
   element: Element;
   children: ReactNode;
@@ -67,14 +69,20 @@ export function HoloCard({
   effects?: boolean;
   foil?: number;
   touchTilt?: boolean;
+  /** When given, the rarity decides the foil, the glare and how far the card tilts. */
+  rarity?: Rarity;
 }) {
+  const look = rarity ? RARITY[rarity] : null;
+  const foilStrength = look ? look.foil : foil;
+  const maxTilt = look ? look.tilt : TILT;
+  const glare = look ? look.glare : true;
   const reduce = useReducedMotion();
   const px = useSpring(50, SPRING);
   const py = useSpring(50, SPRING);
   const o = useSpring(0, SPRING);
   const tilt = effects && !reduce;
-  const rotateY = useTransform(px, (v) => (tilt ? ((v - 50) / 50) * TILT : 0));
-  const rotateX = useTransform(py, (v) => (tilt ? ((50 - v) / 50) * TILT : 0));
+  const rotateY = useTransform(px, (v) => (tilt ? ((v - 50) / 50) * maxTilt : 0));
+  const rotateX = useTransform(py, (v) => (tilt ? ((50 - v) / 50) * maxTilt : 0));
   // The foil drifts against the pointer, so its colours shift as the card turns.
   const bgx = useTransform(px, (v) => `${100 - v}%`);
   const bgy = useTransform(py, (v) => `${100 - v}%`);
@@ -113,8 +121,8 @@ export function HoloCard({
         className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)] [transform-style:preserve-3d]`}
       >
         {children}
-        {effects && <Foil element={element} strength={foil} />}
-        {effects && (
+        {effects && foilStrength > 0 && <Foil element={element} strength={foilStrength} />}
+        {effects && glare && (
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 mix-blend-overlay"

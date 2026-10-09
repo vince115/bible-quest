@@ -9,3 +9,26 @@ body {
   background: radial-gradient(ellipse at top, #292017 0%, #0c0a09 60%);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Card rarity effects: a gold sheen running along SSR+ frames, and the colour cycle of UR prism frames. */
+@keyframes bq-sheen {
+  from {
+    background-position: 160% 0;
+  }
+  to {
+    background-position: -60% 0;
+  }
+}
+@keyframes bq-prism {
+  from {
+    filter: hue-rotate(0deg);
+  }
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bq-animated {
+    animation: none !important;
+  }
+}

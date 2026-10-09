@@ -4,6 +4,7 @@
 // (game/v3/engine.ts): pick 1–3 characters, the front line takes the single-target hits, one free swap per turn.
 // Each side is one row (bench · front line · bench); on phones the selected character's skills move
 // into an action bar, so the whole board fits on one screen.
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -19,12 +20,14 @@ import {
 } from "@/game/v2/data";
 import { canAct, elementMultiplier, enemyAlive, enemyDamage, isAlive, payment, skillDamage, type Target } from "@/game/v2/engine";
 import { PARTY_ORDER } from "@/game/v2/data";
-import type { BattleState, CharacterId, Element, EnemyId, EnergyKind, Intent, SkillId } from "@/game/v2/types";
+import type { BattleState, CharacterId, EnemyId, EnergyKind, Intent, SkillId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
 import { useT } from "@/game/locale";
-import { CharacterCardFace, hasArt } from "@/components/cards/CharacterCardFace";
+import { CharacterCardFace } from "@/components/cards/CharacterCardFace";
+import { CARD_RARITY, lookOf } from "@/components/cards/rarity";
+import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 
 type T = ReturnType<typeof useT>;
@@ -36,48 +39,14 @@ const ENERGY_RING: Record<EnergyKind, string> = {
   attack: "border-red-400 bg-red-600/25 text-red-100",
   guard: "border-emerald-400 bg-emerald-600/25 text-emerald-100",
 };
-const ELEMENT_ICON: Record<Element, string> = { water: "💧", fire: "🔥", wood: "🌿", light: "☀️", dark: "🌑" };
-/** Card frame and art colours by element. */
-const ELEMENT_FRAME: Record<Element, string> = {
-  water: "border-sky-300 from-sky-900 via-sky-950 to-stone-950",
-  fire: "border-orange-300 from-orange-900 via-red-950 to-stone-950",
-  wood: "border-emerald-300 from-emerald-900 via-emerald-950 to-stone-950",
-  light: "border-yellow-200 from-yellow-700 via-amber-900 to-stone-950",
-  dark: "border-violet-300 from-violet-900 via-stone-950 to-black",
-};
-const PORTRAIT: Record<CharacterId | EnemyId, string> = {
-  david: "🪨",
-  samuel: "📜",
-  jonathan: "🤝",
-  goliath: "🗿",
-  bearer: "🛡️",
-  archer: "🏹",
-};
 const SUPPORT_AMOUNT: Partial<Record<SkillId, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield };
 
 /** Card widths: phones get narrow cards so a whole side fits in one row. Every card uses the TCG ratio 63:88. */
-const CARD_WIDTH = { large: "w-24 sm:w-36", small: "w-20 sm:w-28" };
-/** Our characters are shown as their printed cards. */
-const CHAR_WIDTH = { large: "w-28 sm:w-40", small: "w-[5.5rem] sm:w-32" };
+const CARD_WIDTH = { large: "w-[5.5rem] sm:w-32", small: "w-[5.5rem] sm:w-32" };
+/** Every card on the table is the same size; only the selected card is shown enlarged. */
+const CHAR_WIDTH = CARD_WIDTH;
 const CARD_RATIO = "aspect-[63/88]";
 
-/** HP bar: green only at full HP, yellow above 50%, orange from 20% to 50%, red at 20% or less; Shield as a translucent layer. */
-function HpBar({ value, max, shield = 0 }: { value: number; max: number; shield?: number }) {
-  const pct = Math.max(0, (value / max) * 100);
-  const shieldPct = Math.min(100, (shield / max) * 100);
-  const color = pct >= 100 ? "bg-emerald-500" : pct > 50 ? "bg-yellow-400" : pct > 20 ? "bg-orange-500" : "bg-red-600";
-  return (
-    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-black/50 sm:h-2">
-      <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
-      {shield > 0 && (
-        <div
-          className="absolute inset-y-0 rounded-full border border-sky-200/80 bg-sky-300/45 shadow-[0_0_8px] shadow-sky-300/70 transition-all duration-500"
-          style={{ left: `${Math.max(0, pct - shieldPct)}%`, width: `${shieldPct}%` }}
-        />
-      )}
-    </div>
-  );
-}
 
 /** What an enemy action does, as a short tag: damage against the current front line, or the effect. */
 function actionTag(t: T, action: Intent["action"], front: CharacterId): string {
@@ -107,23 +76,11 @@ function IntentRow({ label, intent, front, t, dim }: { label: string; intent: In
   return <AttackRow label={label} name={name} tag={actionTag(t, intent.action, front)} dim={dim} />;
 }
 
-/** Name on its own line (narrow TCG-ratio cards), HP below it on the right. */
-function CardHeader({ name, element, hp, shield, size }: { name: string; element: Element; hp: number; shield?: number; size: "large" | "small" }) {
-  return (
-    <div className="flex flex-col leading-none">
-      <span className={`truncate font-bold ${size === "large" ? "text-[11px] sm:text-sm" : "text-[10px] sm:text-xs"}`}>
-        {ELEMENT_ICON[element]} {name}
-      </span>
-      <span className={`self-end font-black ${size === "large" ? "text-sm sm:text-xl" : "text-xs sm:text-base"}`}>
-        <span className="mr-0.5 text-[8px] font-bold sm:text-[10px]">HP</span>
-        {hp}
-        {!!shield && <span className="ml-0.5 text-[9px] font-bold text-sky-200 sm:text-xs">🛡️{shield}</span>}
-      </span>
-    </div>
-  );
-}
 
-/** Enemy card: "large" for the front line (Goliath), "small" for the bench. */
+/**
+ * An enemy: its printed card (same style as ours) with the HP badge on the corner and status chips on the other;
+ * what it will do next is shown under the card. While it is a valid target the whole card is the button.
+ */
 function EnemyCard({
   b,
   front,
@@ -133,6 +90,7 @@ function EnemyCard({
   className = "",
   pending,
   onTarget,
+  onView,
 }: {
   b: BattleState;
   front: CharacterId;
@@ -142,6 +100,7 @@ function EnemyCard({
   className?: string;
   pending: Pending | null;
   onTarget: () => void;
+  onView: () => void;
 }) {
   const hp = b.enemies[id].hp;
   const alive = hp > 0;
@@ -149,64 +108,67 @@ function EnemyCard({
   const isTarget = !!pending?.targets.includes(id);
   const owner = pending ? SKILLS[pending.skill].owner : null;
   const mult = owner ? elementMultiplier(CHARACTER_ELEMENT[owner], ENEMY_ELEMENT[id]) : 1;
+  const chips = [
+    id === "goliath" && g.enraged && { text: t("v2.ui.enraged"), tone: "bg-red-700" },
+    id === "goliath" && g.stunned && { text: t("v2.ui.stunned"), tone: "bg-sky-600" },
+    id === "goliath" && g.charging && { text: t("v2.ui.charging"), tone: "bg-orange-600" },
+    id === "goliath" && enemyAlive(b, "bearer") && { text: "🛡", title: t("v2.ui.protected"), tone: "bg-amber-700" },
+  ].filter(Boolean) as { text: string; title?: string; tone: string }[];
   return (
-    <div
-      onClick={
-        isTarget
-          ? (e) => {
-              e.stopPropagation();
-              onTarget();
-            }
-          : undefined
-      }
-      className={`relative flex shrink-0 flex-col gap-1 overflow-hidden rounded-md border-[3px] ${isTarget ? "cursor-pointer" : ""} bg-gradient-to-b p-1.5 shadow-2xl transition sm:gap-1.5 sm:border-4 sm:p-2 ${CARD_RATIO} ${
-        ELEMENT_FRAME[ENEMY_ELEMENT[id]]
-      } ${CARD_WIDTH[size]} ${!alive ? "opacity-40 grayscale" : ""} ${isTarget ? "ring-4 ring-amber-300" : ""} ${className}`}
-    >
-      <CardHeader name={t(`v2.enemy.${id}.name`)} element={ENEMY_ELEMENT[id]} hp={hp} size={size} />
-      <HpBar value={hp} max={ENEMY_HP[id]} />
-      <div className={`flex min-h-0 flex-1 items-center justify-center rounded bg-black/30 ${size === "large" ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"}`}>
-        {PORTRAIT[id]}
-      </div>
-      <div className="flex flex-wrap gap-1 empty:hidden">
-        {id === "goliath" && g.enraged && <span className="rounded bg-red-700 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.enraged")}</span>}
-        {id === "goliath" && g.stunned && <span className="rounded bg-sky-600 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.stunned")}</span>}
-        {id === "goliath" && g.charging && <span className="rounded bg-orange-600 px-1 text-[9px] font-bold sm:text-[10px]">{t("v2.ui.charging")}</span>}
-        {id === "goliath" && enemyAlive(b, "bearer") && (
-          <span title={t("v2.ui.protected")} className="rounded bg-amber-700/80 px-1 text-[9px] font-bold sm:text-[10px]">
-            {/* Phones: the shield icon only, so the portrait keeps its room */}
-            <span className="sm:hidden">🛡</span>
-            <span className="hidden sm:inline">{t("v2.ui.protected")}</span>
+    <div className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isTarget) onTarget();
+          else if (!pending) onView();
+        }}
+        aria-label={t(`v2.enemy.${id}.name`)}
+        className={`relative w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
+          isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
+        }`}
+      >
+        <span className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "opacity-50 grayscale" : ""}`} style={{ fontSize: "4.67cqw" }}>
+          <EnemyCardFace id={id} />
+        </span>
+        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-sm font-black text-stone-100 drop-shadow">{t("v2.enemy.fallen")}</span>}
+        <span className="absolute -right-2 -top-4 z-20">
+          <HpBadge hp={hp} max={ENEMY_HP[id]} />
+        </span>
+        {alive && chips.length > 0 && (
+          <span className="absolute -left-2 -top-3 z-20 flex flex-wrap gap-0.5 text-[9px] font-bold text-white sm:text-[10px]">
+            {chips.map((c) => (
+              <span key={c.text} title={c.title} className={`rounded-full px-1.5 py-0.5 shadow ${c.tone}`}>
+                {c.text}
+              </span>
+            ))}
           </span>
         )}
-        {!alive && <span className="rounded bg-stone-700 px-1 text-[9px] sm:text-[10px]">{t("v2.enemy.fallen")}</span>}
-      </div>
-      {alive && id === "goliath" && (
-        <div className="grid gap-1">
-          {g.stunned ? (
-            <div className="rounded-md bg-black/40 px-2 py-1 text-[11px] font-semibold text-sky-200 sm:text-xs">{t("v2.ui.intentStunned")}</div>
-          ) : (
-            <IntentRow label={t("v3.ui.nextAction")} intent={b.intents[0]} front={front} t={t} />
+        {isTarget && pending && (
+          <span className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-md bg-amber-400 py-1 text-center text-xs font-black text-stone-950 shadow-lg sm:text-sm">
+            🎯 {skillDamage(b, pending.skill, id)}
+            {mult !== 1 && ` ×${mult}`}
+          </span>
+        )}
+      </button>
+
+      {/* What this enemy will do */}
+      {alive && (
+        <div className="grid w-full gap-1">
+          {id === "goliath" &&
+            (g.stunned ? (
+              <div className="rounded-md bg-black/50 px-2 py-1 text-[11px] font-semibold text-sky-200 sm:text-xs">{t("v2.ui.intentStunned")}</div>
+            ) : (
+              <IntentRow label={t("v3.ui.nextAction")} intent={b.intents[0]} front={front} t={t} />
+            ))}
+          {id === "goliath" && (
+            <div className="hidden sm:block">
+              <IntentRow label={t("v3.ui.then")} intent={b.intents[1]} front={front} t={t} dim />
+            </div>
           )}
-          <div className="hidden sm:block">
-            <IntentRow label={t("v3.ui.then")} intent={b.intents[1]} front={front} t={t} dim />
-          </div>
+          {id === "archer" && b.archerTarget && (
+            <AttackRow name={`${t("v3.action.arrow")} → ${t("v3.ui.front")}`} tag={String(enemyDamage("archer", front, R.archerDamage))} />
+          )}
         </div>
-      )}
-      {alive && id === "archer" && b.archerTarget && (
-        <AttackRow name={`${t("v3.action.arrow")} → ${t("v3.ui.front")}`} tag={String(enemyDamage("archer", front, R.archerDamage))} />
-      )}
-      {alive && id === "bearer" && (
-        <div className="rounded-md bg-black/40 px-1.5 py-1 text-[9px] leading-tight text-amber-100 sm:text-[11px]">{t("v3.ui.protects")}</div>
-      )}
-      {isTarget && pending && (
-        <button
-          onClick={onTarget}
-          className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-amber-400 py-1 text-xs font-black text-stone-950 shadow-lg hover:bg-amber-300 sm:inset-x-2 sm:bottom-2 sm:py-1.5 sm:text-sm"
-        >
-          🎯 {skillDamage(b, pending.skill, id)}
-          {mult !== 1 && ` ×${mult}`}
-        </button>
       )}
     </div>
   );
@@ -235,7 +197,7 @@ function HpBadge({ hp, max, shield = 0, big }: { hp: number; max: number; shield
 }
 
 /**
- * One of our characters: the printed card (untouched), the front-line label above it, the HP badge on its corner and
+ * One of our characters: the printed card (untouched), the front-line label under it, the HP badge on its corner and
  * status chips on the other. Clicking it opens the skill view, picks it as a target, or promotes it to the front line.
  */
 function CharacterSlot({
@@ -261,9 +223,6 @@ function CharacterSlot({
   const alive = isAlive(b, id);
   return (
     <div className={`relative flex shrink-0 flex-col items-center gap-2 ${CHAR_WIDTH[size]} ${className}`}>
-      <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
-        {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
-      </div>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -294,6 +253,55 @@ function CharacterSlot({
           </span>
         )}
       </button>
+      {/* Front-line tag under the card */}
+      <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
+        {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** How long a skill's effect plays on the close-up card before it resolves (ms). */
+const CAST_FX_MS = 550;
+const BURST: Record<EnergyKind, string> = {
+  faith: "rgb(253 224 71 / 0.95)",
+  attack: "rgb(248 113 113 / 0.95)",
+  guard: "rgb(110 231 183 / 0.95)",
+};
+
+/** A band of light that sweeps once across the card as it comes up close. */
+function CardShine() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-xs">
+      <motion.div
+        initial={{ x: "-120%" }}
+        animate={{ x: "120%" }}
+        transition={{ duration: 0.9, delay: 0.25, ease: "easeInOut" }}
+        className="absolute inset-y-0 w-2/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent mix-blend-overlay"
+      />
+    </div>
+  );
+}
+
+/** The cast effect: a burst of the skill's energy colour from the card, with the skill name. */
+function CastBurst({ kind, label }: { kind: EnergyKind; label: string }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center">
+      <motion.div
+        initial={{ scale: 0.2, opacity: 1 }}
+        animate={{ scale: 2.2, opacity: 0 }}
+        transition={{ duration: CAST_FX_MS / 1000, ease: "easeOut" }}
+        className="absolute aspect-square w-full rounded-full"
+        style={{ background: `radial-gradient(circle, ${BURST[kind]} 0%, transparent 65%)` }}
+      />
+      <motion.span
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: [0.6, 1.25, 1], opacity: [0, 1, 1] }}
+        transition={{ duration: 0.35 }}
+        className="relative text-[2em] font-black text-white [-webkit-text-stroke:2px_rgb(0_0_0/0.7)] [paint-order:stroke_fill] drop-shadow-lg"
+      >
+        {label}
+      </motion.span>
     </div>
   );
 }
@@ -322,6 +330,12 @@ function SkillFocus({
   const b = board.battle;
   const c = b.party[id];
   const alive = isAlive(b, id);
+  /** The skill being cast: its effect plays on the card before the skill resolves. */
+  const [casting, setCasting] = useState<SkillId | null>(null);
+  const cast = (skill: SkillId) => {
+    setCasting(skill);
+    setTimeout(() => onSkill(skill), CAST_FX_MS);
+  };
   const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
   return (
     <div
@@ -331,7 +345,11 @@ function SkillFocus({
       }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
     >
-      <div
+      {/* The card rises from the table to a close-up */}
+      <motion.div
+        initial={{ scale: 0.55, y: 60, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
         className="relative [--w:min(300px,68vw,calc((100dvh-9rem)*63/88))]"
         style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
@@ -348,12 +366,16 @@ function SkillFocus({
           <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} big />
         </div>
 
-        <HoloCard element={CHARACTER_ELEMENT[id]} foil={hasArt(id) ? 0.08 : 0.25} touchTilt={false}>
-          <CharacterCardFace id={id} />
-        </HoloCard>
+        <div className="relative">
+          <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]}>
+            <CharacterCardFace id={id} />
+          </HoloCard>
+          {lookOf(id).shine && <CardShine />}
+          {casting && <CastBurst kind={SKILLS[casting].kind} label={t(`v2.skill.${casting}.name`)} />}
+        </div>
 
-        {/* Skill bars over the printed skill rows, wider than the card */}
-        <div className="absolute left-1/2 top-[56%] z-20 flex w-[118%] -translate-x-1/2 flex-col gap-2">
+        {/* Skill bars: compact and off to the right, so most of the card stays in view */}
+        <div className="absolute -right-[16%] top-[60%] z-20 flex w-[78%] flex-col gap-1.5">
           {CHARACTER_SKILLS[id].map((skill) => {
             const def = SKILLS[skill];
             const reason = boardBlockReason(board, skill);
@@ -365,19 +387,19 @@ function SkillFocus({
             return (
               <button
                 key={skill}
-                onClick={() => onSkill(skill)}
-                disabled={!ready}
+                onClick={() => cast(skill)}
+                disabled={!ready || !!casting}
                 title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
-                className="group flex items-center gap-3 rounded-xl border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-3 py-2 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 enabled:hover:from-white disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
+                className="group flex items-center gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2 py-1 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-x-1 enabled:hover:from-white disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
               >
-                <span className="w-14 shrink-0 text-sm tracking-tighter">{cost}</span>
-                <span className="flex-1">
-                  <span className="block text-base font-black">{t(`v2.skill.${skill}.name`)}</span>
-                  {reason && reason !== "v2.reason.over" && <span className="block text-[10px] font-semibold text-red-700">{t(reason)}</span>}
+                <span className="w-11 shrink-0 text-xs tracking-tighter">{cost}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-black">{t(`v2.skill.${skill}.name`)}</span>
+                  {reason && reason !== "v2.reason.over" && <span className="block truncate text-[9px] font-semibold text-red-700">{t(reason)}</span>}
                 </span>
-                <span className="text-2xl font-black">
+                <span className="text-xl font-black">
                   {def.damage ? amount : `+${amount}`}
-                  {boosted && <span className="ml-0.5 text-base text-amber-500">▲</span>}
+                  {boosted && <span className="ml-0.5 text-sm text-amber-500">▲</span>}
                 </span>
               </button>
             );
@@ -386,10 +408,10 @@ function SkillFocus({
             <button
               onClick={onSwap}
               disabled={locked || !canSwap(board, id)}
-              className="ml-auto flex w-3/4 items-center justify-between gap-3 rounded-xl border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-3 py-1.5 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
+              className="flex items-center justify-between gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2 py-1 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-x-1 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
             >
-              <span className="text-xs font-bold text-slate-600">{board.swapped && !needsFront(board) ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
-              <span className="text-base font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
+              <span className="text-[10px] font-bold text-slate-600">{board.swapped && !needsFront(board) ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
+              <span className="text-sm font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
             </button>
           )}
         </div>
@@ -401,7 +423,7 @@ function SkillFocus({
         >
           ✕
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -435,7 +457,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
                 aria-pressed={on}
                 className={`relative w-[220px] text-left text-[10.3px] transition sm:w-[230px] sm:text-[10.8px] lg:w-[250px] lg:text-[11.7px] ${on ? "" : "opacity-45 grayscale"}`}
               >
-                <HoloCard element={CHARACTER_ELEMENT[id]} foil={hasArt(id) ? 0.08 : 0.25} touchTilt={false}>
+                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false}>
                   <CharacterCardFace id={id} />
                 </HoloCard>
                 {on && lead === id && (
@@ -502,6 +524,8 @@ export function BattleV3Screen() {
   const [preview, setPreview] = useState<number | null>(null);
   /** Character whose full card is shown enlarged. */
   const [viewing, setViewing] = useState<CharacterId | null>(null);
+  /** Enemy whose card is shown enlarged. */
+  const [viewingEnemy, setViewingEnemy] = useState<EnemyId | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [showResult, setShowResult] = useState(true);
   const logRef = useRef<HTMLDivElement>(null);
@@ -516,6 +540,7 @@ export function BattleV3Screen() {
     const close = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setViewing(null);
+      setViewingEnemy(null);
       setActing(null);
       setPending(null);
     };
@@ -530,7 +555,7 @@ export function BattleV3Screen() {
 
   const locked = resolving || auto || b.result !== "ongoing";
   const promote = needsFront(board);
-  const open = acting && board.lineup.includes(acting) && !locked && !pending ? acting : null;
+  const open = acting && board.lineup.includes(acting) && !pending ? acting : null;
   const onSkill = (skill: SkillId) => {
     setActing(null);
     const targets = boardSkillTargets(board, skill);
@@ -579,14 +604,14 @@ export function BattleV3Screen() {
       <main className="flex min-w-0 flex-1 flex-col">
         <div className="px-3 pt-2 text-[10px] uppercase tracking-widest text-stone-300/70 sm:px-4 sm:text-[11px]">{t("v3.ui.title")}</div>
 
-        <section className="flex flex-1 items-center justify-center px-2 pt-1 sm:px-4">
+        <section className="flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
           <div className="flex items-start justify-center gap-2 sm:gap-5">
             {/* In a duel the shield bearer and the archer stand aside. */}
             <div className={isDuel(board) ? "hidden" : "contents"}>
-              <EnemyCard b={b} front={board.front} id="archer" t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget("archer")} />
-              <EnemyCard b={b} front={board.front} id="bearer" t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget("bearer")} />
+              <EnemyCard b={b} front={board.front} id="archer" t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget("archer")} onView={() => setViewingEnemy("archer")} />
+              <EnemyCard b={b} front={board.front} id="bearer" t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget("bearer")} onView={() => setViewingEnemy("bearer")} />
             </div>
-            <EnemyCard b={b} front={board.front} id="goliath" t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget("goliath")} />
+            <EnemyCard b={b} front={board.front} id="goliath" t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget("goliath")} onView={() => setViewingEnemy("goliath")} />
           </div>
         </section>
 
@@ -614,15 +639,8 @@ export function BattleV3Screen() {
           )}
         </div>
 
-        <section className="flex flex-1 items-center justify-center px-2 sm:px-4">
-          <div className="flex items-start justify-center gap-2 sm:gap-5">
-            {slot(board.front, "large", "order-2")}
-            {bench.map((id, i) => slot(id, "small", i === 0 ? "order-1" : "order-3"))}
-          </div>
-        </section>
-
-        {/* Hand: Scripture cards fanned along the bottom edge */}
-        <section className="flex justify-center px-2 pb-2 pt-3 sm:pb-3">
+        {/* Hand: Scripture cards fanned above our characters */}
+        <section className="flex justify-center px-2 pb-2 pt-1 sm:pb-3">
           {hand.map((inst, i) => {
             const kind = CARDS_V2[inst.card].energy;
             const tilt = (i - (hand.length - 1) / 2) * 5;
@@ -649,6 +667,14 @@ export function BattleV3Screen() {
             );
           })}
         </section>
+        <section className="flex flex-1 items-center justify-center px-2 sm:px-4">
+          <div className="flex items-start justify-center gap-2 sm:gap-5">
+            {/* The front line stands forward; the bench stands back. */}
+            {slot(board.front, "large", "order-2 z-10 -translate-y-4")}
+            {bench.map((id, i) => slot(id, "small", `${i === 0 ? "order-1" : "order-3"} brightness-90`))}
+          </div>
+        </section>
+
       </main>
 
       {/* ---------- Controls: side rail on desktop, bottom bar on phones ---------- */}
@@ -724,11 +750,11 @@ export function BattleV3Screen() {
         />
       )}
 
-      {/* Hand card preview, above the hand */}
+      {/* Hand card preview, over the enemy row (the hand sits mid-screen) */}
       {previewed && !locked && !pending && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`fixed bottom-36 left-1/2 z-40 w-40 -translate-x-1/2 sm:bottom-40 sm:w-48 ${canHover ? "pointer-events-none" : ""}`}
+          className={`fixed left-1/2 top-[4%] z-40 w-36 -translate-x-1/2 sm:top-[8%] sm:w-48 ${canHover ? "pointer-events-none" : ""}`}
         >
           <div className={`flex ${CARD_RATIO} flex-col items-center justify-between rounded-xl border-4 bg-stone-900 p-3 text-center shadow-2xl ${ENERGY_RING[CARDS_V2[previewed.card].energy]}`}>
             <span className="text-[11px] font-semibold text-stone-300">{t(`v2.card.${previewed.card}.ref`)}</span>
@@ -766,11 +792,42 @@ export function BattleV3Screen() {
             className="[--w:min(340px,82vw,calc((100dvh-5rem)*63/88))]"
             style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
           >
-            <HoloCard element={CHARACTER_ELEMENT[viewing]} foil={hasArt(viewing) ? 0.08 : 0.25}>
+            <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]}>
               <CharacterCardFace id={viewing} />
             </HoloCard>
           </div>
           <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+            ✕ {t("v3.ui.close")}
+          </button>
+        </div>
+      )}
+
+      {/* Enlarged enemy card */}
+      {viewingEnemy && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewingEnemy(null);
+          }}
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/80 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.55, y: -60, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative [--w:min(340px,82vw,calc((100dvh-5rem)*63/88))]"
+            style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
+          >
+            <HoloCard element={ENEMY_ELEMENT[viewingEnemy]} rarity={CARD_RARITY[viewingEnemy]}>
+              <EnemyCardFace id={viewingEnemy} />
+            </HoloCard>
+            {lookOf(viewingEnemy).shine && <CardShine />}
+            <div className="absolute -right-4 -top-6 z-30">
+              <HpBadge hp={b.enemies[viewingEnemy].hp} max={ENEMY_HP[viewingEnemy]} big />
+            </div>
+          </motion.div>
+          <button onClick={() => setViewingEnemy(null)} className="rounded-full border border-stone-400 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
             ✕ {t("v3.ui.close")}
           </button>
         </div>

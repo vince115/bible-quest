@@ -4,13 +4,12 @@
 // ornaments laid over it as a 9-slice border image. The ornaments are the project's own artwork (public/cards/frame-*.png,
 // navy paper keyed out), so they sit on any element colour.
 import type { ReactNode } from "react";
+import { RARITY, type Rarity } from "./rarity";
 
 export type Ornament = "dove" | "lily";
 
 /** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. */
 const SLICE = 34;
-/** Size of a corner piece on the card (% of the card width); smaller than SLICE shrinks the ornaments and the border. */
-const CORNER = 18;
 /**
  * Face inset (padding, % of the card width), just inside the ornament's inner gold line (7.8% of the image).
  * cqw below is measured inside this padding, so it is scaled back to card widths.
@@ -42,8 +41,26 @@ const FRAME_SIDES = [
   { name: "right", toward: "to left", light: "rgb(0 0 0 / 0.12)", box: (w: string) => ({ top: 0, bottom: 0, right: 0, width: w }), clip: (w: string) => `polygon(0 ${w}, 100% 0, 100% 100%, 0 calc(100% - ${w}))` },
 ];
 
-/** fill: cover the parent (fixed-aspect cards); false lets the content set the height (battle cards). */
-export function CardFrame({ frame, ornament = "dove", fill = true, children }: { frame: string; ornament?: Ornament; fill?: boolean; children: ReactNode }) {
+/**
+ * fill: cover the parent (fixed-aspect cards); false lets the content set the height.
+ * rarity: decides the ornaments (none for N), a running gold sheen (SSR+) and a prismatic frame (UR).
+ * ornament: overrides the rarity's ornament (the card demo compares frames).
+ */
+export function CardFrame({
+  frame,
+  rarity = "SR",
+  ornament,
+  fill = true,
+  children,
+}: {
+  frame: string;
+  rarity?: Rarity;
+  ornament?: Ornament;
+  fill?: boolean;
+  children: ReactNode;
+}) {
+  const look = RARITY[rarity];
+  const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
     <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
@@ -79,6 +96,26 @@ export function CardFrame({ frame, ornament = "dove", fill = true, children }: {
           }}
         />
       ))}
+      {/* UR: prismatic frame cycling through the colours */}
+      {look.prism && (
+        <div
+          aria-hidden
+          className="bq-animated pointer-events-none absolute inset-0 mix-blend-color"
+          style={{ backgroundImage: "conic-gradient(from 0deg, #f87171, #facc15, #4ade80, #38bdf8, #a78bfa, #f472b6, #f87171)", animation: "bq-prism 6s linear infinite" }}
+        />
+      )}
+      {/* SSR+: a gold sheen that keeps running along the frame */}
+      {look.sheen && (
+        <div
+          aria-hidden
+          className="bq-animated pointer-events-none absolute inset-0 mix-blend-overlay"
+          style={{
+            backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 236 170 / 0.95) 50%, transparent 60%)",
+            backgroundSize: "250% 100%",
+            animation: "bq-sheen 3.6s ease-in-out infinite",
+          }}
+        />
+      )}
       {/* Bevel: light outer edge, dark groove */}
       <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.5),inset_0_0_0_3px_rgb(0_0_0/0.25)]" />
 
@@ -89,17 +126,19 @@ export function CardFrame({ frame, ornament = "dove", fill = true, children }: {
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_1.2cqw_2cqw_rgb(0_0_0/0.55),inset_0_0_1cqw_rgb(0_0_0/0.4)]" />
       </div>
 
-      {/* Gold floral ornaments over the border and the face's corners */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
-        style={{
-          borderStyle: "solid",
-          borderColor: "transparent",
-          borderWidth: cardW(CORNER),
-          borderImage: `url(/cards/frame-${ornament}.png) ${SLICE}% / ${cardW(CORNER)} round`,
-        }}
-      />
+      {/* Gold floral ornaments over the border and the face's corners (none on N cards) */}
+      {art && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
+          style={{
+            borderStyle: "solid",
+            borderColor: "transparent",
+            borderWidth: cardW(look.ornamentSize),
+            borderImage: `url(/cards/frame-${art}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
+          }}
+        />
+      )}
     </div>
   );
 }
