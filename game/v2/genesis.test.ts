@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ENEMY_HP, MAX_HP, RULES_V2 as R, personOf } from "./data";
-import { castSkill, createBattle, resolveGoliath, skillBlockReason, skillDamage, skillTargets, startNextTurn } from "./engine";
+import { castSkill, createBattle, endTurn, resolveGoliath, skillBlockReason, skillDamage, skillTargets, startNextTurn } from "./engine";
 import type { BattleState, CharacterId } from "./types";
+
+/** Damage is shown in steps of 10. */
+const tens = (n: number) => Math.floor(n / 10) * 10;
 
 function seeded(seed = 1) {
   return () => {
@@ -336,7 +339,7 @@ describe("Aaron", () => {
     let s = castSkill(aaron({ guard: 2 }), "breastplate");
     s.intents[0] = { action: "spear", targets: ["david"] };
     s = resolveGoliath(s, seeded());
-    expect(s.party.david.hp).toBe(MAX_HP.david - R.spear / 2); // metal → light ×1
+    expect(s.party.david.hp).toBe(MAX_HP.david - tens(R.spear / 2)); // metal → light ×1
     s = startNextTurn(s, seeded());
     expect(s.breastplate).toBe(false);
   });
@@ -492,5 +495,351 @@ describe("Gideon", () => {
     s = resolveGoliath(s, seeded());
     expect(s.party.david.hp).toBe(MAX_HP.david);
     expect(s.torchesUsed).toBe(true);
+  });
+});
+
+describe("Samson", () => {
+  const samson = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["samson", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("the Jawbone hits every enemy for 30", () => {
+    const s = castSkill(samson({ attack: 2 }), "jawbone");
+    expect(s.enemies.bearer.hp).toBe(ENEMY_HP.bearer - 20); // wood beats earth: 30 × 0.75 = 22 → 20
+    expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 30); // earth → fire ×1
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 30); // earth → metal ×1
+  });
+
+  it("Pull Down the Pillars: 100 to the leader, and Samson falls", () => {
+    const s = castSkill(samson({ faith: 3 }), "pillars");
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 100); // earth → metal ×1
+    expect(s.party.samson.hp).toBe(0);
+    expect(s.result).toBe("ongoing"); // David still stands
+  });
+});
+
+describe("Ruth", () => {
+  const ruth = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["ruth", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Gleaning draws 2 cards", () => {
+    expect(castSkill(ruth({ guard: 1 }), "glean", undefined, seeded()).hand).toHaveLength(R.gleanDraw);
+  });
+
+  it("Whither Thou Goest: Ruth takes the blow meant for the ally, for one turn", () => {
+    const s0 = ruth({ guard: 1 });
+    expect(skillTargets(s0, "whither")).toEqual(["david"]);
+    let s = castSkill(s0, "whither", "david");
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(MAX_HP.david);
+    expect(s.party.ruth.hp).toBe(MAX_HP.ruth - tens(R.spear * 1.5)); // metal → wood ×1.5
+    s = startNextTurn(s, seeded());
+    expect(s.covered).toBeNull();
+  });
+});
+
+describe("Naomi", () => {
+  const naomi = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["naomi", "ruth", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Mother's Counsel heals 30, or 60 for Ruth", () => {
+    const start = naomi({ guard: 1 });
+    start.party.david.hp = 50;
+    start.party.ruth.hp = 50;
+    expect(castSkill(start, "counsel", "david").party.david.hp).toBe(50 + R.counselHeal);
+    expect(castSkill(start, "counsel", "ruth").party.ruth.hp).toBe(50 + R.counselHeal * 2);
+  });
+
+  it("Restorer of Life raises a fallen ally with 50 HP, once per battle", () => {
+    const start = naomi({ guard: 2 });
+    start.party.david.hp = 0;
+    const s = castSkill(start, "restorer", "david");
+    expect(s.party.david.hp).toBe(R.restorerHp);
+    expect(s.restorerUsed).toBe(true);
+  });
+});
+
+describe("Boaz", () => {
+  const boaz = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["boaz", "naomi", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Under His Wings gives one ally Shield 60", () => {
+    expect(castSkill(boaz({ guard: 2 }), "wings", "naomi").party.naomi.shield).toBe(R.wingsShield);
+  });
+
+  it("Kinsman Redeemer lifts everyone below half HP back to half, once per battle", () => {
+    const start = boaz({ guard: 2 });
+    start.party.david.hp = 20; // max 120 → 60
+    start.party.naomi.hp = 10; // max 90 → 40 (tens)
+    start.party.boaz.hp = 100; // above half: unchanged
+    const s = castSkill(start, "redeemer");
+    expect([s.party.david.hp, s.party.naomi.hp, s.party.boaz.hp]).toEqual([60, 40, 100]);
+    expect(s.redeemerUsed).toBe(true);
+  });
+});
+
+describe("Hannah", () => {
+  const hannah = (lineup: CharacterId[], energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), lineup);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Silent Prayer gives 1 Faith, or 2 with Samuel", () => {
+    expect(castSkill(hannah(["hannah", "david"], { guard: 1 }), "prayer").energy.faith).toBe(R.prayerFaith);
+    expect(castSkill(hannah(["hannah", "samuel"], { guard: 1 }), "prayer").energy.faith).toBe(R.prayerSamuelFaith);
+  });
+
+  it("Hannah's Song heals every ally and strikes the leader, once per battle", () => {
+    const start = hannah(["hannah", "david"], { faith: 3 });
+    start.party.david.hp = 50;
+    const s = castSkill(start, "hannahSong");
+    expect(s.party.david.hp).toBe(50 + R.hannahSongHeal);
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 40); // water → metal ×1
+    expect(s.hannahSongUsed).toBe(true);
+  });
+});
+
+describe("King Saul", () => {
+  const saul = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["saul", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Javelin deals 30 (less against fire, which beats metal)", () => {
+    expect(castSkill(saul({ attack: 1 }), "javelin", "bearer").enemies.bearer.hp).toBe(ENEMY_HP.bearer - 40); // metal → wood ×1.5 = 45 → 40
+    expect(castSkill(saul({ attack: 1 }), "javelin", "archer").enemies.archer.hp).toBe(ENEMY_HP.archer - 20); // metal → fire ×0.75 = 22 → 20
+  });
+
+  it("Rash Offering: 2 Faith now, and Saul is Shaken next turn", () => {
+    let s = castSkill(saul({ guard: 1 }), "rashOffering");
+    expect(s.energy.faith).toBe(R.rashFaith);
+    s = endTurn(s, seeded());
+    expect(s.party.saul.shaken).toBe(true);
+    expect(skillBlockReason(s, "javelin")).toBe("v2.reason.shaken");
+    s = endTurn(s, seeded());
+    expect(s.party.saul.shaken).toBe(false);
+  });
+});
+
+describe("Abigail", () => {
+  const abigail = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["abigail", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Bread and Wine heals every ally 20", () => {
+    const start = abigail({ guard: 1 });
+    start.party.david.hp = 50;
+    start.party.abigail.hp = 50;
+    const s = castSkill(start, "provision");
+    expect([s.party.david.hp, s.party.abigail.hp]).toEqual([50 + R.provisionHeal, 50 + R.provisionHeal]);
+  });
+
+  it("Wise Intercession softens every hit by 20 for one turn", () => {
+    let s = castSkill(abigail({ guard: 2 }), "intercede");
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(MAX_HP.david - (R.swing - R.intercedeBlock)); // metal → light ×1
+    s = startNextTurn(s, seeded());
+    expect(s.intercede).toBe(false);
+  });
+});
+
+describe("King Solomon", () => {
+  const solomon = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["solomon", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Ask for Wisdom gives 1 Faith and 1 Attack", () => {
+    expect(castSkill(solomon({ guard: 1 }), "wisdom").energy).toMatchObject({ faith: R.wisdomFaith, attack: R.wisdomAttack, guard: 0 });
+  });
+
+  it("Fire from Heaven hits every enemy and heals every ally, once per battle", () => {
+    const start = solomon({ faith: 3 });
+    start.party.david.hp = 50;
+    const s = castSkill(start, "templeFire");
+    expect(s.enemies.bearer.hp).toBe(ENEMY_HP.bearer - 50); // fire → wood ×1
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 70); // fire → metal ×1.5 = 75 → 70
+    expect(s.party.david.hp).toBe(50 + R.templeFireHeal);
+    expect(s.templeFireUsed).toBe(true);
+  });
+});
+
+describe("Elijah", () => {
+  const elijah = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["elijah", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Fed by Ravens heals Elijah 40 and draws 1 card", () => {
+    const start = elijah({ guard: 1 });
+    start.party.elijah.hp = 50;
+    const s = castSkill(start, "ravens", undefined, seeded());
+    expect(s.party.elijah.hp).toBe(50 + R.ravensHeal);
+    expect(s.hand).toHaveLength(R.ravensDraw);
+  });
+
+  it("Fire on Carmel strikes the leader for 80, once per battle", () => {
+    const s = castSkill(elijah({ faith: 3 }), "carmel");
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 120); // fire → metal ×1.5
+    expect(s.carmelUsed).toBe(true);
+  });
+});
+
+describe("Elisha", () => {
+  const elisha = (lineup: CharacterId[], energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), lineup);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Healing the Waters heals every ally 20 (40 with Elijah) and lifts Shaken", () => {
+    const start = elisha(["elisha", "david"], { guard: 1 });
+    start.party.david.hp = 50;
+    start.party.david.shaken = true;
+    const s = castSkill(start, "healWaters");
+    expect(s.party.david.hp).toBe(50 + R.healWatersHeal);
+    expect(s.party.david.shaken).toBe(false);
+    const withElijah = elisha(["elisha", "elijah"], { guard: 1 });
+    withElijah.party.elijah.hp = 50;
+    expect(castSkill(withElijah, "healWaters").party.elijah.hp).toBe(50 + R.healWatersHeal * 2);
+  });
+
+  it("Chariots of Fire shield every ally, once per battle", () => {
+    const s = castSkill(elisha(["elisha", "david"], { faith: 2 }), "chariots");
+    expect([s.party.elisha.shield, s.party.david.shield]).toEqual([R.chariotsShield, R.chariotsShield]);
+    expect(s.chariotsUsed).toBe(true);
+  });
+});
+
+describe("Jonah", () => {
+  const jonah = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["jonah", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Cast Me Into the Sea draws the blows meant for allies to Jonah", () => {
+    let s = castSkill(jonah({ guard: 1 }), "castIntoSea");
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(MAX_HP.david);
+    expect(s.party.jonah.hp).toBeLessThan(MAX_HP.jonah);
+  });
+
+  it("Preach to Nineveh hits every enemy", () => {
+    const s = castSkill(jonah({ attack: 2 }), "nineveh");
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 20);
+    expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 30); // water → fire ×1.5
+  });
+
+  it("Out of the Fish: the first fall brings Jonah back next turn with 50 HP, only once", () => {
+    let s = jonah();
+    s.party.jonah.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["jonah"] };
+    s = endTurn(s, seeded());
+    expect(s.party.jonah.hp).toBe(R.fishHp);
+    expect(s.fish).toBe("used");
+    s.party.jonah.hp = 10;
+    s.intents[0] = { action: "spear", targets: ["jonah"] };
+    s = endTurn(s, seeded());
+    expect(s.party.jonah.hp).toBe(0);
+  });
+});
+
+describe("Isaiah", () => {
+  it("Here Am I deals 30, and A Great Light strikes the leader and lifts Shaken, once per battle", () => {
+    const s0 = createBattle(seeded(), ["isaiah", "david"], "eden");
+    s0.hand = [];
+    s0.energy = { faith: 3, attack: 1, guard: 0 };
+    s0.party.david.shaken = true;
+    const s = castSkill(s0, "greatLight");
+    expect(s.enemies.serpent.hp).toBe(ENEMY_HP.serpent - 90); // light → dark ×1.5
+    expect(s.party.david.shaken).toBe(false);
+    expect(s.greatLightUsed).toBe(true);
+    expect(skillDamage(s0, "sendMe", "serpent")).toBe(40); // 30 × 1.5 = 45 → 40
+  });
+});
+
+describe("Esther", () => {
+  const esther = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["esther", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Three Days of Fasting: 2 Faith for 10 of Esther's HP", () => {
+    const s = castSkill(esther({ guard: 1 }), "fasting");
+    expect(s.energy.faith).toBe(R.fastingFaith);
+    expect(s.party.esther.hp).toBe(MAX_HP.esther - R.fastingCost);
+  });
+
+  it("Turned to the Contrary: the leader's blows fall back on it this turn, once per battle", () => {
+    let s = castSkill(esther({ faith: 3 }), "contrary");
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect([s.party.esther.hp, s.party.david.hp]).toEqual([MAX_HP.esther, MAX_HP.david]);
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 2 * R.swing); // metal → metal, metal → light ×1
+    s = startNextTurn(s, seeded());
+    expect(s.contrary).toBe(false);
+    expect(skillBlockReason(s, "contrary")).toBe("v2.reason.ariseUsed");
+  });
+});
+
+describe("Daniel", () => {
+  const daniel = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["daniel", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    s.archerTarget = null;
+    return s;
+  };
+
+  it("Stone Cut Without Hands deals 50", () => {
+    expect(castSkill(daniel({ attack: 2 }), "stoneCut", "archer").enemies.archer.hp).toBe(0); // earth → fire ×1
+  });
+
+  it("Shut the Lions' Mouths: the leader's blows do no harm this turn, once per battle", () => {
+    let s = castSkill(daniel({ faith: 2 }), "lionsDen");
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect([s.party.daniel.hp, s.party.david.hp]).toEqual([MAX_HP.daniel, MAX_HP.david]);
+    s = startNextTurn(s, seeded());
+    expect(s.lionsDen).toBe(false);
+    expect(skillBlockReason(s, "lionsDen")).toBe("v2.reason.ariseUsed");
   });
 });

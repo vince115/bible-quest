@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -44,7 +44,7 @@ export type StageId = "goliath" | "eden";
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
 /** anyEnemy: any standing enemy, ignoring the shield bearer's protection (the archer's Volley). */
-export type TargetKind = "none" | "ally" | "fallenAlly" | "actedAlly" | "enemy" | "anyEnemy";
+export type TargetKind = "none" | "ally" | "otherAlly" | "fallenAlly" | "actedAlly" | "enemy" | "anyEnemy";
 
 export interface SkillDef {
   id: SkillId;
@@ -161,6 +161,35 @@ export interface BattleState {
   starsFoughtUsed: boolean;
   /** Gideon's Torches and Pitchers can be used once per battle. */
   torchesUsed: boolean;
+  /** Ruth's Whither Thou Goest: the ally whose blows she takes this turn. */
+  covered: CharacterId | null;
+  /** Naomi's Restorer of Life can be used once per battle. */
+  restorerUsed: boolean;
+  /** Boaz's Kinsman Redeemer can be used once per battle. */
+  redeemerUsed: boolean;
+  /** Hannah's Song can be used once per battle. */
+  hannahSongUsed: boolean;
+  /** Saul offered in haste: he is Shaken next turn. */
+  saulRash: boolean;
+  /** Abigail's Wise Intercession: every hit on an ally is softened this turn. */
+  intercede: boolean;
+  /** Solomon's Fire from Heaven can be used once per battle. */
+  templeFireUsed: boolean;
+  /** Elijah's Fire on Carmel can be used once per battle. */
+  carmelUsed: boolean;
+  /** Elisha's Chariots of Fire can be used once per battle. */
+  chariotsUsed: boolean;
+  /** Jonah: castIntoSea draws every blow to him this turn; fish: "ready" until he falls, "inside" until he returns, then "used". */
+  castIntoSea: boolean;
+  fish: "ready" | "inside" | "used";
+  /** Isaiah's A Great Light can be used once per battle. */
+  greatLightUsed: boolean;
+  /** Esther's Turned to the Contrary: once per battle; while on, the leader's blows fall back on it this turn. */
+  contraryUsed: boolean;
+  contrary: boolean;
+  /** Daniel's Shut the Lions' Mouths: once per battle; while on, the leader's blows go to Daniel and do no harm. */
+  lionsDenUsed: boolean;
+  lionsDen: boolean;
   /** The characters in this battle; everyone else sits it out (HP 0, never targeted). */
   lineup: CharacterId[];
   log: LogEntry[];

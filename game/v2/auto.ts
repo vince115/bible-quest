@@ -67,8 +67,17 @@ export function nextAutoAction(s: BattleState): AutoAction {
   // 2b. Moses parts the Red Sea over every enemy; raises his hands when the others still have Attack to spend.
   if (canCast(s, "sea")) return { type: "cast", skill: "sea" };
   if (canCast(s, "jericho")) return { type: "cast", skill: "jericho" };
+  if (canCast(s, "templeFire")) return { type: "cast", skill: "templeFire" };
+  if (canCast(s, "carmel")) return { type: "cast", skill: "carmel" };
+  if (canCast(s, "greatLight")) return { type: "cast", skill: "greatLight" };
   if (canCast(s, "starsFought")) return { type: "cast", skill: "starsFought" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.hannahSongHeal).length >= 2 && canCast(s, "hannahSong")) return { type: "cast", skill: "hannahSong" };
   if (underThreat(s) && canCast(s, "torches")) return { type: "cast", skill: "torches" };
+  // Samson brings down the pillars to finish the leader, or when he is about to fall anyway.
+  const bossHp = s.enemies[s.stage === "eden" ? "serpent" : "goliath"].hp;
+  if ((bossHp <= skillDamage(s, "pillars", s.stage === "eden" ? "serpent" : "goliath") || (isAlive(s, "samson") && s.party.samson.hp <= 40)) && canCast(s, "pillars")) return { type: "cast", skill: "pillars" };
+  if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "jawbone")) return { type: "cast", skill: "jawbone" };
+  if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "nineveh")) return { type: "cast", skill: "nineveh" };
   // Deborah rouses the others when someone still has an attack to make.
   const ready = s.lineup.filter((id) => id !== "deborah" && isAlive(s, id) && !s.party[id].acted && !s.party[id].shaken && CHARACTER_SKILLS[id].some((k) => SKILLS[k].kind === "attack")).length;
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "upToday")) return { type: "cast", skill: "upToday" };
@@ -80,6 +89,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (fallen.length) {
     const target: CharacterId = fallen.includes("david") ? "david" : fallen[0];
     if (canCast(s, "arise", target)) return { type: "cast", skill: "arise", target };
+    if (canCast(s, "restorer", target)) return { type: "cast", skill: "restorer", target };
   }
 
 
@@ -89,11 +99,29 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (underThreat(s) && canCast(s, "ark")) return { type: "cast", skill: "ark" };
   if (underThreat(s) && !s.breastplate && canCast(s, "breastplate")) return { type: "cast", skill: "breastplate" };
   if (underThreat(s) && canCast(s, "faceShone")) return { type: "cast", skill: "faceShone" };
+  // Esther turns the leader's heaviest blows back on it.
+  const heavy = !s.goliath.stunned && (["crush", "swing", "fang", "coil"] as const).some((a) => s.intents[0].action === a) && !(s.intents[0].action === "crush" && !s.goliath.charging);
+  if (heavy && canCast(s, "contrary")) return { type: "cast", skill: "contrary" };
+  if (heavy && !s.contrary && canCast(s, "lionsDen")) return { type: "cast", skill: "lionsDen" };
   if (underThreat(s) && canCast(s, "tenWords")) return { type: "cast", skill: "tenWords" };
+  if (underThreat(s) && canCast(s, "chariots")) return { type: "cast", skill: "chariots" };
+  // Abigail's Intercession pays off most against blows that hit several allies or the archer as well.
+  if (underThreat(s) && !s.intercede && canCast(s, "intercede")) return { type: "cast", skill: "intercede" };
   if (cainTargeted(s) && canCast(s, "mark")) return { type: "cast", skill: "mark" };
   // Isaac's Ram when a real blow is coming and someone is low enough to fall.
   if (underThreat(s) && s.lineup.some((id) => isAlive(s, id) && s.party[id].hp <= 60) && canCast(s, "ram")) return { type: "cast", skill: "ram" };
   if (underThreat(s) && s.lineup.filter((id) => isAlive(s, id) && s.party[id].hp <= 60).length >= 2 && canCast(s, "scarletCord")) return { type: "cast", skill: "scarletCord" };
+  // Jonah throws himself into the sea when a blow is coming and he is the sturdiest (or the fish is still waiting for him).
+  if (underThreat(s) && isAlive(s, "jonah") && (s.fish === "ready" || s.lineup.every((id) => !isAlive(s, id) || s.party[id].hp <= s.party.jonah.hp)) && canCast(s, "castIntoSea")) return { type: "cast", skill: "castIntoSea" };
+  // Ruth steps in front of a weaker ally the leader is aiming at.
+  const aimed = s.intents[0].targets[0];
+  if (underThreat(s) && aimed && aimed !== "ruth" && isAlive(s, aimed) && isAlive(s, "ruth") && s.party[aimed].hp < s.party.ruth.hp && canCast(s, "whither", aimed)) return { type: "cast", skill: "whither", target: aimed };
+  // Boaz redeems when two allies are below half HP; shields the most exposed ally under a real threat.
+  if (s.lineup.filter((id) => isAlive(s, id) && s.party[id].hp < MAX_HP[id] / 2).length >= 2 && canCast(s, "redeemer")) return { type: "cast", skill: "redeemer" };
+  if (underThreat(s)) {
+    const shelter = s.lineup.filter((id) => isAlive(s, id) && s.party[id].shield === 0).sort((a, b) => s.party[a].hp - s.party[b].hp)[0];
+    if (shelter && canCast(s, "wings", shelter)) return { type: "cast", skill: "wings", target: shelter };
+  }
   if (underThreat(s)) {
     const exposed = s.lineup.filter((id) => isAlive(s, id) && s.party[id].shield === 0).sort((a, b) => s.party[a].hp - s.party[b].hp)[0];
     if (exposed && canCast(s, "hideSpies", exposed)) return { type: "cast", skill: "hideSpies", target: exposed };
@@ -127,6 +155,14 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (canCast(s, "provide")) return { type: "cast", skill: "provide" };
   if (s.energy.faith <= R.maxFaith - R.starsFaith && canCast(s, "stars")) return { type: "cast", skill: "stars" };
   if (s.energy.faith < R.maxFaith && canCast(s, "fleece")) return { type: "cast", skill: "fleece" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "prayer")) return { type: "cast", skill: "prayer" };
+  if (s.energy.faith <= R.maxFaith - R.fastingFaith && isAlive(s, "esther") && s.party.esther.hp > 40 && canCast(s, "fasting")) return { type: "cast", skill: "fasting" };
+  if (canCast(s, "wisdom")) return { type: "cast", skill: "wisdom" };
+  if (isAlive(s, "elijah") && MAX_HP.elijah - s.party.elijah.hp >= R.ravensHeal && canCast(s, "ravens")) return { type: "cast", skill: "ravens" };
+  // Saul's Rash Offering only when the Faith would complete a Faith skill this turn.
+  const faithSkill = s.lineup.some((id) => isAlive(s, id) && !s.party[id].acted && CHARACTER_SKILLS[id].some((k) => SKILLS[k].kind === "faith" && skillBlockReason({ ...s, energy: { ...s.energy, faith: s.energy.faith + R.rashFaith } }, k) === null));
+  if (faithSkill && canCast(s, "rashOffering")) return { type: "cast", skill: "rashOffering" };
+  if (s.hand.length <= R.maxHand - R.gleanDraw && canCast(s, "glean")) return { type: "cast", skill: "glean" };
   // Miriam sings when someone is Shaken or Faith has room for the full gift.
   if ((shaken.length >= 1 || s.energy.faith <= R.maxFaith - R.songFaith) && canCast(s, "song")) return { type: "cast", skill: "song" };
 
@@ -135,6 +171,9 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (sore && canCast(s, "firstlings", sore)) return { type: "cast", skill: "firstlings", target: sore };
   const worn = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.blessingHeal).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
   if (worn && canCast(s, "blessing", worn)) return { type: "cast", skill: "blessing", target: worn };
+  if (worn && canCast(s, "counsel", worn)) return { type: "cast", skill: "counsel", target: worn };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.provisionHeal).length >= 2 && canCast(s, "provision")) return { type: "cast", skill: "provision" };
+  if ((shaken.length >= 1 || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.healWatersHeal).length >= 2) && canCast(s, "healWaters")) return { type: "cast", skill: "healWaters" };
 
   // 5b. Eve's Helper: an ally who has already acted strikes again if there is energy for it (David first).
   const again = (["david", "jonathan", "adam", "cain", "samuel"] as CharacterId[]).find(
@@ -150,7 +189,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   const boss = s.stage === "eden" ? "serpent" : "goliath";
   if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "courage", boss)) return { type: "cast", skill: "courage", target: boss };
-  for (const skill of ["wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel"] as SkillId[]) {
+  for (const skill of ["stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
   }

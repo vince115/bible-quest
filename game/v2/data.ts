@@ -15,8 +15,8 @@ export const RULES_V2 = {
 
   /** Victory when Goliath falls; the others flee (1 Sam 17:51). */
   archerDamage: 30,
-  spear: 40,
-  crush: 100,
+  spear: 30,
+  crush: 90,
   swing: 50,
   defyTargets: 2,
 
@@ -24,8 +24,8 @@ export const RULES_V2 = {
   ariseHp: 70,
   covShield: 30,
   /** The Serpent of Eden. Coil hits every ally. */
-  fang: 70,
-  fangShed: 90,
+  fang: 60,
+  fangShed: 80,
   coil: 40,
   temptFaith: 1,
 
@@ -84,6 +84,37 @@ export const RULES_V2 = {
   /** Gideon's Sign of the Fleece gives Faith and draws a card. */
   fleeceFaith: 1,
   fleeceDraw: 1,
+  /** Ruth's Gleaning draws cards. */
+  gleanDraw: 2,
+  /** Naomi's Counsel heals one ally (double for Ruth); Restorer of Life raises a fallen ally. */
+  counselHeal: 30,
+  restorerHp: 50,
+  /** Boaz's Under His Wings shields one ally. */
+  wingsShield: 60,
+  /** Hannah's Silent Prayer gives Faith (more with Samuel beside her); her Song heals every ally. */
+  prayerFaith: 1,
+  prayerSamuelFaith: 2,
+  hannahSongHeal: 40,
+  /** Saul's Rash Offering gives Faith at once, but Saul is Shaken next turn. */
+  rashFaith: 2,
+  /** Abigail's Provision heals every ally; her Intercession softens every hit this turn. */
+  provisionHeal: 20,
+  intercedeBlock: 20,
+  /** Solomon's Ask for Wisdom gives Faith and Attack; Fire from Heaven also heals every ally. */
+  wisdomFaith: 1,
+  wisdomAttack: 1,
+  templeFireHeal: 30,
+  /** Elijah's Fed by Ravens heals him and draws a card. */
+  ravensHeal: 40,
+  ravensDraw: 1,
+  /** Elisha's Healing the Waters (double with Elijah beside him); Chariots of Fire shield every ally. */
+  healWatersHeal: 20,
+  chariotsShield: 50,
+  /** Jonah comes back out of the fish with this HP, once per battle. */
+  fishHp: 50,
+  /** Esther's Fasting gives Faith at the cost of her HP. */
+  fastingFaith: 2,
+  fastingCost: 10,
 
   /** Eve's Mother of All Living: heals every ally. */
   motherHeal: 40,
@@ -137,6 +168,20 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   rahab: "fire",
   deborah: "wood",
   gideon: "fire",
+  samson: "earth",
+  ruth: "wood",
+  naomi: "water",
+  boaz: "metal",
+  hannah: "water",
+  saul: "metal",
+  abigail: "light",
+  solomon: "fire",
+  elijah: "fire",
+  elisha: "water",
+  jonah: "water",
+  isaiah: "light",
+  esther: "metal",
+  daniel: "earth",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
@@ -150,7 +195,7 @@ export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -166,7 +211,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -210,6 +255,34 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   starsFought: { id: "starsFought", owner: "deborah", kind: "faith", cost: 3, damage: 60 },
   fleece: { id: "fleece", owner: "gideon", kind: "guard", cost: 1 },
   torches: { id: "torches", owner: "gideon", kind: "faith", cost: 3, damage: 30 },
+  jawbone: { id: "jawbone", owner: "samson", kind: "attack", cost: 2, damage: 30 },
+  pillars: { id: "pillars", owner: "samson", kind: "faith", cost: 3, damage: 100 },
+  glean: { id: "glean", owner: "ruth", kind: "guard", cost: 1 },
+  whither: { id: "whither", owner: "ruth", kind: "guard", cost: 1 },
+  counsel: { id: "counsel", owner: "naomi", kind: "guard", cost: 1 },
+  restorer: { id: "restorer", owner: "naomi", kind: "guard", cost: 2 },
+  wings: { id: "wings", owner: "boaz", kind: "guard", cost: 2 },
+  redeemer: { id: "redeemer", owner: "boaz", kind: "guard", cost: 2 },
+  prayer: { id: "prayer", owner: "hannah", kind: "guard", cost: 1 },
+  hannahSong: { id: "hannahSong", owner: "hannah", kind: "faith", cost: 3, damage: 40 },
+  javelin: { id: "javelin", owner: "saul", kind: "attack", cost: 1, damage: 30 },
+  rashOffering: { id: "rashOffering", owner: "saul", kind: "guard", cost: 1 },
+  provision: { id: "provision", owner: "abigail", kind: "guard", cost: 1 },
+  intercede: { id: "intercede", owner: "abigail", kind: "guard", cost: 2 },
+  wisdom: { id: "wisdom", owner: "solomon", kind: "guard", cost: 1 },
+  templeFire: { id: "templeFire", owner: "solomon", kind: "faith", cost: 3, damage: 50 },
+  ravens: { id: "ravens", owner: "elijah", kind: "guard", cost: 1 },
+  carmel: { id: "carmel", owner: "elijah", kind: "faith", cost: 3, damage: 80 },
+  healWaters: { id: "healWaters", owner: "elisha", kind: "guard", cost: 1 },
+  chariots: { id: "chariots", owner: "elisha", kind: "faith", cost: 2 },
+  castIntoSea: { id: "castIntoSea", owner: "jonah", kind: "guard", cost: 1 },
+  nineveh: { id: "nineveh", owner: "jonah", kind: "attack", cost: 2, damage: 20 },
+  sendMe: { id: "sendMe", owner: "isaiah", kind: "attack", cost: 1, damage: 30 },
+  greatLight: { id: "greatLight", owner: "isaiah", kind: "faith", cost: 3, damage: 60 },
+  fasting: { id: "fasting", owner: "esther", kind: "guard", cost: 1 },
+  contrary: { id: "contrary", owner: "esther", kind: "faith", cost: 3 },
+  stoneCut: { id: "stoneCut", owner: "daniel", kind: "attack", cost: 2, damage: 50 },
+  lionsDen: { id: "lionsDen", owner: "daniel", kind: "faith", cost: 2 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -239,6 +312,20 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   rahab: ["hideSpies", "scarletCord"],
   deborah: ["upToday", "starsFought"],
   gideon: ["fleece", "torches"],
+  samson: ["jawbone", "pillars"],
+  ruth: ["glean", "whither"],
+  naomi: ["counsel", "restorer"],
+  boaz: ["wings", "redeemer"],
+  hannah: ["prayer", "hannahSong"],
+  saul: ["javelin", "rashOffering"],
+  abigail: ["provision", "intercede"],
+  solomon: ["wisdom", "templeFire"],
+  elijah: ["ravens", "carmel"],
+  elisha: ["healWaters", "chariots"],
+  jonah: ["castIntoSea", "nineveh"],
+  isaiah: ["sendMe", "greatLight"],
+  esther: ["fasting", "contrary"],
+  daniel: ["stoneCut", "lionsDen"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],
