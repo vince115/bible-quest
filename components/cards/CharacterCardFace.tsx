@@ -3,7 +3,7 @@
 // Full-size character card face (TCG layout): name/HP, art, skills, passive, weakness/resistance, verse.
 // With an illustration the card is full-art; without one it uses an art window with the character's emoji.
 import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
-import { elementMultiplier } from "@/game/v2/engine";
+import { baseSupportAmount, elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
 import { CardFrame, type Ornament } from "./CardFrame";
@@ -25,9 +25,9 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
   adam: { src: "/cards/adam.jpg", figure: { cx: 0.405, head: 0.171, feet: 0.945 } },
   eve: { src: "/cards/eve.jpg", figure: { cx: 0.44, head: 0.215, feet: 0.928 } },
-  // Enemy cards drawn by the player: same art as their enemy versions.
+  // Enemy cards drawn by the player: same art as their enemy versions, except the Serpent.
   goliathP: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943 } },
-  serpentP: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  serpentP: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   archerP: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   bearerP: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
 };
@@ -60,8 +60,6 @@ export const THEME: Record<Element, { frame: string; panel: string; art: string 
     art: "radial-gradient(circle at 50% 35%, #ecfccb 0%, #4ade80 35%, #064e3b 100%)",
   },
 };
-
-const SUPPORT: Partial<Record<string, number>> = { heal: R.healAmount, arise: R.ariseHp, covshield: R.covShield, keep: R.keepShield, mother: R.motherHeal, helper: 1 };
 
 /** Name, title, HP and element. */
 function Header({ id, light }: { id: CharacterId; light?: boolean }) {
@@ -107,13 +105,13 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
       <div className={`flex flex-col justify-center ${compact ? "gap-[1.5%]" : "flex-1 gap-[3%]"}`}>
         {CHARACTER_SKILLS[id].map((skill) => {
           const def = SKILLS[skill];
-          const amount = def.damage ?? SUPPORT[skill];
+          const amount = def.damage ?? baseSupportAmount(skill);
           return (
             <div key={skill} className={`border-b border-stone-900/15 last:border-0 ${compact ? "pb-[1%]" : "pb-[2%]"}`}>
               <div className="flex items-center gap-[3%]">
                 <span className="w-[22%] shrink-0 text-[0.8em] tracking-tighter">{ENERGY_ICON[def.kind].repeat(def.cost)}</span>
                 <span className="flex-1 text-[0.95em] font-black">{t(`v2.skill.${skill}.name`)}</span>
-                <span className="text-[1.15em] font-black">{def.damage ? amount : `+${amount}`}</span>
+                <span className="text-[1.15em] font-black">{def.damage ? amount : amount > 0 && `+${amount}`}</span>
               </div>
               <div className="pl-[25%] text-[0.58em] leading-snug opacity-75">{t(`v2.skill.${skill}.desc`, { n: amount })}</div>
             </div>

@@ -21,6 +21,8 @@ const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
   { id: "eve" },
   { id: "bearer", enemy: true },
   { id: "archer", enemy: true },
+  { id: "serpent", enemy: true },
+  { id: "serpentP" },
 ];
 
 export function CardDemo() {

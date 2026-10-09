@@ -413,7 +413,7 @@ function SkillFocus({
                   {reason && reason !== "v2.reason.over" && <span className="block truncate text-[0.62em] font-semibold text-red-700">{t(reason)}</span>}
                 </span>
                 <span className="text-[1.4em] font-black leading-none">
-                  {def.damage ? amount : `+${amount}`}
+                  {def.damage ? amount : amount > 0 && `+${amount}`}
                   {boosted && <span className="ml-0.5 text-[0.6em] text-amber-500">▲</span>}
                 </span>
               </button>

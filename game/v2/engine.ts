@@ -174,15 +174,21 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
 }
 
 /** Heal or Shield amount of a support skill, with story bonuses. */
-export function supportAmount(s: BattleState, skill: SkillId): number {
+/** Heal or Shield a support skill gives before story bonuses; 0 for skills without an amount (Helper, Beguile). */
+export function baseSupportAmount(skill: SkillId): number {
   if (skill === "heal") return R.healAmount;
   if (skill === "arise") return R.ariseHp;
   if (skill === "covshield") return R.covShield;
-  if (skill === "keep") return R.keepShield + (inStory(s, "adam") ? R.edenKeepBonus : 0);
-  if (skill === "mother") return R.motherHeal + (inStory(s, "eve") ? R.edenMotherBonus : 0);
-  if (skill === "helper" || skill === "beguile") return 1;
+  if (skill === "keep") return R.keepShield;
+  if (skill === "mother") return R.motherHeal;
   if (skill === "shieldUp") return R.shieldUpAmount;
   return 0;
+}
+
+export function supportAmount(s: BattleState, skill: SkillId): number {
+  if (skill === "keep" && inStory(s, "adam")) return R.keepShield + R.edenKeepBonus;
+  if (skill === "mother" && inStory(s, "eve")) return R.motherHeal + R.edenMotherBonus;
+  return baseSupportAmount(skill);
 }
 
 /** Damage an enemy deals to an ally, with elements (e.g. dark Goliath hits light David ×1.5). */

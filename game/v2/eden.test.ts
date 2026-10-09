@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENEMY_HP, RULES_V2 as R } from "./data";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R } from "./data";
 import { attackableEnemies, castSkill, createBattle, resolveGoliath, skillDamage, startNextTurn, supportAmount } from "./engine";
 import type { BattleState } from "./types";
 
@@ -103,8 +103,8 @@ describe("Eden", () => {
     let s = eden();
     s.intents[0] = { action: "coil", targets: ["adam"] };
     s = resolveGoliath(s, seeded());
-    expect(s.party.eve.hp).toBe(100 - R.coil);
-    expect(s.party.adam.hp).toBe(130 - R.coil);
+    expect(s.party.eve.hp).toBe(MAX_HP.eve - R.coil);
+    expect(s.party.adam.hp).toBe(MAX_HP.adam - R.coil);
   });
   it("the battle is won when the Serpent falls", () => {
     let s = eden();

@@ -51,12 +51,12 @@ describe("Adam", () => {
 });
 
 describe("Eve", () => {
-  it("Mother of All Living heals every ally by 30, up to their maximum", () => {
+  it("Mother of All Living heals every ally, up to their maximum", () => {
     const start = battle({ guard: 2 });
     start.party.david.hp = 50;
     start.party.adam.hp = 120;
     const s = castSkill(start, "mother");
-    expect(s.party.david.hp).toBe(80);
+    expect(s.party.david.hp).toBe(50 + R.motherHeal);
     expect(s.party.adam.hp).toBe(MAX_HP.adam);
   });
 

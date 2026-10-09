@@ -45,7 +45,7 @@ export const RULES_V2 = {
   /** Adam's Keep the Garden: Shield on himself. */
   keepShield: 50,
   /** Eve's Mother of All Living: heals every ally. */
-  motherHeal: 30,
+  motherHeal: 40,
 
   /** Elements are reserved for multi-stage play: switched off, so damage is unaffected for now. */
   elements: {
@@ -100,7 +100,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 320 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 100, archerP: 70, bearerP: 110, goliathP: 120, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, archerP: 70, bearerP: 110, goliathP: 120, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
