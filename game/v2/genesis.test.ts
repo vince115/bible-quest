@@ -843,3 +843,56 @@ describe("Daniel", () => {
     expect(skillBlockReason(s, "lionsDen")).toBe("v2.reason.ariseUsed");
   });
 });
+
+describe("Nehemiah", () => {
+  const nehemiah = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["nehemiah", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Rebuild the Wall shields everyone, higher with each course, up to 50", () => {
+    let s = castSkill(nehemiah({ guard: 1 }), "buildWall");
+    expect(s.party.david.shield).toBe(20);
+    const shields: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      s = { ...s, energy: { ...s.energy, guard: 1 }, party: { ...s.party, nehemiah: { ...s.party.nehemiah, acted: false }, david: { ...s.party.david, shield: 0 } } };
+      s = castSkill(s, "buildWall");
+      shields.push(s.party.david.shield);
+    }
+    expect(shields).toEqual([30, 40, 50, 50]);
+  });
+
+  it("Sword and Trowel deals 20 and shields Nehemiah", () => {
+    const s = castSkill(nehemiah({ attack: 1 }), "swordAndTrowel", "archer");
+    expect(s.enemies.archer.hp).toBe(ENEMY_HP.archer - 20);
+    expect(s.party.nehemiah.shield).toBe(R.trowelShield);
+  });
+});
+
+describe("Zechariah", () => {
+  const zechariah = (energy: Partial<BattleState["energy"]> = {}) => {
+    const s = createBattle(seeded(), ["zechariah", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Incense gives 1 Faith and shields everyone 10", () => {
+    const s = castSkill(zechariah({ guard: 1 }), "incense");
+    expect(s.energy.faith).toBe(R.incenseFaith);
+    expect(s.party.david.shield).toBe(R.incenseShield);
+  });
+
+  it("His Name Is John stays silent until turn 3, then heals all and gives Faith, once", () => {
+    const early = zechariah({ guard: 2 });
+    expect(skillBlockReason(early, "nameIsJohn")).toBe("v2.reason.silent");
+    const s0 = { ...early, turn: R.johnTurn };
+    s0.party.david.hp = 50;
+    const s = castSkill(s0, "nameIsJohn");
+    expect(s.party.david.hp).toBe(50 + R.johnHeal);
+    expect(s.energy.faith).toBe(R.johnFaith);
+    expect(s.johnUsed).toBe(true);
+  });
+});

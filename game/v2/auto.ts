@@ -105,6 +105,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (heavy && !s.contrary && canCast(s, "lionsDen")) return { type: "cast", skill: "lionsDen" };
   if (underThreat(s) && canCast(s, "tenWords")) return { type: "cast", skill: "tenWords" };
   if (underThreat(s) && canCast(s, "chariots")) return { type: "cast", skill: "chariots" };
+  if (underThreat(s) && canCast(s, "buildWall")) return { type: "cast", skill: "buildWall" };
   // Abigail's Intercession pays off most against blows that hit several allies or the archer as well.
   if (underThreat(s) && !s.intercede && canCast(s, "intercede")) return { type: "cast", skill: "intercede" };
   if (cainTargeted(s) && canCast(s, "mark")) return { type: "cast", skill: "mark" };
@@ -156,6 +157,8 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.energy.faith <= R.maxFaith - R.starsFaith && canCast(s, "stars")) return { type: "cast", skill: "stars" };
   if (s.energy.faith < R.maxFaith && canCast(s, "fleece")) return { type: "cast", skill: "fleece" };
   if (s.energy.faith < R.maxFaith && canCast(s, "prayer")) return { type: "cast", skill: "prayer" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.johnHeal).length >= 2 && canCast(s, "nameIsJohn")) return { type: "cast", skill: "nameIsJohn" };
+  if (canCast(s, "incense")) return { type: "cast", skill: "incense" };
   if (s.energy.faith <= R.maxFaith - R.fastingFaith && isAlive(s, "esther") && s.party.esther.hp > 40 && canCast(s, "fasting")) return { type: "cast", skill: "fasting" };
   if (canCast(s, "wisdom")) return { type: "cast", skill: "wisdom" };
   if (isAlive(s, "elijah") && MAX_HP.elijah - s.party.elijah.hp >= R.ravensHeal && canCast(s, "ravens")) return { type: "cast", skill: "ravens" };
@@ -189,7 +192,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   const boss = s.stage === "eden" ? "serpent" : "goliath";
   if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "courage", boss)) return { type: "cast", skill: "courage", target: boss };
-  for (const skill of ["stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe"] as SkillId[]) {
+  for (const skill of ["stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
   }

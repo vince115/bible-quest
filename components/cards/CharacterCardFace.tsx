@@ -15,8 +15,8 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -26,6 +26,8 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
+  zechariah: { src: "/cards/zechariah.jpg", figure: { cx: 0.49, head: 0.164, feet: 0.977 } },
+  nehemiah: { src: "/cards/nehemiah.jpg", figure: { cx: 0.4, head: 0.117, feet: 0.967 } },
   daniel: { src: "/cards/daniel.jpg", figure: { cx: 0.49, head: 0.174, feet: 0.952 } },
   esther: { src: "/cards/esther.jpg", figure: { cx: 0.48, head: 0.137, feet: 0.962 } },
   isaiah: { src: "/cards/isaiah.jpg", figure: { cx: 0.45, head: 0.18, feet: 0.962 } },

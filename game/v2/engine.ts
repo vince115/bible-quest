@@ -265,6 +265,9 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "healWaters") return R.healWatersHeal;
   if (skill === "chariots") return R.chariotsShield;
   if (skill === "fasting") return R.fastingFaith;
+  if (skill === "buildWall") return R.wallShield;
+  if (skill === "incense") return R.incenseFaith;
+  if (skill === "nameIsJohn") return R.johnHeal;
   return 0;
 }
 
@@ -275,6 +278,8 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "prayer" && isAlive(s, "samuel")) return R.prayerSamuelFaith;
   // Let a double portion of thy spirit be upon me (2 Kings 2:9): with Elijah beside him, Elisha heals double.
   if (skill === "healWaters" && isAlive(s, "elijah")) return R.healWatersHeal * 2;
+  // So built we the wall; and all the wall was joined together (Nehemiah 4:6): each course stands higher.
+  if (skill === "buildWall") return Math.min(R.wallCap, R.wallShield + R.wallStep * s.wallCourses);
   return baseSupportAmount(skill);
 }
 
@@ -339,6 +344,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     contrary: false,
     lionsDenUsed: false,
     lionsDen: false,
+    wallCourses: 0,
+    johnUsed: false,
     enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
     stage,
     coiled: null,
@@ -396,7 +403,7 @@ export function playCard(state: BattleState, uid: number): BattleState {
 // ---------- skills ----------
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut") return "enemy";
+  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
   if (skill === "volley" || skill === "courage") return "anyEnemy";
   if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings") return "ally";
@@ -451,6 +458,9 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (skill === "greatLight" && s.greatLightUsed) return "v2.reason.ariseUsed";
   if (skill === "contrary" && s.contraryUsed) return "v2.reason.ariseUsed";
   if (skill === "lionsDen" && s.lionsDenUsed) return "v2.reason.ariseUsed";
+  if (skill === "nameIsJohn" && s.johnUsed) return "v2.reason.ariseUsed";
+  // Thou shalt be dumb, until the day that these things shall be performed (Luke 1:20).
+  if (skill === "nameIsJohn" && s.turn < R.johnTurn) return "v2.reason.silent";
   // The ladder is for allies who have already acted: someone must have.
   if (skill === "ladder" && !s.lineup.some((id) => id !== "jacob" && isAlive(s, id) && s.party[id].acted)) return "v2.reason.noTarget";
   if (!payment(s, skill)) return def.kind === "faith" ? "v2.reason.needFaith" : "v2.reason.energy";
@@ -638,6 +648,36 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       log(s, "v2.log.fasting", "player", { n: gained, hp: c.hp, max: MAX_HP.esther });
       break;
     }
+    case "incense": {
+      // His lot was to burn incense when he went into the temple of the Lord (Luke 1:9).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.incenseFaith);
+      log(s, "v2.log.incense", "player");
+      living(s).forEach((id) => addShield(s, id, R.incenseShield));
+      break;
+    }
+    case "nameIsJohn":
+      // He wrote, saying, His name is John. And his mouth was opened (Luke 1:63-64).
+      s.johnUsed = true;
+      log(s, "v2.log.nameIsJohn", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.johnHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.johnFaith);
+      break;
+    case "buildWall": {
+      const n = supportAmount(s, "buildWall");
+      s.wallCourses += 1;
+      log(s, "v2.log.buildWall", "player", { n });
+      living(s).forEach((id) => addShield(s, id, n));
+      break;
+    }
+    case "swordAndTrowel":
+      // Every one with one of his hands wrought in the work, and with the other hand held a weapon (Nehemiah 4:17).
+      addShield(s, "nehemiah", R.trowelShield);
+      break;
     case "lionsDen":
       s.lionsDenUsed = true;
       s.lionsDen = true;

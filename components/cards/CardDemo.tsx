@@ -49,6 +49,8 @@ const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
   { id: "isaiah" },
   { id: "esther" },
   { id: "daniel" },
+  { id: "nehemiah" },
+  { id: "zechariah" },
   { id: "bearer", enemy: true },
   { id: "archer", enemy: true },
   { id: "serpent", enemy: true },

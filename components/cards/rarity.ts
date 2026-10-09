@@ -40,6 +40,8 @@ export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
   isaiah: "SSR",
   esther: "UR",
   daniel: "SSR",
+  nehemiah: "SR",
+  zechariah: "SR",
   david: "SSR",
   adam: "SSR",
   eve: "SSR",
