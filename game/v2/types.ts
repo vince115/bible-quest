@@ -2,13 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "elizabeth" | "mordecai" | "sarah" | "rebekah" | "rachel" | "barak" | "jael" | "josephArimathea" | "ananias" | "threeFriends" | "job" | "enoch" | "melchizedek" | "caleb" | "jeremiah" | "ezekiel" | "ezra" | "nathan" | "hezekiah" | "josiah" | "magi" | "shepherds" | "bartimaeus" | "centurion" | "jairus" | "simonCyrene" | "thief" | "jamesJust" | "mockingThief" | "jesusCross" | "widow" | "fisherman" | "fourFriends" | "goodSamaritan" | "pharaoh" | "charioteer" | "jezebel" | "baalProphet" | "haman" | "delilah" | "nebuchadnezzar" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "leper" | "gethsemane" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold" | "atHisFeet" | "spikenard" | "looseHim" | "manyBelieved" | "gracePower" | "heavensOpened" | "hereIsWater" | "samaria" | "armourOfGod" | "swordOfSpirit" | "encourage" | "soldField" | "midnightHymns" | "prisonOpened" | "example" | "stirUpGift" | "purpleCloth" | "abideHouse" | "tentmaking" | "expound" | "goInPeace" | "speakLord" | "tentRope" | "layDownNeck" | "garments" | "almsdeeds" | "centurionCommand" | "prayersAlms" | "mightyScriptures" | "watered" | "succourer" | "bearLetter" | "physician" | "inOrder" | "departed" | "profitable" | "setInOrder" | "earnestCare" | "refreshed" | "receiveHim" | "nowProfitable" | "belovedBrother" | "byNight" | "bornAgain" | "livingWater" | "comeSee" | "waiting" | "nuncDimittis" | "nightAndDay" | "gaveThanks" | "giveBasket" | "pebble" | "thirtySilver" | "moneyBag" | "philipComeSee" | "twoHundredPence" | "figTree" | "noGuile" | "quietFaith" | "oneOfTwelve" | "aQuestion" | "contendFaith" | "zeal" | "swordDown" | "lotFell" | "withEleven"
+  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "leper" | "gethsemane" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold" | "atHisFeet" | "spikenard" | "looseHim" | "manyBelieved" | "gracePower" | "heavensOpened" | "hereIsWater" | "samaria" | "armourOfGod" | "swordOfSpirit" | "encourage" | "soldField" | "midnightHymns" | "prisonOpened" | "example" | "stirUpGift" | "purpleCloth" | "abideHouse" | "tentmaking" | "expound" | "goInPeace" | "speakLord" | "tentRope" | "layDownNeck" | "garments" | "almsdeeds" | "centurionCommand" | "prayersAlms" | "mightyScriptures" | "watered" | "succourer" | "bearLetter" | "physician" | "inOrder" | "departed" | "profitable" | "setInOrder" | "earnestCare" | "refreshed" | "receiveHim" | "nowProfitable" | "belovedBrother" | "byNight" | "bornAgain" | "livingWater" | "comeSee" | "waiting" | "nuncDimittis" | "nightAndDay" | "gaveThanks" | "giveBasket" | "pebble" | "thirtySilver" | "moneyBag" | "philipComeSee" | "twoHundredPence" | "figTree" | "noGuile" | "quietFaith" | "oneOfTwelve" | "aQuestion" | "contendFaith" | "zeal" | "swordDown" | "lotFell" | "withEleven" | "leaped" | "blessedAmong" | "wouldNotBow" | "suchATime" | "laughter" | "tooHard" | "drinkMyLord" | "waterCamels" | "keepSheep" | "fewDays" | "ifThouGo" | "downTabor" | "blessedAbove" | "tentPeg" | "wentInBoldly" | "fineLinen" | "brotherSaul" | "scalesFell" | "butIfNot" | "fourthMan" | "lordGave" | "turnedCaptivity" | "walkedWithGod" | "saintsCome" | "breadAndWine" | "tenthOfAll" | "goUpAtOnce" | "thisMountain" | "almondRod" | "fireInBones" | "watchman" | "dryBones" | "preparedHeart" | "readTheLaw" | "thouArtTheMan" | "houseForever" | "spreadLetter" | "fifteenYears" | "heardTheBook" | "purgeIdols" | "hisStar" | "threeGifts" | "goodTidings" | "gloryHighest" | "sonOfDavid" | "castGarment" | "speakTheWord" | "underAuthority" | "onlyBelieve" | "talithaCumi" | "bearHisCross" | "comingFromCountry" | "rememberMe" | "paradise" | "swiftToHear" | "faithWorks" | "saveThyself" | "railedOn" | "forgiveThem" | "itIsFinished" | "twoMites" | "allHerLiving" | "toiledAllNight" | "atThyWord" | "throughTheRoof" | "theirFaith" | "oilAndWine" | "twoPence" | "hardenedHeart" | "makeBricks" | "pursued" | "chosenChariots" | "royalCommand" | "sealedLetters" | "callOnBaal" | "cutThemselves" | "kingsRing" | "hamansDecree" | "pieceOfSilver" | "whereinStrength" | "sevenTimesHotter" | "praiseKingOfHeaven"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
@@ -183,6 +183,8 @@ export interface BattleState {
   basketGiven: boolean;
   /** Matthias' The Lot Fell can be used once per battle. */
   lotUsed: boolean;
+  /** Sarah's Is Any Thing Too Hard can be used once per battle. */
+  tooHardUsed: boolean;
   /** Abigail's Wise Intercession: every hit on an ally is softened this turn. */
   intercede: boolean;
   /** Solomon's Fire from Heaven can be used once per battle. */
@@ -202,6 +204,27 @@ export interface BattleState {
   /** Daniel's Shut the Lions' Mouths: once per battle; while on, the leader's blows go to Daniel and do no harm. */
   lionsDenUsed: boolean;
   lionsDen: boolean;
+  /** Shadrach, Meshach and Abednego: the Fourth in the Fire keeps every ally unhurt this turn, once per battle. */
+  fourthManUsed: boolean;
+  fiery: boolean;
+  /** Job: the LORD Turned His Captivity can be used once per battle. */
+  captivityUsed: boolean;
+  /** Enoch: God took him — the first time he falls, every ally is blessed. */
+  enochTaken: boolean;
+  /** Ezekiel: the Dry Bones Live can be used once per battle. */
+  dryBonesUsed: boolean;
+  /** Hezekiah: Spread the Letter before the LORD can be used once per battle. */
+  letterUsed: boolean;
+  /** The Magi: Gold, Frankincense and Myrrh can be given once per battle. */
+  giftsGiven: boolean;
+  /** Jairus: Talitha Cumi can be used once per battle. */
+  talithaUsed: boolean;
+  /** Jesus on the cross: It Is Finished can be spoken once per battle. */
+  finishedUsed: boolean;
+  /** Nebuchadnezzar praises the King of heaven once per battle. */
+  praisedHeaven: boolean;
+  /** The good Samaritan's Two Pence: the innkeeper looks after this ally for a few more turns. */
+  inn: { ally: CharacterId; turns: number } | null;
   /** How many times Nehemiah has built the wall this battle: each course makes it stronger. */
   wallCourses: number;
   /** Zechariah's His Name Is John can be used once per battle. */
@@ -245,6 +268,8 @@ export interface BattleState {
   speakUsed: boolean;
   /** The ally Aquila takes the blows for this turn. */
   aquilaCovers: CharacterId | null;
+  /** Simon of Cyrene bears the blows meant for this ally this turn. */
+  simonCovers: CharacterId | null;
   /** Tabitha, arise: "ready" until she falls beside Peter, "asleep" until next turn, then "raised". */
   dorcas: "ready" | "asleep" | "raised";
   /** Jesus (UR) rises once: the turn he rises on while in the tomb, else null; risenUsed after that. */

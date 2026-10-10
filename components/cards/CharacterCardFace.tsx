@@ -15,8 +15,8 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", eli: "061", aquila: "062", dorcas: "063", cornelius: "064", apollos: "065", phoebe: "066", luke: "067", johnMark: "068", titus: "069", philemon: "070", onesimus: "071", nicodemus: "072", samaritan: "073", simeon: "074", anna: "075", loavesBoy: "076", judas: "077", philipApostle: "078", nathanael: "079", jamesAlph: "080", thaddaeus: "081", simonZealot: "082", matthias: "083", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", elizabeth: "🤰", mordecai: "🚪", sarah: "😄", rebekah: "🏺", rachel: "🐑", barak: "⛰️", jael: "⛺", josephArimathea: "🪨", ananias: "👁️", threeFriends: "🔥", job: "🌾", enoch: "🚶", melchizedek: "🍞", caleb: "⛰️", jeremiah: "🌸", ezekiel: "🦴", ezra: "📜", nathan: "👉", hezekiah: "✉️", josiah: "📖", magi: "⭐", shepherds: "🐑", bartimaeus: "👁️", centurion: "🪖", jairus: "🙏", simonCyrene: "✝️", thief: "🕊️", jamesJust: "👂", mockingThief: "😠", jesusCross: "✝️", widow: "🪙", fisherman: "🎣", fourFriends: "🛏️", goodSamaritan: "🫒", pharaoh: "𓂀", charioteer: "🐎", jezebel: "👑", baalProphet: "🗿", haman: "💍", delilah: "✂️", nebuchadnezzar: "🔥", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", eli: "061", aquila: "062", dorcas: "063", cornelius: "064", apollos: "065", phoebe: "066", luke: "067", johnMark: "068", titus: "069", philemon: "070", onesimus: "071", nicodemus: "072", samaritan: "073", simeon: "074", anna: "075", loavesBoy: "076", judas: "077", philipApostle: "078", nathanael: "079", jamesAlph: "080", thaddaeus: "081", simonZealot: "082", matthias: "083", elizabeth: "084", mordecai: "085", sarah: "086", rebekah: "087", rachel: "088", barak: "089", jael: "090", josephArimathea: "091", ananias: "092", threeFriends: "093", job: "094", enoch: "095", melchizedek: "096", caleb: "097", jeremiah: "098", ezekiel: "099", ezra: "100", nathan: "101", hezekiah: "102", josiah: "103", magi: "104", shepherds: "105", bartimaeus: "106", centurion: "107", jairus: "108", simonCyrene: "109", thief: "110", jamesJust: "111", jesusCross: "112", widow: "113", fisherman: "114", fourFriends: "115", goodSamaritan: "116", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04", mockingThief: "E05", pharaoh: "E06", charioteer: "E07", jezebel: "E08", baalProphet: "E09", haman: "E10", delilah: "E11", nebuchadnezzar: "E12" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -27,6 +27,47 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
   matthias: { src: "/cards/matthias.jpg", figure: { cx: 0.51, head: 0.132, feet: 0.962 } },
+  elizabeth: { src: "/cards/elizabeth.jpg", figure: { cx: 0.47, head: 0.13, feet: 0.975 } },
+  mordecai: { src: "/cards/mordecai.jpg", figure: { cx: 0.45, head: 0.164, feet: 0.965 } },
+  sarah: { src: "/cards/sarah.jpg", figure: { cx: 0.47, head: 0.128, feet: 0.97 } },
+  rebekah: { src: "/cards/rebekah.jpg", figure: { cx: 0.48, head: 0.16, feet: 0.962 } },
+  rachel: { src: "/cards/rachel.jpg", figure: { cx: 0.47, head: 0.175, feet: 0.965 } },
+  barak: { src: "/cards/barak.jpg", figure: { cx: 0.46, head: 0.176, feet: 0.96 } },
+  jael: { src: "/cards/jael.jpg", figure: { cx: 0.5, head: 0.14, feet: 0.955 } },
+  josephArimathea: { src: "/cards/josephArimathea.jpg", figure: { cx: 0.49, head: 0.12, feet: 0.965 } },
+  ananias: { src: "/cards/ananias.jpg", figure: { cx: 0.5, head: 0.15, feet: 0.965 } },
+  charioteer: { src: "/cards/charioteer.jpg", figure: { cx: 0.44, head: 0.105, feet: 0.94 } },
+  jezebel: { src: "/cards/jezebel.jpg", figure: { cx: 0.47, head: 0.09, feet: 0.955 } },
+  baalProphet: { src: "/cards/baalProphet.jpg", figure: { cx: 0.42, head: 0.11, feet: 0.965 } },
+  nebuchadnezzar: { src: "/cards/nebuchadnezzar.jpg", figure: { cx: 0.45, head: 0.165, feet: 0.955 } },
+  delilah: { src: "/cards/delilah.jpg", figure: { cx: 0.45, head: 0.11, feet: 0.965 } },
+  haman: { src: "/cards/haman.jpg", figure: { cx: 0.5, head: 0.09, feet: 0.96 } },
+  pharaoh: { src: "/cards/pharaoh.jpg", figure: { cx: 0.5, head: 0.175, feet: 0.965 } },
+  goodSamaritan: { src: "/cards/goodSamaritan.jpg", figure: { cx: 0.52, head: 0.13, feet: 0.96 } },
+  fourFriends: { src: "/cards/fourFriends.jpg", figure: { cx: 0.444, head: 0.11, feet: 0.95, size: 0.88 } },
+  fisherman: { src: "/cards/fisherman.jpg", figure: { cx: 0.5, head: 0.13, feet: 0.965 } },
+  widow: { src: "/cards/widow.jpg", figure: { cx: 0.47, head: 0.11, feet: 0.975 } },
+  jesusCross: { src: "/cards/jesusCross.jpg", figure: { cx: 0.444, head: 0.145, feet: 0.88, size: 0.77 } },
+  mockingThief: { src: "/cards/mockingThief.jpg", figure: { cx: 0.444, head: 0.15, feet: 0.9, size: 0.79 } },
+  jamesJust: { src: "/cards/jamesJust.jpg", figure: { cx: 0.49, head: 0.105, feet: 0.965 } },
+  thief: { src: "/cards/thief.jpg", figure: { cx: 0.444, head: 0.17, feet: 0.92, size: 0.79 } },
+  simonCyrene: { src: "/cards/simonCyrene.jpg", figure: { cx: 0.49, head: 0.18, feet: 0.95 } },
+  jairus: { src: "/cards/jairus.jpg", figure: { cx: 0.48, head: 0.14, feet: 0.975 } },
+  centurion: { src: "/cards/centurion.jpg", figure: { cx: 0.5, head: 0.145, feet: 0.965 } },
+  bartimaeus: { src: "/cards/bartimaeus.jpg", figure: { cx: 0.5, head: 0.135, feet: 0.95 } },
+  shepherds: { src: "/cards/shepherds.jpg", figure: { cx: 0.4, head: 0.21, feet: 0.86, size: 0.69 } },
+  magi: { src: "/cards/magi.jpg", figure: { cx: 0.444, head: 0.21, feet: 0.92, size: 0.75 } },
+  josiah: { src: "/cards/josiah.jpg", figure: { cx: 0.45, head: 0.13, feet: 0.97 } },
+  hezekiah: { src: "/cards/hezekiah.jpg", figure: { cx: 0.48, head: 0.175, feet: 0.965 } },
+  nathan: { src: "/cards/nathan.jpg", figure: { cx: 0.47, head: 0.15, feet: 0.955 } },
+  ezra: { src: "/cards/ezra.jpg", figure: { cx: 0.46, head: 0.195, feet: 0.965 } },
+  ezekiel: { src: "/cards/ezekiel.jpg", figure: { cx: 0.4, head: 0.19, feet: 0.955 } },
+  jeremiah: { src: "/cards/jeremiah.jpg", figure: { cx: 0.47, head: 0.13, feet: 0.95 } },
+  caleb: { src: "/cards/caleb.jpg", figure: { cx: 0.45, head: 0.19, feet: 0.96 } },
+  melchizedek: { src: "/cards/melchizedek.jpg", figure: { cx: 0.5, head: 0.12, feet: 0.97 } },
+  enoch: { src: "/cards/enoch.jpg", figure: { cx: 0.5, head: 0.18, feet: 0.95 } },
+  job: { src: "/cards/job.jpg", figure: { cx: 0.43, head: 0.15, feet: 0.965 } },
+  threeFriends: { src: "/cards/threeFriends.jpg", figure: { cx: 0.5, head: 0.19, feet: 0.89, size: 0.74 } },
   simonZealot: { src: "/cards/simon-zealot.jpg", figure: { cx: 0.47, head: 0.137, feet: 0.962 } },
   thaddaeus: { src: "/cards/thaddaeus.jpg", figure: { cx: 0.5, head: 0.122, feet: 0.957 } },
   jamesAlph: { src: "/cards/james-alphaeus.jpg", figure: { cx: 0.49, head: 0.183, feet: 0.962 } },
@@ -68,7 +109,7 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   johnApostle: { src: "/cards/john-apostle.jpg", figure: { cx: 0.51, head: 0.171, feet: 0.972 } },
   andrew: { src: "/cards/andrew.jpg", figure: { cx: 0.5, head: 0.18, feet: 0.952 } },
   peter: { src: "/cards/peter.jpg", figure: { cx: 0.52, head: 0.164, feet: 0.977 } },
-  jesus: { src: "/cards/jesus.jpg", figure: { cx: 0.49, head: 0.146, feet: 0.962 } },
+  jesus: { src: "/cards/jesus-risen.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.965 } },
   jesusUR: { src: "/cards/jesus-ur.jpg", figure: { cx: 0.49, head: 0.145, feet: 0.972 } },
   johnBaptist: { src: "/cards/john-baptist.jpg", figure: { cx: 0.48, head: 0.164, feet: 0.962 } },
   josephNaz: { src: "/cards/joseph-nazareth.jpg", figure: { cx: 0.47, head: 0.193, feet: 0.972 } },
@@ -148,6 +189,9 @@ export const THEME: Record<Element, { frame: string; panel: string; art: string 
   },
 };
 
+/** Rough display width of a name: CJK characters count double. */
+const nameWidth = (name: string) => [...name].reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? 2 : 1), 0);
+
 /** Name, title, HP and element. */
 function Header({ id, light }: { id: CharacterId; light?: boolean }) {
   const t = useT();
@@ -155,7 +199,8 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
     <div className={`flex items-end justify-between px-[6%] ${light ? "text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]" : ""}`}>
       <div className="min-w-0">
         <div className={`text-[0.6em] font-semibold uppercase tracking-wider ${light ? "opacity-90" : "opacity-60"}`}>{t(`v3.card.${id}.title`)}</div>
-        <div className="truncate text-[1.35em] font-black leading-none">{t(`char.${id}.name`)}</div>
+        {/* Long names (Shadrach, Meshach and Abednego) shrink so they stay clear of the HP corner. */}
+        <div className={`truncate font-black leading-none ${nameWidth(t(`char.${id}.name`)) > 14 ? "text-[0.85em]" : "text-[1.35em]"}`}>{t(`char.${id}.name`)}</div>
       </div>
       {/* HP and element sit in the face's top-right corner, where the battle HP badge covers them. */}
       <div className="absolute right-[2%] top-[calc(2.2%+10px)] flex items-baseline gap-1">
@@ -176,7 +221,7 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
   const resist = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul" || id === "dorcas" || id === "luke") && (
+      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul" || id === "dorcas" || id === "luke" || id === "josephArimathea" || id === "enoch") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t(`v2.passive.${id}`)}
