@@ -135,10 +135,10 @@ export const RULES_V2 = {
   carpenterHeal: 20,
   /** John the Baptist: the Axe hits wood enemies double; Baptism heals every ally (+1 Faith with Zechariah). */
   baptismHeal: 30,
-  /** Jesus: Cleansing the Leper heals one ally; Gethsemane shields every ally and gives Faith; the Loaves feed everyone. */
-  leperHeal: 50,
-  gethsemaneShield: 40,
-  gethsemaneFaith: 2,
+  /** Jesus (risen): Peace Be unto You heals one ally; I Am with You Alway shields every ally and gives Faith; the Loaves feed everyone. */
+  risenPeaceHeal: 50,
+  alwayShield: 40,
+  alwayFaith: 2,
   loavesHeal: 40,
   loavesDraw: 3,
   loavesFaith: 1,
@@ -331,8 +331,8 @@ export const RULES_V2 = {
   worksMax: 30,
   /** The criminal who mocked: Railed On hits hard, but the railing costs him HP. */
   railCost: 20,
-  /** Jesus on the cross: It Is Finished strikes every enemy and heals every ally, then he gives up the ghost. */
-  finishedHeal: 40,
+  /** Jesus on the cross: Into Thy Hands strikes every enemy and heals every ally, then he gives up the ghost. */
+  spiritHeal: 40,
   /** The four friends: Through the Roof heals another ally (double with Jesus); Their Faith gives Faith (3 with Jesus). */
   roofHeal: 30,
   theirFaith: 2,
@@ -359,6 +359,158 @@ export const RULES_V2 = {
   /** Nebuchadnezzar: Seven Times Hotter strikes every enemy; Praise the King of Heaven heals everyone and gives Faith, once. */
   heavenHeal: 30,
   heavenFaith: 2,
+  /** Ahab: Coveting the Vineyard gives Attack (3 with Jezebel); Humbled Himself heals him and steadies everyone, once. */
+  vineyardAttack: 2,
+  humbledHeal: 50,
+  /** The widow of Zarephath: the Meal Not Spent heals everyone a little (double with Elijah); the Little Cake heals another ally. */
+  mealHeal: 10,
+  cakeHeal: 30,
+  /** The Shunammite woman: a Little Chamber shields everyone (more with Elisha); It Is Well raises a fallen ally once. */
+  chamberShield: 10,
+  wellHp: 60,
+  /** Naaman: Seven Times in Jordan restores him and steadies everyone, once (+2 Faith with Elisha); Captain of the Host strikes. */
+  jordanFaith: 2,
+  /** The little maid: Would God gives Faith (2 with Naaman or Elisha); her service heals another ally. */
+  maidHeal: 20,
+  /** Bathsheba: Remember the Oath gives Faith (2 with David or Nathan); the King's Mother heals and shields an ally (double for Solomon). */
+  queenMotherHeal: 40,
+  queenMotherShield: 20,
+  /** Absalom: Stole the Hearts gives Faith (3) but shakes David; Fifty Men Before Him strikes (+20 against the leader). */
+  heartsFaith: 3,
+  /** Mephibosheth: the King's Table heals him (double with David or Jonathan) and gives Faith; a Dead Dog steadies everyone. */
+  tableHeal: 30,
+  /** The Queen of Sheba: Hard Questions draw cards (2 with Solomon) and give Faith; Spices and Gold give Attack and heal everyone. */
+  goldAttack: 2,
+  spiceHeal: 20,
+  /** Leah: Looked Upon My Affliction heals her (+1 Faith when she is at half HP or less); Now Will I Praise gives Faith (3 with Jacob). */
+  afflictionHeal: 30,
+  praiseFaith: 2,
+  /** Esau: the Cunning Hunter strikes (+20 with Isaac); Ran to Meet Him steadies and shields everyone (Jacob most). */
+  hunterWithIsaac: 20,
+  embraceShield: 10,
+  embraceJacobShield: 30,
+  /** Hagar and Ishmael: God Heard gives Faith (3 with Abraham) and heals them; the Well Opened heals everyone, once. */
+  heardHeal: 20,
+  wellHeal: 40,
+  /** Lot and his wife: Escape for Thy Life shields everyone (+1 Faith with Abraham); Looking Back gives Attack but shakes them. */
+  escapeShield: 15,
+  lookBackAttack: 2,
+  /** Jochebed: the Ark of Bulrushes shields another ally (Moses most); Nurse Him heals another ally and gives Faith (2 with Moses or Miriam). */
+  bulrushShield: 30,
+  bulrushMosesShield: 60,
+  nurseHeal: 30,
+  /** Pharaoh's daughter: Had Compassion heals another ally (double for Moses); Drew Him Out gives Faith (3 with Moses or Jochebed). */
+  compassionHeal: 40,
+  drewFaith: 2,
+  /** Jethro: Share the Burden gives Attack and Guard (+1 Faith with Moses); Greater Than All Gods gives Faith (3 with Moses). */
+  greaterFaith: 2,
+  /** Zipporah: Watered the Flock heals everyone (and shields them with Moses); a Stranger in a Strange Land gives Faith (2 with Moses or Jethro). */
+  flockHeal: 15,
+  flockShield: 10,
+  /** Lois and Eunice: Unfeigned Faith gives Faith (2 with Timothy); From a Child draws a card and shields everyone (Timothy most). */
+  childShield: 10,
+  childTimothyShield: 30,
+  /** Ananias and Sapphira: Sold a Possession gives Attack; Kept Back Part gives Faith — but with Peter in the line-up the lie is found out. */
+  soldAttack: 2,
+  keptFaith: 3,
+  keptCost: 30,
+  /** Pilate: No Fault shields everyone; Washed His Hands guards himself and gives Attack, but strips every other ally's Shield. */
+  noFaultShield: 15,
+  washShield: 30,
+  /** Caiaphas: One Man Should Die gives Faith at the cost of the sturdiest other ally's HP; Rent His Clothes strikes. */
+  expedientFaith: 3,
+  expedientCost: 20,
+  /** Herod Antipas: Hoped to See a Miracle draws cards; the Gorgeous Robe shields him and gives Attack (+1 Faith with Pilate). */
+  signDraw: 2,
+  robeShield: 20,
+  /** Barabbas: Insurrection strikes; Released unto Them restores him once (+2 Faith with Jesus — another took his place). */
+  releasedFaith: 2,
+  /** Herodias: a Convenient Day gives Attack (+1 Faith with Herod); the Grudge strikes hard, but shakes John the Baptist. */
+  convenientAttack: 2,
+  /** The Roman infantryman: Shield Wall shields him and the ally beside him; the Gladius strikes (+20 under a centurion). */
+  scutumShield: 30,
+  wallAllyShield: 10,
+  underCenturion: 20,
+  /** Sennacherib: On Whom Dost Thou Trust gives Attack; the Fenced Cities strike every enemy — but with Hezekiah, the angel of the LORD smites his camp. */
+  campSmitten: 50,
+  /** Belshazzar: the Golden Vessels give Attack but shake him; the Writing on the Wall gives Faith (3 with Daniel, who is clothed in scarlet). */
+  vesselsAttack: 3,
+  scarletShield: 20,
+  /** Balaam and his donkey: the Donkey Saw the Angel shields and steadies everyone; Bless, Not Curse heals everyone and gives Faith. */
+  donkeyShield: 15,
+  blessHeal: 20,
+  /** Korah: Ye Take Too Much gives Attack but shakes Moses and Aaron; the Censers strike every enemy, but with Moses or Aaron the earth opens. */
+  censerCost: 40,
+  /** Achan: the Hidden Spoil gives Faith, but with Joshua it is found out; the Trouble of Achor strikes every enemy at his own cost. */
+  spoilFaith: 3,
+  spoilCost: 30,
+  achorCost: 20,
+  /** Sisera: his chariots strike every enemy, but Deborah or Barak rout them; fleeing to the tent heals him, unless Jael is there. */
+  siseraMilkHeal: 20,
+  siseraMantleShield: 30,
+  siseraPegCost: 40,
+  /** Herod the Great: Privily Called draws cards, but the Magi or Joseph foil him; Exceeding Wroth strikes hard at his own cost. */
+  privilyDraw: 2,
+  wrothCost: 15,
+  /** The man freed from Legion: In His Right Mind steadies everyone (Faith with Jesus); Tell How Great draws and heals everyone. */
+  legionShield: 30,
+  legionFaith: 2,
+  tellDraw: 2,
+  tellHeal: 15,
+  /** The prodigal son: Came to Himself gives more Faith the lower he has sunk; the Best Robe heals and covers him. */
+  prodigalFaith: 1,
+  prodigalLowFaith: 3,
+  prodigalRobeHeal: 40,
+  prodigalRobeShield: 20,
+  /** The Ethiopian: reading Isaiah gives Faith (more with Philip to guide him); he went on his way rejoicing. */
+  eunuchFaith: 1,
+  eunuchPhilipFaith: 3,
+  rejoicingHeal: 20,
+  /** John on Patmos: In the Spirit gives Faith and a card; a New Heaven heals and steadies every ally. */
+  patmosFaith: 2,
+  newHeavenHeal: 30,
+  /** Ehud: the left-handed dagger strikes harder at an enemy still unhurt; his trumpet gives Attack and covers him. */
+  ehudSurprise: 20,
+  trumpetAttack: 2,
+  trumpetShield: 20,
+  /** Jephthah: The LORD Be Judge gives Faith and Shield; his rash vow strikes hard but costs him dearly. */
+  judgeFaith: 2,
+  judgeShield: 15,
+  vowCost: 30,
+  /** Joab: Play the Men shields every ally and gives Attack; his three darts strike hard, and with Absalom on the team they find him too. */
+  joabShield: 15,
+  dartsCost: 40,
+  /** Uriah: Would Not Go Home shields him and gives Faith; set in the hottest battle he strikes hard at his own cost, more with David there. */
+  uriahShield: 30,
+  uriahFaith: 1,
+  hottestCost: 20,
+  hottestBetrayed: 40,
+  /** Simon the sorcerer: his sorceries give Attack (Faith instead with Philip); offering money turns Attack into Faith, unless Peter is there. */
+  sorceryAttack: 2,
+  sorceryFaith: 2,
+  /** Herod Agrippa I: pleasing the crowd gives Attack, unless Peter is there to be set free; the voice of a god strikes every enemy, then the angel smites him. */
+  agrippaAttack: 2,
+  voiceCost: 40,
+  /** Cyrus: his decree gives Faith (and Attack with Ezra, Nehemiah or Daniel to go up); returning the temple vessels shields every ally. */
+  cyrusFaith: 2,
+  cyrusShield: 25,
+  /** Zerubbabel: laying the foundation shields him and gives Faith; Not by Might strikes every enemy with Faith alone. */
+  foundationShield: 30,
+  foundationFaith: 1,
+  /** Vashti: refusing to come shields her; her feast heals every ally (Faith too with Esther there). */
+  vashtiShield: 40,
+  vashtiFeastHeal: 20,
+  /** Michal: Let Down Through a Window shields another ally (more for David) and steadies them; the image in the bed draws a card and shields her. */
+  michalShield: 30,
+  michalDavidShield: 50,
+  michalDecoyShield: 20,
+  /** Gehazi: running after Naaman gives Attack, unless Elisha is there to see it; two talents give Faith and a card. */
+  gehaziAttack: 2,
+  gehaziCost: 30,
+  /** Jehu: his zeal gives Attack and shakes any of Ahab's house on the team. */
+  jehuAttack: 2,
+  /** The Roman spearman: Brace Spears takes an ally's blows this turn and shields him; the Pilum reaches any enemy. */
+  braceShield: 20,
   basketHeal: 30,
   /** Judas: Thirty Pieces of Silver give Faith at an ally's cost; the Money Bag strikes and gives Faith. */
   silverFaith: 3,
@@ -505,6 +657,39 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   fisherman: "water",
   fourFriends: "earth",
   goodSamaritan: "wood",
+  legionFreed: "water",
+  prodigal: "earth",
+  ethiopian: "light",
+  johnPatmos: "light",
+  ehud: "metal",
+  jephthah: "earth",
+  joab: "metal",
+  uriah: "earth",
+  cyrus: "light",
+  zerubbabel: "earth",
+  vashti: "water",
+  michal: "wood",
+  gehazi: "dark",
+  jehu: "fire",
+  simonMagus: "dark",
+  herodAgrippa: "metal",
+  zarephath: "earth",
+  shunammite: "wood",
+  naaman: "water",
+  maid: "light",
+  bathsheba: "metal",
+  mephibosheth: "earth",
+  sheba: "metal",
+  leah: "earth",
+  esau: "fire",
+  hagar: "water",
+  lot: "earth",
+  jochebed: "water",
+  pharaohDaughter: "water",
+  jethro: "earth",
+  zipporah: "water",
+  loisEunice: "wood",
+  balaam: "earth",
   pharaoh: "metal",
   charioteer: "metal",
   jezebel: "dark",
@@ -512,6 +697,25 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   haman: "dark",
   delilah: "dark",
   nebuchadnezzar: "fire",
+  ahab: "dark",
+  absalom: "fire",
+  sapphira: "dark",
+  pilate: "metal",
+  caiaphas: "dark",
+  herod: "fire",
+  barabbas: "dark",
+  herodias: "dark",
+  romanSoldier: "metal",
+  romanSpearman: "metal",
+  romanArcher: "metal",
+  romanCavalry: "metal",
+  romanCenturion: "metal",
+  sennacherib: "dark",
+  belshazzar: "metal",
+  korah: "fire",
+  achan: "earth",
+  sisera: "metal",
+  herodGreat: "dark",
   loavesBoy: "earth",
   judas: "dark",
   philipApostle: "earth",
@@ -529,17 +733,17 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark" };
 
 /** Cards that show the same person: a line-up holds only one of them. */
-export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses", jesusUR: "jesus", jesusCross: "jesus" };
+export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses", jesusUR: "jesus", jesusCross: "jesus", johnPatmos: "johnApostle" };
 
 /** The twelve apostles (Matthew 10:2-4), for One of the Twelve. */
-export const APOSTLES: ReadonlySet<CharacterId> = new Set(["peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "thomas", "matthew", "jamesAlph", "thaddaeus", "simonZealot", "judas", "matthias"]);
+export const APOSTLES: ReadonlySet<CharacterId> = new Set(["peter", "andrew", "jamesZeb", "johnApostle", "johnPatmos", "philipApostle", "nathanael", "thomas", "matthew", "jamesAlph", "thaddaeus", "simonZealot", "judas", "matthias"]);
 
 /** Cards that never fall: never targeted, never hurt, and not counted when deciding defeat. */
 export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "zarephath", "shunammite", "naaman", "maid", "bathsheba", "mephibosheth", "sheba", "leah", "esau", "hagar", "lot", "jochebed", "pharaohDaughter", "jethro", "zipporah", "loisEunice", "balaam", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "ahab", "absalom", "sapphira", "pilate", "caiaphas", "herod", "barabbas", "herodias", "romanSoldier", "romanSpearman", "romanArcher", "romanCavalry", "romanCenturion", "sennacherib", "belshazzar", "korah", "achan", "sisera", "herodGreat", "legionFreed", "prodigal", "ethiopian", "johnPatmos", "ehud", "jephthah", "joab", "uriah", "cyrus", "zerubbabel", "vashti", "michal", "gehazi", "jehu", "simonMagus", "herodAgrippa", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -555,7 +759,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, eli: 90, aquila: 110, dorcas: 100, cornelius: 140, apollos: 110, phoebe: 100, luke: 110, johnMark: 100, titus: 120, philemon: 110, onesimus: 90, nicodemus: 110, samaritan: 100, simeon: 100, anna: 90, loavesBoy: 80, judas: 100, philipApostle: 110, nathanael: 110, jamesAlph: 120, thaddaeus: 110, simonZealot: 120, matthias: 110, elizabeth: 100, mordecai: 130, sarah: 110, rebekah: 110, rachel: 100, barak: 130, jael: 100, josephArimathea: 110, ananias: 100, threeFriends: 150, job: 150, enoch: 110, melchizedek: 120, caleb: 140, jeremiah: 110, ezekiel: 120, ezra: 110, nathan: 110, hezekiah: 120, josiah: 120, magi: 150, shepherds: 140, bartimaeus: 100, centurion: 130, jairus: 110, simonCyrene: 140, thief: 80, jamesJust: 120, mockingThief: 90, jesusCross: 120, widow: 80, fisherman: 100, fourFriends: 160, goodSamaritan: 120, pharaoh: 140, charioteer: 110, jezebel: 110, baalProphet: 100, haman: 120, delilah: 100, nebuchadnezzar: 140, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, eli: 90, aquila: 110, dorcas: 100, cornelius: 140, apollos: 110, phoebe: 100, luke: 110, johnMark: 100, titus: 120, philemon: 110, onesimus: 90, nicodemus: 110, samaritan: 100, simeon: 100, anna: 90, loavesBoy: 80, judas: 100, philipApostle: 110, nathanael: 110, jamesAlph: 120, thaddaeus: 110, simonZealot: 120, matthias: 110, elizabeth: 100, mordecai: 130, sarah: 110, rebekah: 110, rachel: 100, barak: 130, jael: 100, josephArimathea: 110, ananias: 100, threeFriends: 150, job: 150, enoch: 110, melchizedek: 120, caleb: 140, jeremiah: 110, ezekiel: 120, ezra: 110, nathan: 110, hezekiah: 120, josiah: 120, magi: 150, shepherds: 140, bartimaeus: 100, centurion: 130, jairus: 110, simonCyrene: 140, thief: 80, jamesJust: 120, mockingThief: 90, jesusCross: 120, widow: 80, fisherman: 100, fourFriends: 160, goodSamaritan: 120, zarephath: 90, shunammite: 100, naaman: 140, maid: 70, bathsheba: 110, mephibosheth: 90, sheba: 110, leah: 110, esau: 140, hagar: 140, lot: 130, jochebed: 100, pharaohDaughter: 100, jethro: 120, zipporah: 100, loisEunice: 130, balaam: 130, pharaoh: 140, charioteer: 110, jezebel: 110, baalProphet: 100, haman: 120, delilah: 100, nebuchadnezzar: 140, ahab: 130, absalom: 120, sapphira: 110, pilate: 130, caiaphas: 120, herod: 120, barabbas: 110, herodias: 110, romanSoldier: 120, romanSpearman: 110, romanArcher: 90, romanCavalry: 130, romanCenturion: 140, sennacherib: 150, belshazzar: 120, korah: 130, achan: 110, sisera: 140, herodGreat: 130, legionFreed: 120, prodigal: 100, ethiopian: 110, johnPatmos: 120, ehud: 120, jephthah: 130, joab: 140, uriah: 140, cyrus: 130, zerubbabel: 130, vashti: 110, michal: 100, gehazi: 100, jehu: 140, simonMagus: 110, herodAgrippa: 130, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -637,8 +841,8 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   dreamWarning: { id: "dreamWarning", owner: "josephNaz", kind: "faith", cost: 2 },
   axe: { id: "axe", owner: "johnBaptist", kind: "attack", cost: 2, damage: 40 },
   baptism: { id: "baptism", owner: "johnBaptist", kind: "guard", cost: 2 },
-  leper: { id: "leper", owner: "jesus", kind: "guard", cost: 1 },
-  gethsemane: { id: "gethsemane", owner: "jesus", kind: "guard", cost: 2 },
+  peaceBeUnto: { id: "peaceBeUnto", owner: "jesus", kind: "guard", cost: 1 },
+  withYouAlway: { id: "withYouAlway", owner: "jesus", kind: "guard", cost: 2 },
   walkOnWater: { id: "walkOnWater", owner: "jesusUR", kind: "faith", cost: 2 },
   loaves: { id: "loaves", owner: "jesusUR", kind: "faith", cost: 3 },
   greatCatch: { id: "greatCatch", owner: "peter", kind: "guard", cost: 1 },
@@ -784,7 +988,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   saveThyself: { id: "saveThyself", owner: "mockingThief", kind: "attack", cost: 1, damage: 30 },
   railedOn: { id: "railedOn", owner: "mockingThief", kind: "attack", cost: 2, damage: 50 },
   forgiveThem: { id: "forgiveThem", owner: "jesusCross", kind: "guard", cost: 1 },
-  itIsFinished: { id: "itIsFinished", owner: "jesusCross", kind: "faith", cost: 3, damage: 60 },
+  commitSpirit: { id: "commitSpirit", owner: "jesusCross", kind: "faith", cost: 3, damage: 60 },
   twoMites: { id: "twoMites", owner: "widow", kind: "guard", cost: 1 },
   allHerLiving: { id: "allHerLiving", owner: "widow", kind: "guard", cost: 1 },
   toiledAllNight: { id: "toiledAllNight", owner: "fisherman", kind: "guard", cost: 1 },
@@ -807,6 +1011,110 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   whereinStrength: { id: "whereinStrength", owner: "delilah", kind: "attack", cost: 2, damage: 40 },
   sevenTimesHotter: { id: "sevenTimesHotter", owner: "nebuchadnezzar", kind: "attack", cost: 2, damage: 30 },
   praiseKingOfHeaven: { id: "praiseKingOfHeaven", owner: "nebuchadnezzar", kind: "faith", cost: 2 },
+  covetVineyard: { id: "covetVineyard", owner: "ahab", kind: "guard", cost: 1 },
+  humbledHimself: { id: "humbledHimself", owner: "ahab", kind: "faith", cost: 2 },
+  stoleHearts: { id: "stoleHearts", owner: "absalom", kind: "guard", cost: 1 },
+  fiftyMen: { id: "fiftyMen", owner: "absalom", kind: "attack", cost: 2, damage: 40 },
+  soldPossession: { id: "soldPossession", owner: "sapphira", kind: "guard", cost: 1 },
+  keptBackPart: { id: "keptBackPart", owner: "sapphira", kind: "guard", cost: 1 },
+  noFault: { id: "noFault", owner: "pilate", kind: "guard", cost: 1 },
+  washedHands: { id: "washedHands", owner: "pilate", kind: "guard", cost: 1 },
+  oneManDie: { id: "oneManDie", owner: "caiaphas", kind: "guard", cost: 1 },
+  rentClothes: { id: "rentClothes", owner: "caiaphas", kind: "attack", cost: 2, damage: 40 },
+  hopedSign: { id: "hopedSign", owner: "herod", kind: "guard", cost: 1 },
+  gorgeousRobe: { id: "gorgeousRobe", owner: "herod", kind: "guard", cost: 1 },
+  insurrection: { id: "insurrection", owner: "barabbas", kind: "attack", cost: 1, damage: 30 },
+  releasedUnto: { id: "releasedUnto", owner: "barabbas", kind: "guard", cost: 1 },
+  convenientDay: { id: "convenientDay", owner: "herodias", kind: "guard", cost: 1 },
+  heldGrudge: { id: "heldGrudge", owner: "herodias", kind: "attack", cost: 2, damage: 40 },
+  shieldWall: { id: "shieldWall", owner: "romanSoldier", kind: "guard", cost: 1 },
+  gladius: { id: "gladius", owner: "romanSoldier", kind: "attack", cost: 1, damage: 30 },
+  braceSpears: { id: "braceSpears", owner: "romanSpearman", kind: "guard", cost: 1 },
+  pilum: { id: "pilum", owner: "romanSpearman", kind: "attack", cost: 1, damage: 20 },
+  aimedShot: { id: "aimedShot", owner: "romanArcher", kind: "attack", cost: 1, damage: 30 },
+  arrowVolley: { id: "arrowVolley", owner: "romanArcher", kind: "attack", cost: 2, damage: 20 },
+  rideOut: { id: "rideOut", owner: "romanCavalry", kind: "guard", cost: 1 },
+  cavalryCharge: { id: "cavalryCharge", owner: "romanCavalry", kind: "attack", cost: 2, damage: 40 },
+  commandCohort: { id: "commandCohort", owner: "romanCenturion", kind: "guard", cost: 1 },
+  trulySonOfGod: { id: "trulySonOfGod", owner: "romanCenturion", kind: "guard", cost: 2 },
+  whomTrust: { id: "whomTrust", owner: "sennacherib", kind: "guard", cost: 1 },
+  fencedCities: { id: "fencedCities", owner: "sennacherib", kind: "attack", cost: 2, damage: 30 },
+  goldenVessels: { id: "goldenVessels", owner: "belshazzar", kind: "guard", cost: 1 },
+  writingOnWall: { id: "writingOnWall", owner: "belshazzar", kind: "guard", cost: 1 },
+  takeTooMuch: { id: "takeTooMuch", owner: "korah", kind: "guard", cost: 1 },
+  strangeCensers: { id: "strangeCensers", owner: "korah", kind: "attack", cost: 2, damage: 40 },
+  hiddenSpoil: { id: "hiddenSpoil", owner: "achan", kind: "guard", cost: 1 },
+  troubleOfAchor: { id: "troubleOfAchor", owner: "achan", kind: "attack", cost: 2, damage: 30 },
+  ironChariots: { id: "ironChariots", owner: "sisera", kind: "attack", cost: 2, damage: 25 },
+  fledToTent: { id: "fledToTent", owner: "sisera", kind: "guard", cost: 1 },
+  privilyCalled: { id: "privilyCalled", owner: "herodGreat", kind: "guard", cost: 1 },
+  exceedingWroth: { id: "exceedingWroth", owner: "herodGreat", kind: "attack", cost: 2, damage: 45 },
+  rightMind: { id: "rightMind", owner: "legionFreed", kind: "guard", cost: 1 },
+  tellHowGreat: { id: "tellHowGreat", owner: "legionFreed", kind: "faith", cost: 2 },
+  cameToHimself: { id: "cameToHimself", owner: "prodigal", kind: "guard", cost: 1 },
+  bestRobe: { id: "bestRobe", owner: "prodigal", kind: "faith", cost: 2 },
+  readingIsaiah: { id: "readingIsaiah", owner: "ethiopian", kind: "guard", cost: 1 },
+  wentRejoicing: { id: "wentRejoicing", owner: "ethiopian", kind: "faith", cost: 2 },
+  inTheSpirit: { id: "inTheSpirit", owner: "johnPatmos", kind: "guard", cost: 1 },
+  newHeaven: { id: "newHeaven", owner: "johnPatmos", kind: "faith", cost: 3 },
+  leftHanded: { id: "leftHanded", owner: "ehud", kind: "attack", cost: 1, damage: 30 },
+  blewTrumpet: { id: "blewTrumpet", owner: "ehud", kind: "guard", cost: 1 },
+  judgeThisDay: { id: "judgeThisDay", owner: "jephthah", kind: "guard", cost: 1 },
+  rashVow: { id: "rashVow", owner: "jephthah", kind: "attack", cost: 2, damage: 60 },
+  playTheMen: { id: "playTheMen", owner: "joab", kind: "guard", cost: 1 },
+  threeDarts: { id: "threeDarts", owner: "joab", kind: "attack", cost: 2, damage: 45 },
+  wouldNotGoHome: { id: "wouldNotGoHome", owner: "uriah", kind: "guard", cost: 1 },
+  hottestBattle: { id: "hottestBattle", owner: "uriah", kind: "attack", cost: 1, damage: 40 },
+  sorceries: { id: "sorceries", owner: "simonMagus", kind: "guard", cost: 1 },
+  offeredMoney: { id: "offeredMoney", owner: "simonMagus", kind: "guard", cost: 1 },
+  pleasedJews: { id: "pleasedJews", owner: "herodAgrippa", kind: "guard", cost: 1 },
+  voiceOfGod: { id: "voiceOfGod", owner: "herodAgrippa", kind: "attack", cost: 2, damage: 30 },
+  cyrusDecree: { id: "cyrusDecree", owner: "cyrus", kind: "guard", cost: 1 },
+  returnVessels: { id: "returnVessels", owner: "cyrus", kind: "faith", cost: 2 },
+  laidFoundation: { id: "laidFoundation", owner: "zerubbabel", kind: "guard", cost: 1 },
+  notByMight: { id: "notByMight", owner: "zerubbabel", kind: "faith", cost: 3, damage: 35 },
+  refusedToCome: { id: "refusedToCome", owner: "vashti", kind: "guard", cost: 1 },
+  royalFeast: { id: "royalFeast", owner: "vashti", kind: "faith", cost: 2 },
+  letDownWindow: { id: "letDownWindow", owner: "michal", kind: "guard", cost: 1 },
+  imageInBed: { id: "imageInBed", owner: "michal", kind: "guard", cost: 1 },
+  ranAfterNaaman: { id: "ranAfterNaaman", owner: "gehazi", kind: "guard", cost: 1 },
+  twoTalents: { id: "twoTalents", owner: "gehazi", kind: "guard", cost: 1 },
+  drivethFuriously: { id: "drivethFuriously", owner: "jehu", kind: "attack", cost: 2, damage: 45 },
+  zealForLord: { id: "zealForLord", owner: "jehu", kind: "guard", cost: 1 },
+  mealNotSpent: { id: "mealNotSpent", owner: "zarephath", kind: "guard", cost: 1 },
+  littleCake: { id: "littleCake", owner: "zarephath", kind: "guard", cost: 1 },
+  littleChamber: { id: "littleChamber", owner: "shunammite", kind: "guard", cost: 1 },
+  itIsWell: { id: "itIsWell", owner: "shunammite", kind: "faith", cost: 2 },
+  sevenTimesJordan: { id: "sevenTimesJordan", owner: "naaman", kind: "guard", cost: 2 },
+  captainOfHost: { id: "captainOfHost", owner: "naaman", kind: "attack", cost: 2, damage: 50 },
+  wouldGod: { id: "wouldGod", owner: "maid", kind: "guard", cost: 1 },
+  littleMaid: { id: "littleMaid", owner: "maid", kind: "guard", cost: 1 },
+  rememberOath: { id: "rememberOath", owner: "bathsheba", kind: "guard", cost: 1 },
+  kingsMother: { id: "kingsMother", owner: "bathsheba", kind: "faith", cost: 2 },
+  kingsTable: { id: "kingsTable", owner: "mephibosheth", kind: "guard", cost: 1 },
+  deadDog: { id: "deadDog", owner: "mephibosheth", kind: "guard", cost: 1 },
+  hardQuestions: { id: "hardQuestions", owner: "sheba", kind: "guard", cost: 1 },
+  spicesAndGold: { id: "spicesAndGold", owner: "sheba", kind: "faith", cost: 2 },
+  lookedUpon: { id: "lookedUpon", owner: "leah", kind: "guard", cost: 1 },
+  nowPraise: { id: "nowPraise", owner: "leah", kind: "guard", cost: 2 },
+  cunningHunter: { id: "cunningHunter", owner: "esau", kind: "attack", cost: 1, damage: 30 },
+  ranToMeet: { id: "ranToMeet", owner: "esau", kind: "guard", cost: 1 },
+  godHeard: { id: "godHeard", owner: "hagar", kind: "guard", cost: 1 },
+  wellOpened: { id: "wellOpened", owner: "hagar", kind: "faith", cost: 2 },
+  escapeForLife: { id: "escapeForLife", owner: "lot", kind: "guard", cost: 1 },
+  lookedBack: { id: "lookedBack", owner: "lot", kind: "guard", cost: 1 },
+  arkOfBulrushes: { id: "arkOfBulrushes", owner: "jochebed", kind: "guard", cost: 1 },
+  nurseHim: { id: "nurseHim", owner: "jochebed", kind: "guard", cost: 1 },
+  hadCompassion: { id: "hadCompassion", owner: "pharaohDaughter", kind: "guard", cost: 1 },
+  drewHimOut: { id: "drewHimOut", owner: "pharaohDaughter", kind: "guard", cost: 2 },
+  shareBurden: { id: "shareBurden", owner: "jethro", kind: "guard", cost: 1 },
+  greaterThanAll: { id: "greaterThanAll", owner: "jethro", kind: "guard", cost: 2 },
+  wateredFlock: { id: "wateredFlock", owner: "zipporah", kind: "guard", cost: 1 },
+  strangerLand: { id: "strangerLand", owner: "zipporah", kind: "guard", cost: 1 },
+  unfeignedFaith: { id: "unfeignedFaith", owner: "loisEunice", kind: "guard", cost: 1 },
+  fromAChild: { id: "fromAChild", owner: "loisEunice", kind: "guard", cost: 1 },
+  donkeySaw: { id: "donkeySaw", owner: "balaam", kind: "guard", cost: 1 },
+  blessNotCurse: { id: "blessNotCurse", owner: "balaam", kind: "faith", cost: 2 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -855,7 +1163,7 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   mary: ["handmaid", "magnificat"],
   josephNaz: ["carpenter", "dreamWarning"],
   johnBaptist: ["axe", "baptism"],
-  jesus: ["leper", "gethsemane"],
+  jesus: ["peaceBeUnto", "withYouAlway"],
   jesusUR: ["walkOnWater", "loaves"],
   peter: ["greatCatch", "drawSword"],
   andrew: ["comeAndSee", "aLadHere"],
@@ -928,7 +1236,7 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   thief: ["rememberMe", "paradise"],
   jamesJust: ["swiftToHear", "faithWorks"],
   mockingThief: ["saveThyself", "railedOn"],
-  jesusCross: ["forgiveThem", "itIsFinished"],
+  jesusCross: ["forgiveThem", "commitSpirit"],
   widow: ["twoMites", "allHerLiving"],
   fisherman: ["toiledAllNight", "atThyWord"],
   fourFriends: ["throughTheRoof", "theirFaith"],
@@ -940,6 +1248,58 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   haman: ["kingsRing", "hamansDecree"],
   delilah: ["pieceOfSilver", "whereinStrength"],
   nebuchadnezzar: ["sevenTimesHotter", "praiseKingOfHeaven"],
+  ahab: ["covetVineyard", "humbledHimself"],
+  absalom: ["stoleHearts", "fiftyMen"],
+  sapphira: ["soldPossession", "keptBackPart"],
+  pilate: ["noFault", "washedHands"],
+  caiaphas: ["oneManDie", "rentClothes"],
+  herod: ["hopedSign", "gorgeousRobe"],
+  barabbas: ["insurrection", "releasedUnto"],
+  herodias: ["convenientDay", "heldGrudge"],
+  romanSoldier: ["shieldWall", "gladius"],
+  romanSpearman: ["braceSpears", "pilum"],
+  romanArcher: ["aimedShot", "arrowVolley"],
+  romanCavalry: ["rideOut", "cavalryCharge"],
+  romanCenturion: ["commandCohort", "trulySonOfGod"],
+  sennacherib: ["whomTrust", "fencedCities"],
+  belshazzar: ["goldenVessels", "writingOnWall"],
+  korah: ["takeTooMuch", "strangeCensers"],
+  achan: ["hiddenSpoil", "troubleOfAchor"],
+  sisera: ["ironChariots", "fledToTent"],
+  herodGreat: ["privilyCalled", "exceedingWroth"],
+  legionFreed: ["rightMind", "tellHowGreat"],
+  prodigal: ["cameToHimself", "bestRobe"],
+  ethiopian: ["readingIsaiah", "wentRejoicing"],
+  johnPatmos: ["inTheSpirit", "newHeaven"],
+  ehud: ["leftHanded", "blewTrumpet"],
+  jephthah: ["judgeThisDay", "rashVow"],
+  joab: ["playTheMen", "threeDarts"],
+  uriah: ["wouldNotGoHome", "hottestBattle"],
+  simonMagus: ["sorceries", "offeredMoney"],
+  herodAgrippa: ["pleasedJews", "voiceOfGod"],
+  cyrus: ["cyrusDecree", "returnVessels"],
+  zerubbabel: ["laidFoundation", "notByMight"],
+  vashti: ["refusedToCome", "royalFeast"],
+  michal: ["letDownWindow", "imageInBed"],
+  gehazi: ["ranAfterNaaman", "twoTalents"],
+  jehu: ["drivethFuriously", "zealForLord"],
+  zarephath: ["mealNotSpent", "littleCake"],
+  shunammite: ["littleChamber", "itIsWell"],
+  naaman: ["captainOfHost", "sevenTimesJordan"],
+  maid: ["wouldGod", "littleMaid"],
+  bathsheba: ["rememberOath", "kingsMother"],
+  mephibosheth: ["kingsTable", "deadDog"],
+  sheba: ["hardQuestions", "spicesAndGold"],
+  leah: ["lookedUpon", "nowPraise"],
+  esau: ["cunningHunter", "ranToMeet"],
+  hagar: ["godHeard", "wellOpened"],
+  lot: ["escapeForLife", "lookedBack"],
+  jochebed: ["arkOfBulrushes", "nurseHim"],
+  pharaohDaughter: ["hadCompassion", "drewHimOut"],
+  jethro: ["shareBurden", "greaterThanAll"],
+  zipporah: ["wateredFlock", "strangerLand"],
+  loisEunice: ["unfeignedFaith", "fromAChild"],
+  balaam: ["donkeySaw", "blessNotCurse"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],

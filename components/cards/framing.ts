@@ -44,3 +44,17 @@ export function frameFigure({ cx, head, feet, size = 1, gaze = "right" }: Figure
     transformOrigin: `50% ${pct(oy)}`,
   };
 }
+
+/** Where the figure ends up on the card face (fractions of the face): its centre-line, head and feet. */
+export function figureOnFace(figure: Figure): { x: number; top: number; bottom: number } {
+  const { cx, head, feet, size = 1, gaze = "right" } = figure;
+  const scale = Math.max(1, (FIGURE_HEIGHT * size) / (feet - head));
+  const headAt = HEAD_AT - (size - 1) * FIGURE_HEIGHT * 0.3;
+  const target = gaze === "right" ? 0.5 - LEAD : 0.5 + LEAD;
+  const x = clamp((IMAGE_WIDTH * cx - target) / (IMAGE_WIDTH - 1), 0, 1);
+  const oy = scale > 1 ? clamp((headAt - head * scale) / (1 - scale), 0, 1) : 0.5;
+  // object-fit: cover puts the square picture's left edge x·(width−1) face-widths off the face; then the zoom.
+  const faceX = IMAGE_WIDTH * cx - x * (IMAGE_WIDTH - 1);
+  const zoom = (v: number, origin: number) => origin + (v - origin) * scale;
+  return { x: zoom(faceX, 0.5), top: zoom(head, oy), bottom: zoom(feet, oy) };
+}

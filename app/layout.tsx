@@ -31,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} ${brush.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-stone-950 text-stone-100">
+      {/* Browser extensions (e.g. ColorZilla's cz-shortcut-listen) add attributes to <body> before React loads;
+          this only ignores attribute differences on <body> itself, not on anything inside it. */}
+      <body className="min-h-full flex flex-col bg-stone-950 text-stone-100" suppressHydrationWarning>
         <LanguageToggle />
         {children}
       </body>

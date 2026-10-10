@@ -69,9 +69,15 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (canCast(s, "jericho")) return { type: "cast", skill: "jericho" };
   if (canCast(s, "templeFire")) return { type: "cast", skill: "templeFire" };
   if (canCast(s, "spreadLetter")) return { type: "cast", skill: "spreadLetter" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.blessHeal).length >= 2 && canCast(s, "blessNotCurse")) return { type: "cast", skill: "blessNotCurse" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.wellHeal).length >= 2 && canCast(s, "wellOpened")) return { type: "cast", skill: "wellOpened" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.spiceHeal).length >= 2 && canCast(s, "spicesAndGold")) return { type: "cast", skill: "spicesAndGold" };
+  if (isAlive(s, "barabbas") && s.party.barabbas.hp <= MAX_HP.barabbas / 2 && canCast(s, "releasedUnto")) return { type: "cast", skill: "releasedUnto" };
+  if (isAlive(s, "naaman") && s.party.naaman.hp <= MAX_HP.naaman / 2 && canCast(s, "sevenTimesJordan")) return { type: "cast", skill: "sevenTimesJordan" };
+  if (isAlive(s, "ahab") && (s.party.ahab.hp <= MAX_HP.ahab / 2 || s.lineup.filter((id) => isAlive(s, id) && s.party[id].shaken).length >= 2) && canCast(s, "humbledHimself")) return { type: "cast", skill: "humbledHimself" };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.heavenHeal).length >= 2 && canCast(s, "praiseKingOfHeaven")) return { type: "cast", skill: "praiseKingOfHeaven" };
-  // It is finished, once there are others left to carry on.
-  if (s.lineup.some((id) => id !== "jesusCross" && isAlive(s, id)) && canCast(s, "itIsFinished")) return { type: "cast", skill: "itIsFinished" };
+  // He commits his spirit to the Father, once there are others left to carry on.
+  if (s.lineup.some((id) => id !== "jesusCross" && isAlive(s, id)) && canCast(s, "commitSpirit")) return { type: "cast", skill: "commitSpirit" };
   if ((underThreat(s) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.gloryHeal).length >= 2) && canCast(s, "gloryHighest")) return { type: "cast", skill: "gloryHighest" };
   if ((underThreat(s) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.giftHeal).length >= 2) && canCast(s, "threeGifts")) return { type: "cast", skill: "threeGifts" };
   if (canCast(s, "prisonOpened")) return { type: "cast", skill: "prisonOpened" };
@@ -93,6 +99,47 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "upToday")) return { type: "cast", skill: "upToday" };
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || (ready >= 1 && s.energy.attack < 2)) && canCast(s, "goUpAtOnce")) return { type: "cast", skill: "goUpAtOnce" };
   if (ready >= 1 && s.energy.attack < 2 && s.lineup.every((id) => id === "pharaoh" || !isAlive(s, id) || s.party[id].hp > 40) && canCast(s, "makeBricks")) return { type: "cast", skill: "makeBricks" };
+  if (ready >= 1 && s.energy.attack < 2 && !s.lineup.some((id) => id === "moses" || id === "mosesSinai" || id === "aaron") && canCast(s, "takeTooMuch")) return { type: "cast", skill: "takeTooMuch" };
+  if (s.energy.faith <= R.maxFaith - R.spoilFaith && !s.lineup.includes("joshua") && canCast(s, "hiddenSpoil")) return { type: "cast", skill: "hiddenSpoil" };
+  if (s.energy.faith <= R.maxFaith - R.judgeFaith && canCast(s, "judgeThisDay")) return { type: "cast", skill: "judgeThisDay" };
+  if ((underThreat(s) || (ready >= 1 && s.energy.attack < 2)) && canCast(s, "playTheMen")) return { type: "cast", skill: "playTheMen" };
+  if ((underThreat(s) || s.energy.faith < R.maxFaith) && canCast(s, "wouldNotGoHome")) return { type: "cast", skill: "wouldNotGoHome" };
+  if ((s.lineup.includes("philip") || (ready >= 1 && s.energy.attack < 2)) && canCast(s, "sorceries")) return { type: "cast", skill: "sorceries" };
+  if (ready === 0 && s.energy.attack >= 2 && s.energy.faith <= R.maxFaith - 2 && !s.lineup.includes("peter") && canCast(s, "offeredMoney")) return { type: "cast", skill: "offeredMoney" };
+  if (ready >= 1 && s.energy.attack < 2 && !s.lineup.includes("peter") && canCast(s, "pleasedJews")) return { type: "cast", skill: "pleasedJews" };
+  if (s.energy.faith <= R.maxFaith - R.cyrusFaith && canCast(s, "cyrusDecree")) return { type: "cast", skill: "cyrusDecree" };
+  if (underThreat(s) && canCast(s, "returnVessels")) return { type: "cast", skill: "returnVessels" };
+  if ((underThreat(s) || s.energy.faith < R.maxFaith) && canCast(s, "laidFoundation")) return { type: "cast", skill: "laidFoundation" };
+  if (underThreat(s) && canCast(s, "refusedToCome")) return { type: "cast", skill: "refusedToCome" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.vashtiFeastHeal).length >= 2 && canCast(s, "royalFeast")) return { type: "cast", skill: "royalFeast" };
+  const fleeing = isAlive(s, "david") && s.lineup.includes("michal") ? "david" : s.lineup.filter((id) => id !== "michal" && isAlive(s, id) && (s.party[id].shaken || s.party[id].shield === 0)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (fleeing && underThreat(s) && canCast(s, "letDownWindow", fleeing)) return { type: "cast", skill: "letDownWindow", target: fleeing };
+  if (s.hand.length < R.maxHand && canCast(s, "imageInBed")) return { type: "cast", skill: "imageInBed" };
+  if (ready >= 1 && s.energy.attack < 2 && !s.lineup.includes("elisha") && canCast(s, "ranAfterNaaman")) return { type: "cast", skill: "ranAfterNaaman" };
+  if (s.hand.length < R.maxHand && s.energy.faith < R.maxFaith && canCast(s, "twoTalents")) return { type: "cast", skill: "twoTalents" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "zealForLord")) return { type: "cast", skill: "zealForLord" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "blewTrumpet")) return { type: "cast", skill: "blewTrumpet" };
+  if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.newHeavenHeal).length >= 2) && canCast(s, "newHeaven")) return { type: "cast", skill: "newHeaven" };
+  if (s.energy.faith <= R.maxFaith - R.patmosFaith && s.hand.length < R.maxHand && canCast(s, "inTheSpirit")) return { type: "cast", skill: "inTheSpirit" };
+  if (s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) && canCast(s, "rightMind")) return { type: "cast", skill: "rightMind" };
+  if (s.hand.length <= R.maxHand - R.tellDraw && canCast(s, "tellHowGreat")) return { type: "cast", skill: "tellHowGreat" };
+  if (isAlive(s, "prodigal") && s.party.prodigal.hp <= MAX_HP.prodigal - R.prodigalRobeHeal && canCast(s, "bestRobe")) return { type: "cast", skill: "bestRobe" };
+  if (s.energy.faith <= R.maxFaith - R.prodigalLowFaith && canCast(s, "cameToHimself")) return { type: "cast", skill: "cameToHimself" };
+  if (s.energy.faith <= R.maxFaith - R.eunuchPhilipFaith && canCast(s, "readingIsaiah")) return { type: "cast", skill: "readingIsaiah" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.rejoicingHeal).length >= 2 && canCast(s, "wentRejoicing")) return { type: "cast", skill: "wentRejoicing" };
+  if (!s.lineup.includes("jael") && isAlive(s, "sisera") && s.party.sisera.hp <= MAX_HP.sisera - R.siseraMilkHeal && canCast(s, "fledToTent")) return { type: "cast", skill: "fledToTent" };
+  if (s.hand.length <= R.maxHand - R.privilyDraw && !s.lineup.some((id) => id === "magi" || id === "josephNaz") && canCast(s, "privilyCalled")) return { type: "cast", skill: "privilyCalled" };
+  if (ready >= 2 && s.energy.attack < 2 && canCast(s, "goldenVessels")) return { type: "cast", skill: "goldenVessels" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "whomTrust")) return { type: "cast", skill: "whomTrust" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "commandCohort")) return { type: "cast", skill: "commandCohort" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "rideOut")) return { type: "cast", skill: "rideOut" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "convenientDay")) return { type: "cast", skill: "convenientDay" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "gorgeousRobe")) return { type: "cast", skill: "gorgeousRobe" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "soldPossession")) return { type: "cast", skill: "soldPossession" };
+  if (s.energy.faith <= R.maxFaith - R.expedientFaith && s.lineup.every((id) => id === "caiaphas" || !isAlive(s, id) || s.party[id].hp > 60) && canCast(s, "oneManDie")) return { type: "cast", skill: "oneManDie" };
+  if (s.energy.faith <= R.maxFaith - R.keptFaith && !s.lineup.includes("peter") && canCast(s, "keptBackPart")) return { type: "cast", skill: "keptBackPart" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "shareBurden")) return { type: "cast", skill: "shareBurden" };
+  if (ready >= 1 && s.energy.attack < 2 && canCast(s, "covetVineyard")) return { type: "cast", skill: "covetVineyard" };
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "pieceOfSilver")) return { type: "cast", skill: "pieceOfSilver" };
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "kingsRing")) return { type: "cast", skill: "kingsRing" };
   if (ready >= 1 && s.energy.attack < 2 && isAlive(s, "baalProphet") && s.party.baalProphet.hp > R.cutCost + 30 && canCast(s, "cutThemselves")) return { type: "cast", skill: "cutThemselves" };
@@ -130,6 +177,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
     if (canCast(s, "receiveHim", target)) return { type: "cast", skill: "receiveHim", target };
     if (canCast(s, "lotFell", target)) return { type: "cast", skill: "lotFell", target };
     if (canCast(s, "talithaCumi", target)) return { type: "cast", skill: "talithaCumi", target };
+    if (canCast(s, "itIsWell", target)) return { type: "cast", skill: "itIsWell", target };
     if (canCast(s, "dryBones")) return { type: "cast", skill: "dryBones" };
   }
 
@@ -142,7 +190,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (underThreat(s) && canCast(s, "faceShone")) return { type: "cast", skill: "faceShone" };
   if (underThreat(s) && canCast(s, "dreamWarning")) return { type: "cast", skill: "dreamWarning" };
   if (underThreat(s) && canCast(s, "walkOnWater")) return { type: "cast", skill: "walkOnWater" };
-  if (underThreat(s) && canCast(s, "gethsemane")) return { type: "cast", skill: "gethsemane" };
+  if (underThreat(s) && canCast(s, "withYouAlway")) return { type: "cast", skill: "withYouAlway" };
   // Martha speaks her word of faith once someone is in danger of falling.
   if (s.lineup.some((id) => isAlive(s, id) && s.party[id].hp <= 60) && canCast(s, "riseAgain")) return { type: "cast", skill: "riseAgain" };
   if (underThreat(s) && s.energy.guard < 2 && canCast(s, "serving")) return { type: "cast", skill: "serving" };
@@ -171,6 +219,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (underThreat(s) && isAlive(s, "jonah") && (s.fish === "ready" || s.lineup.every((id) => !isAlive(s, id) || s.party[id].hp <= s.party.jonah.hp)) && canCast(s, "castIntoSea")) return { type: "cast", skill: "castIntoSea" };
   // Ruth steps in front of a weaker ally the leader is aiming at.
   const aimed = s.intents[0].targets[0];
+  if (underThreat(s) && aimed && aimed !== "romanSpearman" && isAlive(s, aimed) && isAlive(s, "romanSpearman") && s.party[aimed].hp < s.party.romanSpearman.hp && canCast(s, "braceSpears", aimed)) return { type: "cast", skill: "braceSpears", target: aimed };
   if (underThreat(s) && aimed && aimed !== "simonCyrene" && isAlive(s, aimed) && isAlive(s, "simonCyrene") && s.party[aimed].hp < s.party.simonCyrene.hp && canCast(s, "bearHisCross", aimed)) return { type: "cast", skill: "bearHisCross", target: aimed };
   if (underThreat(s) && aimed && aimed !== "aquila" && isAlive(s, aimed) && isAlive(s, "aquila") && s.party[aimed].hp < s.party.aquila.hp && canCast(s, "layDownNeck", aimed)) return { type: "cast", skill: "layDownNeck", target: aimed };
   if (underThreat(s) && aimed && aimed !== "ruth" && isAlive(s, aimed) && isAlive(s, "ruth") && s.party[aimed].hp < s.party.ruth.hp && canCast(s, "whither", aimed)) return { type: "cast", skill: "whither", target: aimed };
@@ -213,6 +262,22 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.energy.faith < R.maxFaith - 1 && s.energy.attack === 0 && canCast(s, "twoMites")) return { type: "cast", skill: "twoMites" };
   if (isAlive(s, "widow") && s.party.widow.hp >= 40 && s.lineup.filter((id) => id !== "widow" && isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= 20).length >= 2 && canCast(s, "allHerLiving")) return { type: "cast", skill: "allHerLiving" };
   if ((shaken.length >= 1 || s.energy.faith < R.maxFaith) && canCast(s, "forgiveThem")) return { type: "cast", skill: "forgiveThem" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "wouldGod")) return { type: "cast", skill: "wouldGod" };
+  if (isAlive(s, "mephibosheth") && MAX_HP.mephibosheth - s.party.mephibosheth.hp >= R.tableHeal && canCast(s, "kingsTable")) return { type: "cast", skill: "kingsTable" };
+  if (shaken.length >= 1 && canCast(s, "deadDog")) return { type: "cast", skill: "deadDog" };
+  if (isAlive(s, "leah") && MAX_HP.leah - s.party.leah.hp >= R.afflictionHeal && canCast(s, "lookedUpon")) return { type: "cast", skill: "lookedUpon" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.flockHeal).length >= 2 && canCast(s, "wateredFlock")) return { type: "cast", skill: "wateredFlock" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "writingOnWall")) return { type: "cast", skill: "writingOnWall" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "unfeignedFaith")) return { type: "cast", skill: "unfeignedFaith" };
+  if ((underThreat(s) || s.hand.length < R.maxHand) && canCast(s, "fromAChild")) return { type: "cast", skill: "fromAChild" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "strangerLand")) return { type: "cast", skill: "strangerLand" };
+  if ((shaken.length >= 1 || s.energy.faith <= R.maxFaith - 2) && canCast(s, "trulySonOfGod")) return { type: "cast", skill: "trulySonOfGod" };
+  if (s.energy.faith <= R.maxFaith - R.greaterFaith && canCast(s, "greaterThanAll")) return { type: "cast", skill: "greaterThanAll" };
+  if (s.energy.faith <= R.maxFaith - R.drewFaith && canCast(s, "drewHimOut")) return { type: "cast", skill: "drewHimOut" };
+  if (s.energy.faith <= R.maxFaith - 2 && canCast(s, "godHeard")) return { type: "cast", skill: "godHeard" };
+  if (s.energy.faith <= R.maxFaith - R.praiseFaith && canCast(s, "nowPraise")) return { type: "cast", skill: "nowPraise" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "rememberOath")) return { type: "cast", skill: "rememberOath" };
+  if (s.energy.faith <= R.maxFaith - R.heartsFaith && !s.lineup.includes("david") && canCast(s, "stoleHearts")) return { type: "cast", skill: "stoleHearts" };
   if (s.energy.faith < R.maxFaith && canCast(s, "rememberMe")) return { type: "cast", skill: "rememberMe" };
   if (s.energy.faith < R.maxFaith && canCast(s, "onlyBelieve")) return { type: "cast", skill: "onlyBelieve" };
   if (s.energy.faith < R.maxFaith && canCast(s, "sonOfDavid")) return { type: "cast", skill: "sonOfDavid" };
@@ -229,6 +294,14 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (underThreat(s) && canCast(s, "swiftToHear")) return { type: "cast", skill: "swiftToHear" };
   if ((underThreat(s) || s.energy.faith < R.maxFaith) && canCast(s, "houseForever")) return { type: "cast", skill: "houseForever" };
   if ((underThreat(s) || s.energy.faith < R.maxFaith) && canCast(s, "watchman")) return { type: "cast", skill: "watchman" };
+  const aimedAt = s.intents[0].targets[0];
+  if (underThreat(s) && aimedAt && aimedAt !== "jochebed" && isAlive(s, aimedAt) && canCast(s, "arkOfBulrushes", aimedAt)) return { type: "cast", skill: "arkOfBulrushes", target: aimedAt };
+  if ((underThreat(s) || shaken.length >= 1) && canCast(s, "donkeySaw")) return { type: "cast", skill: "donkeySaw" };
+  if (underThreat(s) && canCast(s, "shieldWall")) return { type: "cast", skill: "shieldWall" };
+  if (underThreat(s) && canCast(s, "noFault")) return { type: "cast", skill: "noFault" };
+  if (underThreat(s) && canCast(s, "escapeForLife")) return { type: "cast", skill: "escapeForLife" };
+  if ((underThreat(s) || shaken.length >= 1) && canCast(s, "ranToMeet")) return { type: "cast", skill: "ranToMeet" };
+  if (underThreat(s) && canCast(s, "littleChamber")) return { type: "cast", skill: "littleChamber" };
   if (underThreat(s) && canCast(s, "keepSheep")) return { type: "cast", skill: "keepSheep" };
   if ((shaken.length >= 1 || underThreat(s)) && canCast(s, "wouldNotBow")) return { type: "cast", skill: "wouldNotBow" };
   if ((shaken.length >= 1 || s.energy.faith < R.maxFaith) && canCast(s, "wentInBoldly")) return { type: "cast", skill: "wentInBoldly" };
@@ -284,6 +357,8 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.hand.length <= R.maxHand - R.ladDraw && canCast(s, "aLadHere")) return { type: "cast", skill: "aLadHere" };
   if (s.hand.length <= R.maxHand - R.orderDraw && canCast(s, "inOrder")) return { type: "cast", skill: "inOrder" };
   if (s.hand.length <= R.maxHand - R.ezraDraw && canCast(s, "preparedHeart")) return { type: "cast", skill: "preparedHeart" };
+  if (s.hand.length <= R.maxHand - R.signDraw && canCast(s, "hopedSign")) return { type: "cast", skill: "hopedSign" };
+  if (s.hand.length < R.maxHand - 1 && canCast(s, "hardQuestions")) return { type: "cast", skill: "hardQuestions" };
   if (s.hand.length < R.maxHand && s.energy.faith < R.maxFaith && canCast(s, "almondRod")) return { type: "cast", skill: "almondRod" };
   if (s.hand.length < R.maxHand && s.energy.faith < R.maxFaith && canCast(s, "byNight")) return { type: "cast", skill: "byNight" };
   // Miriam sings when someone is Shaken or Faith has room for the full gift.
@@ -297,8 +372,8 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (worn && canCast(s, "counsel", worn)) return { type: "cast", skill: "counsel", target: worn };
   if (worn && canCast(s, "carpenter", worn)) return { type: "cast", skill: "carpenter", target: worn };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.loavesHeal).length >= 2 && canCast(s, "loaves")) return { type: "cast", skill: "loaves" };
-  const needy = s.lineup.filter((id) => isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.leperHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
-  if (needy && canCast(s, "leper", needy)) return { type: "cast", skill: "leper", target: needy };
+  const needy = s.lineup.filter((id) => isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.risenPeaceHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (needy && canCast(s, "peaceBeUnto", needy)) return { type: "cast", skill: "peaceBeUnto", target: needy };
   if (worn && canCast(s, "mendNets", worn)) return { type: "cast", skill: "mendNets", target: worn };
   if (worn && canCast(s, "goInPeace", worn)) return { type: "cast", skill: "goInPeace", target: worn };
   if (worn && canCast(s, "almsdeeds", worn)) return { type: "cast", skill: "almsdeeds", target: worn };
@@ -307,6 +382,17 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (faint && canCast(s, "blessedAmong", faint)) return { type: "cast", skill: "blessedAmong", target: faint };
   const spent = s.lineup.filter((id) => isAlive(s, id) && s.party[id].hp <= MAX_HP[id] * 0.4).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
   if (spent && canCast(s, "tooHard", spent)) return { type: "cast", skill: "tooHard", target: spent };
+  const pitied = s.lineup.filter((id) => id !== "pharaohDaughter" && isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.compassionHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (pitied && canCast(s, "hadCompassion", pitied)) return { type: "cast", skill: "hadCompassion", target: pitied };
+  const nursed = s.lineup.filter((id) => id !== "jochebed" && isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.nurseHeal).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (nursed && canCast(s, "nurseHim", nursed)) return { type: "cast", skill: "nurseHim", target: nursed };
+  const served = s.lineup.filter((id) => id !== "maid" && isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.maidHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (served && canCast(s, "littleMaid", served)) return { type: "cast", skill: "littleMaid", target: served };
+  const honoured = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.queenMotherHeal).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (honoured && canCast(s, "kingsMother", honoured)) return { type: "cast", skill: "kingsMother", target: honoured };
+  const hungry = s.lineup.filter((id) => id !== "zarephath" && isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.cakeHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
+  if (hungry && canCast(s, "littleCake", hungry)) return { type: "cast", skill: "littleCake", target: hungry };
+  if ((s.energy.faith < R.maxFaith || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.mealHeal).length >= 2) && canCast(s, "mealNotSpent")) return { type: "cast", skill: "mealNotSpent" };
   const wounded = s.lineup.filter((id) => id !== "goodSamaritan" && isAlive(s, id) && (s.party[id].shaken || MAX_HP[id] - s.party[id].hp >= R.oilHeal)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
   if (wounded && canCast(s, "oilAndWine", wounded)) return { type: "cast", skill: "oilAndWine", target: wounded };
   const lodger = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.innHeal * R.innTurns).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
@@ -365,9 +451,12 @@ export function nextAutoAction(s: BattleState): AutoAction {
   const boss = s.stage === "eden" ? "serpent" : "goliath";
   if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "courage", boss)) return { type: "cast", skill: "courage", target: boss };
+  if (enemyAlive(s, boss) && canCast(s, "cavalryCharge", boss)) return { type: "cast", skill: "cavalryCharge", target: boss };
+  if (enemyAlive(s, boss) && canCast(s, "aimedShot", boss)) return { type: "cast", skill: "aimedShot", target: boss };
+  if (enemyAlive(s, boss) && canCast(s, "pilum", boss)) return { type: "cast", skill: "pilum", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "sealedLetters", boss)) return { type: "cast", skill: "sealedLetters", target: boss };
   if (s.goliath.charging && attackableEnemies(s).includes(boss) && canCast(s, "purgeIdols", boss)) return { type: "cast", skill: "purgeIdols", target: boss };
-  for (const skill of ["sevenTimesHotter", ...(s.lineup.includes("samson") ? [] : ["whereinStrength" as const]), ...(s.lineup.some((id) => id === "esther" || id === "mordecai") ? [] : ["hamansDecree" as const]), "callOnBaal", "pursued", "atThyWord", ...(s.party.mockingThief.hp > R.railCost + 10 ? ["railedOn" as const] : []), "saveThyself", "faithWorks", "castGarment", "purgeIdols", "thouArtTheMan", "fireInBones", "thisMountain", "saintsCome", "tentPeg", "downTabor", "zeal", "swordOfSpirit", "centurionCommand", "drawSword", "axe", "stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel", "thunder", "boanerges", "gracePower", "samaria", "stirUpGift", "tentRope", "mightyScriptures", "profitable", "nowProfitable", "pebble", "moneyBag", "twoHundredPence", "noGuile", "oneOfTwelve", "contendFaith", "withEleven"] as SkillId[]) {
+  for (const skill of [...(s.lineup.some((id) => id === "moses" || id === "mosesSinai" || id === "aaron") ? [] : ["strangeCensers" as const]), ...(isAlive(s, "achan") && s.party.achan.hp > R.achorCost + 30 ? ["troubleOfAchor" as const] : []), ...(s.lineup.some((id) => id === "deborah" || id === "barak") ? [] : ["ironChariots" as const]), ...(isAlive(s, "absalom") ? [] : ["threeDarts" as const]), ...(isAlive(s, "herodAgrippa") && s.party.herodAgrippa.hp > R.voiceCost + 30 ? ["voiceOfGod" as const] : []), ...(isAlive(s, "uriah") && s.party.uriah.hp > R.hottestBetrayed + 30 ? ["hottestBattle" as const] : []), ...(isAlive(s, "jephthah") && s.party.jephthah.hp > R.vowCost + 30 ? ["rashVow" as const] : []), ...(isAlive(s, "herodGreat") && s.party.herodGreat.hp > R.wrothCost + 30 ? ["exceedingWroth" as const] : []), ...(s.lineup.includes("hezekiah") ? [] : ["fencedCities" as const]), "arrowVolley", "gladius", ...(s.lineup.includes("johnBaptist") ? [] : ["heldGrudge" as const]), "insurrection", "rentClothes", "cunningHunter", "fiftyMen", "captainOfHost", "sevenTimesHotter", ...(s.lineup.includes("samson") ? [] : ["whereinStrength" as const]), ...(s.lineup.some((id) => id === "esther" || id === "mordecai") ? [] : ["hamansDecree" as const]), "callOnBaal", "pursued", "atThyWord", ...(s.party.mockingThief.hp > R.railCost + 10 ? ["railedOn" as const] : []), "saveThyself", "faithWorks", "castGarment", "purgeIdols", "thouArtTheMan", "fireInBones", "thisMountain", "saintsCome", "tentPeg", "leftHanded", "drivethFuriously", "notByMight", "downTabor", "zeal", "swordOfSpirit", "centurionCommand", "drawSword", "axe", "stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel", "thunder", "boanerges", "gracePower", "samaria", "stirUpGift", "tentRope", "mightyScriptures", "profitable", "nowProfitable", "pebble", "moneyBag", "twoHundredPence", "noGuile", "oneOfTwelve", "contendFaith", "withEleven"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
   }

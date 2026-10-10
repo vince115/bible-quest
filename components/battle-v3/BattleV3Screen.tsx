@@ -25,7 +25,7 @@ import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
 import { useT } from "@/game/locale";
-import { CharacterCardFace } from "@/components/cards/CharacterCardFace";
+import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, lookOf } from "@/components/cards/rarity";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
@@ -402,7 +402,7 @@ function SkillFocus({
         </div>
 
         <div className="relative">
-          <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]}>
+          <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} figure={figureArea(id)}>
             <CharacterCardFace id={id} />
           </HoloCard>
           {lookOf(id).shine && <CardShine />}
@@ -519,7 +519,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
                 aria-pressed={on}
                 className={`relative w-[220px] text-left text-[10.3px] transition sm:w-[200px] sm:text-[9.35px] lg:w-[220px] lg:text-[10.3px] ${on ? "" : "opacity-45 grayscale"}`}
               >
-                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false}>
+                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false} figure={figureArea(id)}>
                   <CharacterCardFace id={id} />
                 </HoloCard>
                 {on && lead === id && (
@@ -855,7 +855,7 @@ export function BattleV3Screen() {
             className="[--w:min(720px,88vw,calc((100dvh-7rem)*63/88))]"
             style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
           >
-            <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]}>
+            <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]} figure={figureArea(viewing)}>
               <CharacterCardFace id={viewing} />
             </HoloCard>
           </div>

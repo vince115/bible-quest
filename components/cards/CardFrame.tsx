@@ -38,9 +38,9 @@ const MOULDING = [
  */
 const FRAME_SIDES = [
   { name: "top", toward: "to bottom", light: "rgb(255 255 255 / 0.18)", box: (w: string) => ({ top: 0, left: 0, right: 0, height: w }), clip: (w: string) => `polygon(0 0, 100% 0, calc(100% - ${w}) 100%, ${w} 100%)` },
-  { name: "bottom", toward: "to top", light: "rgb(0 0 0 / 0.3)", box: (w: string) => ({ bottom: 0, left: 0, right: 0, height: w }), clip: (w: string) => `polygon(${w} 0, calc(100% - ${w}) 0, 100% 100%, 0 100%)` },
+  { name: "bottom", toward: "to top", light: "rgb(255 255 255 / 0.02)", box: (w: string) => ({ bottom: 0, left: 0, right: 0, height: w }), clip: (w: string) => `polygon(${w} 0, calc(100% - ${w}) 0, 100% 100%, 0 100%)` },
   { name: "left", toward: "to right", light: "rgb(255 255 255 / 0.06)", box: (w: string) => ({ top: 0, bottom: 0, left: 0, width: w }), clip: (w: string) => `polygon(0 0, 100% ${w}, 100% calc(100% - ${w}), 0 100%)` },
-  { name: "right", toward: "to left", light: "rgb(0 0 0 / 0.12)", box: (w: string) => ({ top: 0, bottom: 0, right: 0, width: w }), clip: (w: string) => `polygon(0 ${w}, 100% 0, 100% 100%, 0 calc(100% - ${w}))` },
+  { name: "right", toward: "to left", light: "rgb(255 255 255 / 0.04)", box: (w: string) => ({ top: 0, bottom: 0, right: 0, width: w }), clip: (w: string) => `polygon(0 ${w}, 100% 0, 100% 100%, 0 calc(100% - ${w}))` },
 ];
 
 /**
@@ -71,7 +71,7 @@ export function CardFrame({
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
         style={{
           backgroundImage:
-            "conic-gradient(from 200deg at 50% 50%, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.55), rgb(0 0 0 / 0.35), rgb(255 255 255 / 0.45), rgb(0 0 0 / 0.3), rgb(255 255 255 / 0.1))",
+            "conic-gradient(from 200deg at 50% 50%, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.55), rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.45), rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.2))",
         }}
       />
       {/* A band of light that slides across the border as the card turns */}
