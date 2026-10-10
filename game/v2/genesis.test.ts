@@ -1493,3 +1493,151 @@ describe("Onesimus", () => {
     expect(s.energy.faith).toBe(R.brotherFaith);
   });
 });
+
+describe("Nicodemus", () => {
+  it("By Night draws 2 with Jesus; Born Again restores one ally to full, once", () => {
+    const s0 = createBattle(seeded(), ["nicodemus", "jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(s0, "byNight", undefined, seeded()).hand).toHaveLength(R.nightDraw * 2);
+    s0.party.david.hp = 10;
+    s0.party.david.shaken = true;
+    const s = castSkill(s0, "bornAgain", "david");
+    expect([s.party.david.hp, s.party.david.shaken, s.bornAgainUsed]).toEqual([MAX_HP.david, false, true]);
+  });
+});
+
+describe("Samaritan woman", () => {
+  it("Living Water heals everyone, double with Jesus; Come, See gives Faith and Attack", () => {
+    const s0 = createBattle(seeded(), ["samaritan", "jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    s0.party.david.hp = 50;
+    expect(castSkill(s0, "livingWater").party.david.hp).toBe(50 + R.livingHeal * 2);
+    expect(castSkill(s0, "comeSee").energy).toMatchObject({ faith: 1, attack: 1 });
+  });
+});
+
+describe("Simeon", () => {
+  it("Waiting gives Faith now and every other turn; Depart in Peace heals everyone, then Simeon departs", () => {
+    let s = createBattle(seeded(), ["simeon", "david"]);
+    s.hand = [];
+    s.archerTarget = null;
+    s.energy = { faith: 0, attack: 0, guard: 1 };
+    s = castSkill(s, "waiting");
+    expect(s.energy.faith).toBe(1);
+    s.intents[0] = { action: "defy", targets: [] };
+    s = endTurn(s, seeded()); // turn 2
+    expect(s.energy.faith).toBe(2);
+    s.party.david.hp = 50;
+    s = castSkill(s, "nuncDimittis");
+    expect([s.party.david.hp, s.party.david.shield, s.party.simeon.hp]).toEqual([50 + R.nuncHeal, R.nuncShield, 0]);
+    expect(s.result).toBe("ongoing");
+  });
+});
+
+describe("Anna", () => {
+  it("Night and Day shields everyone and gives Faith; She Gave Thanks gives 2 Faith with Simeon", () => {
+    const s0 = createBattle(seeded(), ["anna", "simeon"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    const n = castSkill(s0, "nightAndDay");
+    expect([n.party.simeon.shield, n.energy.faith]).toEqual([R.annaShield, 1]);
+    s0.party.simeon.shaken = true;
+    const t = castSkill(s0, "gaveThanks");
+    expect([t.energy.faith, t.party.simeon.shaken]).toEqual([2, false]);
+  });
+});
+
+describe("The boy with the loaves", () => {
+  it("Offering the Basket gives 3 Faith once, and heals everyone with Jesus", () => {
+    const s0 = createBattle(seeded(), ["loavesBoy", "jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.david.hp = 50;
+    const s = castSkill(s0, "giveBasket");
+    expect([s.energy.faith, s.party.david.hp, s.basketGiven]).toEqual([R.basketFaith, 50 + R.basketHeal, true]);
+  });
+});
+
+describe("Judas Iscariot", () => {
+  it("Thirty Pieces of Silver give 3 Faith but cost the most wounded ally 20 HP", () => {
+    const s0 = createBattle(seeded(), ["judas", "david", "samuel"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.samuel.hp = 50;
+    const s = castSkill(s0, "thirtySilver");
+    expect(s.energy.faith).toBe(R.silverFaith);
+    expect([s.party.samuel.hp, s.party.david.hp]).toEqual([50 - R.silverCost, MAX_HP.david]);
+  });
+});
+
+describe("Philip the Apostle", () => {
+  it("Come and See gives Faith; Two Hundred Pennyworth deals 30", () => {
+    const s0 = createBattle(seeded(), ["philipApostle", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(s0, "philipComeSee").energy.faith).toBe(1);
+    expect(skillDamage(s0, "twoHundredPence", "archer")).toBe(30);
+  });
+});
+
+describe("Nathanael", () => {
+  it("hits harder with Philip; Philip's Come and See readies him with an Attack", () => {
+    const s0 = createBattle(seeded(), ["nathanael", "philipApostle"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    expect(skillDamage(s0, "noGuile", "archer")).toBe(50); // wood → fire ×1
+    expect(castSkill(s0, "philipComeSee").energy).toMatchObject({ faith: 1, attack: 1 });
+    expect(castSkill(s0, "figTree", undefined, seeded()).hand).toHaveLength(1);
+  });
+});
+
+describe("James son of Alphaeus", () => {
+  it("One of the Twelve grows with each other apostle; Quiet Faithfulness shields him and gives Faith", () => {
+    expect(skillDamage(createBattle(seeded(), ["jamesAlph", "david"]), "oneOfTwelve", "archer")).toBe(20);
+    expect(skillDamage(createBattle(seeded(), ["jamesAlph", "peter", "andrew"]), "oneOfTwelve", "archer")).toBe(40);
+    const s0 = createBattle(seeded(), ["jamesAlph", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const s = castSkill(s0, "quietFaith");
+    expect([s.party.jamesAlph.shield, s.energy.faith]).toEqual([30, 1]);
+  });
+});
+
+describe("Thaddaeus", () => {
+  it("A Disciple's Question draws 2 with Jesus, and he counts among the Twelve", () => {
+    const s0 = createBattle(seeded(), ["thaddaeus", "jesus", "jamesAlph"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const s = castSkill(s0, "aQuestion", undefined, seeded());
+    expect([s.hand.length, s.energy.faith]).toEqual([2, 1]);
+    expect(skillDamage(s0, "oneOfTwelve", "archer")).toBe(30);
+  });
+});
+
+describe("Simon the Zealot", () => {
+  it("Zeal burns hotter once the leader is at half HP; Laying Down the Sword steadies everyone", () => {
+    const s0 = createBattle(seeded(), ["simonZealot", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(skillDamage(s0, "zeal", "archer")).toBe(30); // fire → fire ×1
+    s0.enemies.goliath.hp = 100;
+    expect(skillDamage(s0, "zeal", "archer")).toBe(50);
+    s0.party.david.shaken = true;
+    const s = castSkill(s0, "swordDown");
+    expect([s.party.david.shaken, s.party.simonZealot.shield]).toEqual([false, 20]);
+  });
+});
+
+describe("Matthias", () => {
+  it("The Lot Fell raises a fallen ally once; Numbered with the Eleven grows with each apostle", () => {
+    const s0 = createBattle(seeded(), ["matthias", "peter", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(skillDamage(s0, "withEleven", "archer")).toBe(30);
+    s0.party.david.hp = 0;
+    const s = castSkill(s0, "lotFell", "david");
+    expect([s.party.david.hp, s.lotUsed]).toEqual([50, true]);
+  });
+});
