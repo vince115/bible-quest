@@ -4,7 +4,7 @@
 // (game/v3/engine.ts): pick 1–3 characters, the front line takes the single-target hits, one free swap per turn.
 // Each side is one row (bench · front line · bench); on phones the selected character's skills move
 // into an action bar, so the whole board fits on one screen.
-import { motion } from "framer-motion";
+import { motion, useDragControls, useMotionValue } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -18,17 +18,18 @@ import {
   RULES_V2 as R,
   SKILLS,
 } from "@/game/v2/data";
-import { bossOf, canAct, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, payment, skillDamage, type Target } from "@/game/v2/engine";
+import { bossOf, canAct, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
 import { NEVER_FALLS, PARTY_ORDER, personOf } from "@/game/v2/data";
 import type { BattleState, CharacterId, EnemyId, EnergyKind, Intent, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
-import { useT } from "@/game/locale";
+import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, lookOf } from "@/components/cards/rarity";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
+import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 
 type T = ReturnType<typeof useT>;
 type Pending = { skill: SkillId; targets: Target[] };
@@ -340,9 +341,16 @@ function CastBurst({ kind, label, art }: { kind: EnergyKind; label: string; art?
   );
 }
 
+/** Charge segments beside a skill name: Attack red, Faith yellow, Guard green. */
+const SEGMENT_COLOR: Record<EnergyKind, string> = { attack: "bg-red-500", faith: "bg-yellow-400", guard: "bg-emerald-400" };
+
+/** Where the skills were dragged to, kept while the page is open so every character's skill view opens there. */
+let skillsOffset = { x: 0, y: 0 };
+
 /**
- * Skill view (Pokémon TCG Pocket style): the card enlarged in the middle of the screen, its skills as bars laid over
- * the printed rows, the swap-to-front bar like "Retreat", and advantage tags against the enemies above the card.
+ * Skill view: the card at the same size as the /card-demo viewer, with the character story and the skills in the side
+ * panel (the skills below the story; above it on phones, where the panel drops under the card), the swap-to-front bar
+ * like "Retreat", and advantage tags against the enemies above the card.
  */
 function SkillFocus({
   board,
@@ -371,22 +379,36 @@ function SkillFocus({
     setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
   const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
+  // The card size chosen in /card-demo; the story beside it is off until switched on here (remembered for later battles).
+  const [scale] = useState(savedScale);
+  const [showStory, setShowStory] = useState(() => savedShowStory(BATTLE_STORY_KEY, false));
+  const toggleStory = () =>
+    setShowStory((on) => {
+      safeStorage.setItem(BATTLE_STORY_KEY, on ? "off" : "on");
+      return !on;
+    });
+  // The skills can be dragged by their title bar to anywhere around the card.
+  const area = useRef<HTMLDivElement>(null);
+  const dragSkills = useDragControls();
+  const skillsX = useMotionValue(skillsOffset.x);
+  const skillsY = useMotionValue(skillsOffset.y);
   return (
     <div
       onClick={(e) => {
         e.stopPropagation();
         onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+      className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-black/85 p-4 pt-12"
     >
+      <div ref={area} className="my-auto flex max-w-full flex-col items-center gap-4 lg:flex-row lg:items-stretch">
       {/* The card rises from the table to a close-up */}
       <motion.div
         initial={{ scale: 0.55, y: 60, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative [--w:min(630px,74vw,calc((100dvh-6rem)*63/88))]"
-        style={{ width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }}
+        className={`relative shrink-0 ${VIEWER_WIDTH}`}
+        style={viewerStyle(scale)}
       >
         {/* Advantage against the enemies on the field */}
         <div className="absolute bottom-full left-0 mb-[0.5em] flex flex-wrap gap-[0.3em] text-[0.5em] font-black">
@@ -409,49 +431,6 @@ function SkillFocus({
           {casting && <CastBurst kind={SKILLS[casting].kind} label={t(`v2.skill.${casting}.name`)} art={SKILL_ART[casting]} />}
         </div>
 
-        {/* Skill bars: compact and off to the right. Anchored to the bottom, where every card prints its skills just above
-            the weakness/verse lines (cards with an ability or story line push their skills lower). */}
-        <div className="absolute -right-[12%] bottom-[16%] z-20 flex w-[70%] flex-col gap-[0.25em] text-[0.62em]">
-          {CHARACTER_SKILLS[id].map((skill) => {
-            const def = SKILLS[skill];
-            const reason = boardBlockReason(board, skill);
-            const ready = !locked && !reason;
-            const pay = payment(b, skill);
-            const cost = pay ? ENERGY_ICON[def.kind].repeat(def.cost - pay.faith) + ENERGY_ICON.faith.repeat(pay.faith) : ENERGY_ICON[def.kind].repeat(def.cost);
-            const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? bossOf(b) : skillTargets(b, skill).length === 1 ? (skillTargets(b, skill)[0] as EnemyId) : undefined) : supportAmount(b, skill);
-            const boosted = !!def.damage && amount > def.damage;
-            return (
-              <button
-                key={skill}
-                onClick={() => cast(skill)}
-                disabled={!ready || !!casting}
-                title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
-                className="group flex items-center gap-[0.5em] rounded-[0.5em] border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-[0.6em] py-[0.3em] text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-x-1 enabled:hover:from-white disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
-              >
-                <span className="w-[3.2em] shrink-0 text-[0.8em] tracking-tighter">{cost}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[1em] font-black">{t(`v2.skill.${skill}.name`)}</span>
-                  {reason && reason !== "v2.reason.over" && <span className="block truncate text-[0.62em] font-semibold text-red-700">{t(reason)}</span>}
-                </span>
-                <span className="text-[1.4em] font-black leading-none">
-                  {def.damage ? amount : amount > 0 && `${skill === "mark" ? "↩" : "+"}${amount}`}
-                  {boosted && <span className="ml-0.5 text-[0.6em] text-amber-500">▲</span>}
-                </span>
-              </button>
-            );
-          })}
-          {board.front !== id && alive && (
-            <button
-              onClick={onSwap}
-              disabled={locked || !canSwap(board, id)}
-              className="flex items-center justify-between gap-[0.5em] rounded-[0.5em] border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-[0.6em] py-[0.3em] text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-x-1 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
-            >
-              <span className="text-[0.62em] font-bold text-slate-600">{needsFront(board) ? t("v3.focus.free") : b.coiled === board.front ? t("v3.ui.coiled") : board.swapped ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
-              <span className="text-[0.95em] font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
-            </button>
-          )}
-        </div>
-
         <button
           onClick={onClose}
           aria-label={t("v3.ui.close")}
@@ -460,6 +439,101 @@ function SkillFocus({
           ✕
         </button>
       </motion.div>
+
+      {/* Side panel: the story, then the skills (skills first on phones, so they stay near the card) */}
+      <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-md flex-col items-stretch gap-3 lg:w-80 lg:justify-center">
+        <div className="order-last lg:order-none">{showStory && <StoryPanel id={id} />}</div>
+        <motion.div
+          drag
+          dragControls={dragSkills}
+          dragListener={false}
+          dragConstraints={area}
+          dragMomentum={false}
+          dragElastic={0.05}
+          style={{ x: skillsX, y: skillsY }}
+          onDragEnd={() => (skillsOffset = { x: skillsX.get(), y: skillsY.get() })}
+          className="relative z-10"
+        >
+        <motion.div
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-2 p-2"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p
+              onPointerDown={(e) => dragSkills.start(e)}
+              title={t("v3.focus.drag")}
+              className="flex flex-1 cursor-grab touch-none select-none items-center gap-1.5 text-xs font-bold tracking-widest text-amber-300/80 active:cursor-grabbing"
+            >
+              <span aria-hidden className="text-sm leading-none text-stone-400">⠿</span>
+              {t("v3.focus.skills")}
+            </p>
+            <button
+              onClick={toggleStory}
+              aria-pressed={showStory}
+              className={`rounded-full border px-3 py-0.5 text-[11px] ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+            >
+              {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {CHARACTER_SKILLS[id].map((skill) => {
+              const def = SKILLS[skill];
+              const reason = boardBlockReason(board, skill);
+              const ready = !locked && !reason;
+              const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? bossOf(b) : skillTargets(b, skill).length === 1 ? (skillTargets(b, skill)[0] as EnemyId) : undefined) : supportAmount(b, skill);
+              const boosted = !!def.damage && amount > def.damage;
+              // Not enough energy just fades the button; other reasons (Shaken, already acted…) are spelled out.
+              const short = reason === "v2.reason.energy" || reason === "v2.reason.needFaith";
+              // Charge toward the cost, one segment per point: Faith pays for itself; Attack or Guard can be topped up with Faith.
+              const charged = Math.min(def.cost, def.kind === "faith" ? b.energy.faith : b.energy[def.kind] + b.energy.faith);
+              // Segments paid by the skill's own energy come first, in its colour; any topped up with Faith show yellow.
+              const own = def.kind === "faith" ? charged : Math.min(def.cost, b.energy[def.kind]);
+              return (
+                <button
+                  key={skill}
+                  onClick={() => cast(skill)}
+                  disabled={!ready || !!casting}
+                  title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
+                  className={`group flex items-center gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 enabled:hover:from-white disabled:cursor-not-allowed ${short ? "disabled:opacity-50" : "disabled:opacity-70 disabled:grayscale"}`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-sm font-black">{t(`v2.skill.${skill}.name`)}</span>
+                      {def.cost > 0 && (
+                        <span className="flex gap-0.5" aria-label={`${charged}/${def.cost}`}>
+                          {Array.from({ length: def.cost }, (_, i) => (
+                            <span key={i} className={`h-1.5 w-2 rounded-full ${i < own ? SEGMENT_COLOR[def.kind] : i < charged ? SEGMENT_COLOR.faith : "bg-slate-900/25"}`} />
+                          ))}
+                        </span>
+                      )}
+                    </span>
+                    <span className="block text-[11px] leading-snug text-slate-600">{t(`v2.skill.${skill}.desc`, { n: amount })}</span>
+                    {reason && reason !== "v2.reason.over" && !short && <span className="block text-[11px] font-semibold text-red-700">{t(reason)}</span>}
+                  </span>
+                  <span className="text-xl font-black leading-none">
+                    {def.damage ? amount : amount > 0 && `${skill === "mark" ? "↩" : "+"}${amount}`}
+                    {boosted && <span className="ml-0.5 text-[0.6em] text-amber-500">▲</span>}
+                  </span>
+                </button>
+              );
+            })}
+            {board.front !== id && alive && (
+              <button
+                onClick={onSwap}
+                disabled={locked || !canSwap(board, id)}
+                className="flex items-center justify-between gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
+              >
+                <span className="text-[11px] font-bold text-slate-600">{needsFront(board) ? t("v3.focus.free") : b.coiled === board.front ? t("v3.ui.coiled") : board.swapped ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
+                <span className="text-sm font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
+              </button>
+            )}
+          </div>
+        </motion.div>
+        </motion.div>
+      </div>
+      </div>
     </div>
   );
 }

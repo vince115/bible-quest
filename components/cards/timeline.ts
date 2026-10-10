@@ -32,15 +32,15 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
     era: "ministry",
     cards: [
       "jesusUR", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
-      "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "legionFreed", "jairus", "loavesBoy", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
-      "lazarus", "bartimaeus", "zacchaeus", "widow",
+      "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
+      "lazarus", "richRuler", "bartimaeus", "zacchaeus", "widow",
     ],
   },
-  { era: "passion", cards: ["caiaphas", "pilate", "herod", "barabbas", "simonCyrene", "thief", "mockingThief", "jesusCross", "romanCenturion", "josephArimathea", "jesus"] },
+  { era: "passion", cards: ["malchus", "caiaphas", "pilate", "herod", "barabbas", "simonCyrene", "thief", "mockingThief", "jesusCross", "romanCenturion", "josephArimathea", "jesus", "cleopas"] },
   {
     era: "church",
     cards: [
-      "matthias", "jamesJust", "sapphira", "stephen", "philip", "simonMagus", "ethiopian", "ananias", "paul", "romanSpearman", "romanArcher", "romanCavalry", "barnabas", "cornelius", "herodAgrippa", "dorcas", "johnMark", "silas", "lydia",
+      "matthias", "jamesJust", "sapphira", "stephen", "philip", "simonMagus", "ethiopian", "ananias", "paul", "romanSpearman", "romanArcher", "romanCavalry", "barnabas", "cornelius", "herodAgrippa", "rhoda", "dorcas", "johnMark", "silas", "lydia", "jailer",
       "loisEunice", "timothy", "priscilla", "aquila", "apollos", "luke", "titus", "phoebe", "philemon", "onesimus",
     ],
   },

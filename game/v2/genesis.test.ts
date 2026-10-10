@@ -2786,6 +2786,83 @@ describe("Michal, Gehazi and Jehu", () => {
   });
 });
 
+describe("The Canaanite woman", () => {
+  it("Lord, Help Me gives more Faith with Jesus; the crumbs heal double with Jesus", () => {
+    const s0 = createBattle(seeded(), ["canaanite", "jesusUR", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(s0, "lordHelpMe").energy.faith).toBe(2 + R.helpMeJesusFaith);
+    s0.party.david.hp = 20;
+    s0.party.david.shaken = true;
+    const c = castSkill(s0, "crumbs", "david");
+    expect([c.party.david.hp, c.party.david.shaken]).toEqual([20 + R.crumbsHeal * 2, false]);
+    const alone = createBattle(seeded(), ["canaanite", "david"]);
+    alone.hand = [];
+    alone.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(alone, "lordHelpMe").energy.faith).toBe(R.helpMeFaith);
+  });
+});
+
+describe("The rich young ruler and Cleopas", () => {
+  it("the ruler keeps the law; his possessions give Attack but he goes away sorrowful", () => {
+    const s0 = createBattle(seeded(), ["richRuler", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const k = castSkill(s0, "keptAllThese");
+    expect([k.party.richRuler.shield, k.energy.faith]).toEqual([R.rulerShield, 1]);
+    const p = castSkill(s0, "greatPossessions");
+    expect([p.energy.attack, p.party.richRuler.shaken]).toEqual([R.possessionsAttack, true]);
+  });
+
+  it("Cleopas' heart burns (Attack with Jesus); breaking bread heals and steadies everyone", () => {
+    const s0 = createBattle(seeded(), ["cleopas", "jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    const h = castSkill(s0, "heartsBurn");
+    expect([h.energy.faith, h.energy.attack]).toEqual([2 + R.burnFaith, 1]);
+    s0.party.david.hp = 50;
+    s0.party.david.shaken = true;
+    const b = castSkill(s0, "breakingBread");
+    expect([b.party.david.hp, b.party.david.shaken]).toEqual([50 + R.emmausHeal, false]);
+  });
+});
+
+describe("Malchus and the Philippian jailer", () => {
+  it("Malchus' ear is healed fully with Jesus; lanterns and torches give Attack", () => {
+    const s0 = createBattle(seeded(), ["malchus", "jesusUR"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.malchus.hp = 20;
+    const e = castSkill(s0, "earHealed");
+    expect([e.party.malchus.hp, e.party.malchus.shield]).toEqual([MAX_HP.malchus, R.earJesusShield]);
+    const t = castSkill(s0, "lanternsTorches");
+    expect([t.energy.attack, t.hand.length]).toEqual([1, 1]);
+  });
+
+  it("the jailer asks what he must do (a card with Paul), and washes everyone's stripes", () => {
+    const s0 = createBattle(seeded(), ["jailer", "paul"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    const w = castSkill(s0, "whatMustIDo");
+    expect([w.energy.faith, w.hand.length]).toEqual([2 + R.jailerFaith, 1]);
+    s0.party.paul.hp = 50;
+    expect(castSkill(s0, "washedStripes").party.paul.hp).toBe(50 + R.stripesHeal);
+  });
+});
+
+describe("Rhoda", () => {
+  it("for gladness gives Faith (Attack with Peter); running in steadies everyone", () => {
+    const s0 = createBattle(seeded(), ["rhoda", "peter"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const g = castSkill(s0, "forGladness");
+    expect([g.energy.faith, g.energy.attack]).toEqual([R.gladFaith, 1]);
+    s0.party.peter.shaken = true;
+    const r = castSkill(s0, "ranInTold");
+    expect([r.party.peter.shaken, r.hand.length]).toEqual([false, 1]);
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);

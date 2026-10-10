@@ -541,6 +541,17 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "ranAfterNaaman") return R.gehaziAttack;
   if (skill === "twoTalents") return 1;
   if (skill === "zealForLord") return R.jehuAttack;
+  if (skill === "lordHelpMe") return R.helpMeFaith;
+  if (skill === "crumbs") return R.crumbsHeal;
+  if (skill === "keptAllThese") return R.rulerShield;
+  if (skill === "greatPossessions") return R.possessionsAttack;
+  if (skill === "heartsBurn") return R.burnFaith;
+  if (skill === "breakingBread") return R.emmausHeal;
+  if (skill === "lanternsTorches") return 1;
+  if (skill === "earHealed") return R.earHeal;
+  if (skill === "whatMustIDo") return R.jailerFaith;
+  if (skill === "washedStripes") return R.stripesHeal;
+  if (skill === "forGladness") return R.gladFaith;
   if (skill === "blessNotCurse") return R.blessHeal;
   if (skill === "writingOnWall") return 1;
   if (skill === "trulySonOfGod") return 2;
@@ -590,6 +601,8 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "healWaters" && isAlive(s, "elijah")) return R.healWatersHeal * 2;
   // The disciple whom Jesus loved (John 21:20): with Jesus beside him, John's love is doubled.
   if (skill === "loveOneAnother" && jesusHere(s)) return R.loveHeal * 2;
+  if (skill === "lordHelpMe" && jesusHere(s)) return R.helpMeJesusFaith;
+  if (skill === "crumbs" && jesusHere(s)) return R.crumbsHeal * 2;
   // At midnight Paul and Silas prayed, and sang praises unto God (Acts 16:25).
   if (skill === "midnightHymns" && isAlive(s, "paul")) return R.hymnsPaulFaith;
   if (skill === "earnestCare" && isAlive(s, "paul")) return R.earnestPaulShield;
@@ -812,7 +825,7 @@ export function skillTargetKind(skill: SkillId): TargetKind {
   if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
   if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
-  if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
+  if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
   if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim" || skill === "lotFell" || skill === "talithaCumi" || skill === "itIsWell") return "fallenAlly";
   if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord" || skill === "underAuthority") return "actedAlly";
   return "none";
@@ -2606,6 +2619,101 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         s.party[id].shaken = true;
         log(s, "v2.log.zealShakes", "detail", { char: id });
       });
+      break;
+    case "lordHelpMe": {
+      // Then came she and worshipped him, saying, Lord, help me (Matthew 15:25).
+      const n = supportAmount(s, "lordHelpMe");
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + n);
+      log(s, "v2.log.lordHelpMe", "player", { n });
+      break;
+    }
+    case "crumbs": {
+      // Yet the dogs eat of the crumbs... O woman, great is thy faith (Matthew 15:27-28).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(supportAmount(s, "crumbs"), MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      c.shaken = false;
+      log(s, "v2.log.crumbs", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "keptAllThese":
+      // All these things have I kept from my youth up: what lack I yet? (Matthew 19:20).
+      addShield(s, "richRuler", R.rulerShield);
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + 1);
+      log(s, "v2.log.keptAllThese", "player", { n: R.rulerShield });
+      break;
+    case "greatPossessions":
+      // He went away sorrowful: for he had great possessions (Matthew 19:22).
+      s.energy.attack += R.possessionsAttack;
+      s.party.richRuler.shaken = true;
+      log(s, "v2.log.greatPossessions", "player", { n: R.possessionsAttack });
+      break;
+    case "heartsBurn":
+      // Did not our heart burn within us, while he talked with us by the way? (Luke 24:32).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.burnFaith);
+      log(s, "v2.log.heartsBurn", "player", { n: R.burnFaith });
+      if (jesusHere(s)) {
+        s.energy.attack += 1;
+        log(s, "v2.log.heartsBurnJesus", "player");
+      }
+      break;
+    case "breakingBread":
+      // He took bread, and blessed it, and brake... and their eyes were opened, and they knew him (Luke 24:30-31).
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        c.hp += Math.min(R.emmausHeal, MAX_HP[id] - c.hp);
+        c.shaken = false;
+      });
+      log(s, "v2.log.breakingBread", "player", { n: R.emmausHeal });
+      break;
+    case "lanternsTorches":
+      // Judas then, having received a band of men and officers... cometh thither with lanterns and torches and weapons (John 18:3).
+      s.energy.attack += 1;
+      log(s, "v2.log.lanternsTorches", "player");
+      draw(s, 1, rng);
+      break;
+    case "earHealed": {
+      // And he touched his ear, and healed him (Luke 22:51).
+      const me = s.party.malchus;
+      const withJesus = jesusHere(s);
+      const healed = withJesus ? MAX_HP.malchus - me.hp : Math.min(R.earHeal, MAX_HP.malchus - me.hp);
+      me.hp += healed;
+      if (withJesus) addShield(s, "malchus", R.earJesusShield);
+      log(s, withJesus ? "v2.log.earHealedJesus" : "v2.log.earHealed", "player", { n: healed, shield: R.earJesusShield });
+      break;
+    }
+    case "whatMustIDo":
+      // Sirs, what must I do to be saved? Believe on the Lord Jesus Christ, and thou shalt be saved, and thy house (Acts 16:30-31).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.jailerFaith);
+      log(s, "v2.log.whatMustIDo", "player", { n: R.jailerFaith });
+      if (isAlive(s, "paul") || isAlive(s, "silas")) {
+        log(s, "v2.log.whatMustIDoPaul", "player");
+        draw(s, 1, rng);
+      }
+      break;
+    case "washedStripes":
+      // He took them the same hour of the night, and washed their stripes (Acts 16:33).
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        c.hp += Math.min(R.stripesHeal, MAX_HP[id] - c.hp);
+      });
+      log(s, "v2.log.washedStripes", "player", { n: R.stripesHeal });
+      break;
+    case "forGladness":
+      // When she knew Peter's voice, she opened not the gate for gladness (Acts 12:14).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.gladFaith);
+      log(s, "v2.log.forGladness", "player", { n: R.gladFaith });
+      if (isAlive(s, "peter")) {
+        s.energy.attack += 1;
+        log(s, "v2.log.forGladnessPeter", "player");
+      }
+      break;
+    case "ranInTold":
+      // But ran in, and told how Peter stood before the gate... and when they had opened the door, and saw him, they were astonished (Acts 12:14-16).
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      log(s, "v2.log.ranInTold", "player");
+      draw(s, 1, rng);
       break;
     case "comeSee":
       // Come, see a man, which told me all things that ever I did (John 4:29).

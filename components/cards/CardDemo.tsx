@@ -12,6 +12,7 @@ import { EnemyCardFace } from "./EnemyCardFace";
 import { HoloCard } from "./HoloCard";
 import { TIMELINE } from "./timeline";
 import { CARD_RARITY, type Rarity } from "./rarity";
+import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = ["UR", "SSR", "SR", "R", "N"];
@@ -25,17 +26,6 @@ type Viewed = { id: CharacterId | EnemyId; enemy?: boolean; rarity?: Rarity };
 function CardFace({ id, enemy, rarity }: Viewed) {
   return enemy ? <EnemyCardFace id={id as EnemyId} /> : <CharacterCardFace id={id as CharacterId} rarity={rarity} />;
 }
-
-/**
- * Viewer size as a share of a real Pokémon card (63 × 88 mm). CSS millimetres run small on the designer's 24-inch
- * screen: a real card measured 115% of 63mm, so that is 100% here. Adjustable and remembered.
- */
-const REAL_SIZE = "calc(63mm * 1.15)";
-const SCALE_KEY = "bq-card-demo-real";
-/** Whether the viewer shows the character story beside the card (on unless turned off). */
-const STORY_KEY = "bq-card-demo-story";
-const SCALE_DEFAULT = 1.75;
-const SCALE_STEP = 0.1;
 
 /** Other names a card is known by (other Chinese translations, Catholic names, alternate names), for search. */
 const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
@@ -54,6 +44,12 @@ const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
   michal: "米甲 米加爾 掃羅的女兒 大衛的妻子 窗戶",
   gehazi: "基哈西 革哈齊 以利沙的僕人 乃縵 大痲瘋",
   jehu: "耶戶 耶胡 耶斯列 耶洗別 巴力 趕車",
+  canaanite: "迦南婦人 迦南 客納罕婦人 敘利非尼基 推羅 西頓 碎渣兒",
+  richRuler: "富有的少年官 少年官 富少年 少年財主 永生 變賣",
+  cleopas: "革流巴 克羅帕 克羅頗 以馬忤斯 厄瑪烏 擘餅",
+  malchus: "馬勒古 瑪爾曷 大祭司的僕人 耳朵 客西馬尼",
+  jailer: "腓立比獄卒 獄卒 禁卒 斐理伯 腓立比 地震",
+  rhoda: "羅大 洛德 使女 彼得 敲門 馬可的母親",
   simonMagus: "西門 術士 行邪術 巫師 西滿 撒馬利亞 買聖靈",
   herodAgrippa: "希律 亞基帕 黑落德 阿格黎帕 希律王 該撒利亞 彼得出監",
   philipApostle: "斐理伯 菲利普 使徒腓利",
@@ -179,38 +175,6 @@ const SEARCH = new Map(CARDS.map((c) => [c.id, searchText(c)]));
 const figureOf = ({ id, enemy }: Viewed) => (enemy ? undefined : figureArea(id as CharacterId));
 const elementOf = ({ id, enemy }: Viewed) => (enemy ? ENEMY_ELEMENT[id as EnemyId] : CHARACTER_ELEMENT[id as CharacterId]);
 
-/** The character's story beside the card in the viewer (nothing when the card has no story yet). */
-function StoryPanel({ id, enemy }: Viewed) {
-  const t = useT();
-  const key = `v3.bio.${id}`;
-  const story = t(key);
-  if (story === key) return null;
-  return (
-    <motion.aside
-      key={id}
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.25 }}
-      onClick={(e) => e.stopPropagation()}
-      className="relative w-full max-w-md px-[42px] py-[38px] text-stone-100 lg:w-80 lg:self-center"
-    >
-      {/* Just the gold frame: a 9-slice of public/ui-frame-gold.png (ornate corners keep their shape, edges stretch);
-          its dark ground is transparent, so nothing but the gold lines shows. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ borderStyle: "solid", borderWidth: 34, borderImage: "url(/ui-frame-gold.png) 48 / 34px stretch" }}
-      />
-      <p className="text-xs font-bold tracking-widest text-amber-300/80">{t("v3.demo.story")}</p>
-      {/* Same order as the card: title above, name below. */}
-      <p className="mt-1 text-sm text-stone-400">{t(`v3.card.${id}.title`)}</p>
-      <h2 className="text-xl font-black">{t(enemy ? `v2.enemy.${id}.name` : `char.${id}.name`)}</h2>
-      <p className="mt-3 text-[0.95rem] leading-relaxed text-stone-200">{story}</p>
-      <p className="mt-3 text-xs text-amber-200/80">— {t(`v3.card.${id}.ref`)}</p>
-    </motion.aside>
-  );
-}
-
 export function CardDemo() {
   const t = useT();
   const [effects, setEffects] = useState(true);
@@ -232,13 +196,13 @@ export function CardDemo() {
   const shown = filter === "all" ? matches : matches.filter((c) => CARD_RARITY[c.id] === filter);
   // Read once on the client; the scale only shows in the viewer, which never renders on the server.
   // Read once on the client, like the scale: the story panel only shows in the viewer.
-  const [showStory, setShowStory] = useState(() => typeof window === "undefined" || safeStorage.getItem(STORY_KEY) !== "off");
+  const [showStory, setShowStory] = useState(() => savedShowStory());
   const toggleStory = () =>
     setShowStory((on) => {
       safeStorage.setItem(STORY_KEY, on ? "off" : "on");
       return !on;
     });
-  const [scale, setScale] = useState(() => (typeof window === "undefined" ? 1 : Number(safeStorage.getItem(SCALE_KEY)) || SCALE_DEFAULT));
+  const [scale, setScale] = useState(savedScale);
 
   const adjust = (next: (current: number) => number) =>
     setScale((current) => {
@@ -366,8 +330,8 @@ export function CardDemo() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
             onClick={(e) => e.stopPropagation()}
-            className="[--w:min(calc(var(--real)*var(--cal)),92vw,calc((100dvh-7rem)*63/88))] lg:[--w:min(calc(var(--real)*var(--cal)),calc(100vw-32rem),calc((100dvh-7rem)*63/88))]"
-            style={{ "--real": REAL_SIZE, "--cal": scale, width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" } as React.CSSProperties}
+            className={VIEWER_WIDTH}
+            style={viewerStyle(scale)}
           >
             <HoloCard element={elementOf(viewing)} effects={effects} rarity={viewing.rarity ?? CARD_RARITY[viewing.id]} figure={figureOf(viewing)}>
               <CardFace {...viewing} />
