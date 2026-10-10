@@ -3,7 +3,8 @@
 // /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size.
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT } from "@/game/v2/data";
+import { translate } from "@/game/i18n";
 import type { CharacterId, EnemyId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace } from "./CharacterCardFace";
@@ -77,6 +78,17 @@ const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = [
   { id: "timothy" },
   { id: "lydia" },
   { id: "priscilla" },
+  { id: "eli" },
+  { id: "aquila" },
+  { id: "dorcas" },
+  { id: "cornelius" },
+  { id: "apollos" },
+  { id: "phoebe" },
+  { id: "luke" },
+  { id: "johnMark" },
+  { id: "titus" },
+  { id: "philemon" },
+  { id: "onesimus" },
   { id: "bearer", enemy: true },
   { id: "archer", enemy: true },
   { id: "serpent", enemy: true },
@@ -98,6 +110,15 @@ const SCALE_KEY = "bq-card-demo-real";
 const SCALE_DEFAULT = 1.75;
 const SCALE_STEP = 0.1;
 
+/** Everything a search can match on a card — name, title and skills — in both languages, lower-cased. */
+function searchText({ id, enemy }: Viewed): string {
+  const keys = enemy
+    ? [`v2.enemy.${id}.name`, `v3.card.${id}.title`]
+    : [`char.${id}.name`, `v3.card.${id}.title`, ...CHARACTER_SKILLS[id as CharacterId].map((k) => `v2.skill.${k}.name`)];
+  return (["zh", "en"] as const).flatMap((l) => keys.map((k) => translate(l, k))).join(" ").toLowerCase();
+}
+const SEARCH = new Map(CARDS.map((c) => [c.id, searchText(c)]));
+
 const elementOf = ({ id, enemy }: Viewed) => (enemy ? ENEMY_ELEMENT[id as EnemyId] : CHARACTER_ELEMENT[id as CharacterId]);
 
 export function CardDemo() {
@@ -105,6 +126,7 @@ export function CardDemo() {
   const [effects, setEffects] = useState(true);
   const [viewing, setViewing] = useState<Viewed | null>(null);
   const [filter, setFilter] = useState<Rarity | "all">("all");
+  const [query, setQuery] = useState("");
   // Restored after mount (the server always renders "all"), so hydration stays in step.
   useEffect(() => {
     const saved = safeStorage.getItem(FILTER_KEY);
@@ -115,7 +137,9 @@ export function CardDemo() {
     setFilter(f);
     safeStorage.setItem(FILTER_KEY, f);
   };
-  const shown = filter === "all" ? CARDS : CARDS.filter((c) => CARD_RARITY[c.id] === filter);
+  const q = query.trim().toLowerCase();
+  const matches = q ? CARDS.filter((c) => SEARCH.get(c.id)!.includes(q)) : CARDS;
+  const shown = filter === "all" ? matches : matches.filter((c) => CARD_RARITY[c.id] === filter);
   // Read once on the client; the scale only shows in the viewer, which never renders on the server.
   const [scale, setScale] = useState(() => (typeof window === "undefined" ? 1 : Number(safeStorage.getItem(SCALE_KEY)) || SCALE_DEFAULT));
 
@@ -139,9 +163,17 @@ export function CardDemo() {
         <h1 className="text-xl font-bold">{t("v3.demo.title")}</h1>
         <p className="mt-1 text-sm text-stone-400">{t("v3.demo.hint")}</p>
       </div>
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t("v3.demo.search")}
+        aria-label={t("v3.demo.search")}
+        className="w-full max-w-sm rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none"
+      />
       <div role="tablist" aria-label={t("v3.demo.filter")} className="flex flex-wrap justify-center gap-2">
         {(["all", ...RARITY_TABS] as const).map((f) => {
-          const count = f === "all" ? CARDS.length : CARDS.filter((c) => CARD_RARITY[c.id] === f).length;
+          const count = f === "all" ? matches.length : matches.filter((c) => CARD_RARITY[c.id] === f).length;
           return (
             <button
               key={f}
@@ -156,6 +188,7 @@ export function CardDemo() {
         })}
       </div>
       <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
+        {shown.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
         {shown.map((card) => (
           <div key={card.id} className="flex flex-col items-center gap-2">
             <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">

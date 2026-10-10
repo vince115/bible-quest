@@ -15,8 +15,8 @@ import { RarityMark } from "./RarityMark";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", eli: "061", aquila: "062", dorcas: "063", cornelius: "064", apollos: "065", phoebe: "066", luke: "067", johnMark: "068", titus: "069", philemon: "070", onesimus: "071", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -26,6 +26,17 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
+  onesimus: { src: "/cards/onesimus.jpg", figure: { cx: 0.5, head: 0.212, feet: 0.967 } },
+  philemon: { src: "/cards/philemon.jpg", figure: { cx: 0.52, head: 0.141, feet: 0.967 } },
+  titus: { src: "/cards/titus.jpg", figure: { cx: 0.45, head: 0.156, feet: 0.962 } },
+  johnMark: { src: "/cards/john-mark.jpg", figure: { cx: 0.46, head: 0.195, feet: 0.957 } },
+  luke: { src: "/cards/luke.jpg", figure: { cx: 0.47, head: 0.146, feet: 0.957 } },
+  phoebe: { src: "/cards/phoebe.jpg", figure: { cx: 0.45, head: 0.164, feet: 0.967 } },
+  apollos: { src: "/cards/apollos.jpg", figure: { cx: 0.47, head: 0.156, feet: 0.967 } },
+  cornelius: { src: "/cards/cornelius.jpg", figure: { cx: 0.47, head: 0.156, feet: 0.967 } },
+  dorcas: { src: "/cards/dorcas.jpg", figure: { cx: 0.5, head: 0.168, feet: 0.977 } },
+  aquila: { src: "/cards/aquila.jpg", figure: { cx: 0.5, head: 0.186, feet: 0.977 } },
+  eli: { src: "/cards/eli.jpg", figure: { cx: 0.445, head: 0.28, feet: 0.978, size: 0.8 } },
   priscilla: { src: "/cards/priscilla.jpg", figure: { cx: 0.5, head: 0.151, feet: 0.972 } },
   lydia: { src: "/cards/lydia.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.98 } },
   timothy: { src: "/cards/timothy.jpg", figure: { cx: 0.46, head: 0.151, feet: 0.972 } },
@@ -153,7 +164,7 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
   const resist = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul") && (
+      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul" || id === "dorcas" || id === "luke") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t(`v2.passive.${id}`)}

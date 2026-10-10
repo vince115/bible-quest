@@ -1336,3 +1336,160 @@ describe("Priscilla", () => {
     expect(s.taught).toBeNull();
   });
 });
+
+describe("Eli", () => {
+  it("Go in Peace heals and gives Faith (double for Hannah); Speak, Lord lets an ally act again once", () => {
+    const s0 = createBattle(seeded(), ["eli", "hannah", "samuel"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 1, guard: 3 };
+    s0.party.hannah.hp = 50;
+    const p = castSkill(s0, "goInPeace", "hannah");
+    expect([p.party.hannah.hp, p.energy.faith]).toEqual([50 + R.peaceHeal * 2, R.peaceFaith * 2]);
+    let s = castSkill(s0, "rebuke", "archer");
+    s = castSkill(s, "speakLord", "samuel");
+    expect(s.party.samuel.acted).toBe(false);
+    expect(s.energy.faith).toBe(1);
+    expect(s.speakUsed).toBe(true);
+  });
+});
+
+describe("Aquila", () => {
+  it("takes the blow meant for an ally this turn, with a Shield when Priscilla is there", () => {
+    let s = createBattle(seeded(), ["aquila", "priscilla", "david"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 1 };
+    s.archerTarget = null;
+    s = castSkill(s, "layDownNeck", "david");
+    expect(s.party.aquila.shield).toBe(R.aquilaShield);
+    s.intents[0] = { action: "spear", targets: ["david"] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.david.hp).toBe(MAX_HP.david);
+    expect(s.party.aquila.hp).toBe(MAX_HP.aquila - (R.spear - R.aquilaShield)); // metal → earth ×1
+    s = startNextTurn(s, seeded());
+    expect(s.aquilaCovers).toBeNull();
+  });
+});
+
+describe("Dorcas", () => {
+  it("rises with full HP the turn after she falls — only with Peter in the line-up", () => {
+    const fall = (lineup: CharacterId[]) => {
+      const s = createBattle(seeded(), lineup);
+      s.archerTarget = null;
+      s.party.dorcas.hp = 10;
+      s.intents[0] = { action: "spear", targets: ["dorcas"] };
+      return endTurn(s, seeded());
+    };
+    expect(fall(["dorcas", "peter"]).party.dorcas.hp).toBe(MAX_HP.dorcas);
+    expect(fall(["dorcas", "david"]).party.dorcas.hp).toBe(0);
+  });
+
+  it("Garments heal and shield everyone a little", () => {
+    const s0 = createBattle(seeded(), ["dorcas", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.david.hp = 50;
+    const s = castSkill(s0, "garments");
+    expect([s.party.david.hp, s.party.david.shield]).toEqual([50 + R.garmentHeal, R.garmentShield]);
+  });
+});
+
+describe("Cornelius", () => {
+  it("Centurion's Command deals 40; Prayers and Alms give Faith, and Attack with Peter", () => {
+    const s0 = createBattle(seeded(), ["cornelius", "peter"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(skillDamage(s0, "centurionCommand", "bearer")).toBe(60); // metal → wood ×1.5
+    expect(castSkill(s0, "prayersAlms").energy).toMatchObject({ faith: R.memorialFaith, attack: 1 });
+  });
+});
+
+describe("Apollos", () => {
+  it("Mighty in the Scriptures hits harder with Priscilla or Aquila; Watered heals everyone", () => {
+    expect(skillDamage(createBattle(seeded(), ["apollos", "david"]), "mightyScriptures", "bearer")).toBe(30); // water → wood ×1
+    expect(skillDamage(createBattle(seeded(), ["apollos", "aquila"]), "mightyScriptures", "bearer")).toBe(30 + R.scripturesWithTeachers);
+    const s0 = createBattle(seeded(), ["apollos", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.david.hp = 50;
+    expect(castSkill(s0, "watered").party.david.hp).toBe(50 + R.wateredHeal);
+  });
+});
+
+describe("Phoebe", () => {
+  it("Succourer heals and gives Guard; Bearer of the Letter gives Faith and draws, double with Paul", () => {
+    const s0 = createBattle(seeded(), ["phoebe", "paul"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    s0.party.paul.hp = 50;
+    const h = castSkill(s0, "succourer", "paul");
+    expect([h.party.paul.hp, h.energy.guard]).toEqual([50 + R.succourHeal, 1]);
+    const l = castSkill(s0, "bearLetter", undefined, seeded());
+    expect([l.energy.faith, l.hand.length]).toEqual([R.letterFaith * 2, R.letterDraw * 2]);
+  });
+});
+
+describe("Luke", () => {
+  it("heals double for Paul, draws 2, and is shielded each turn beside Paul", () => {
+    let s = createBattle(seeded(), ["luke", "paul"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 2 };
+    s.party.paul.hp = 30;
+    expect(castSkill(s, "physician", "paul").party.paul.hp).toBe(30 + R.physicianHeal * 2);
+    expect(castSkill(s, "inOrder", undefined, seeded()).hand).toHaveLength(R.orderDraw);
+    s.archerTarget = null;
+    s.intents[0] = { action: "defy", targets: [] };
+    s = endTurn(s, seeded());
+    expect(s.party.luke.shield).toBe(R.lukeShield);
+  });
+});
+
+describe("John Mark", () => {
+  it("Departing gives 2 Faith but he is Shaken next turn; Profitable hits harder with Barnabas", () => {
+    let s = createBattle(seeded(), ["johnMark", "barnabas"]);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(skillDamage(s, "profitable", "archer")).toBe(20 + R.profitableWith); // wood → fire ×1
+    s = castSkill(s, "departed");
+    expect(s.energy.faith).toBe(R.departFaith);
+    s = endTurn(s, seeded());
+    expect(s.party.johnMark.shaken).toBe(true);
+  });
+});
+
+describe("Titus", () => {
+  it("Set in Order turns 1 Faith into a Guard and an Attack; Earnest Care shields everyone, 30 with Paul", () => {
+    const s0 = createBattle(seeded(), ["titus", "paul"]);
+    s0.hand = [];
+    s0.energy = { faith: 1, attack: 0, guard: 2 };
+    expect(castSkill(s0, "setInOrder").energy).toEqual({ faith: 0, attack: 1, guard: 3 });
+    expect(castSkill(s0, "earnestCare").party.paul.shield).toBe(R.earnestPaulShield);
+  });
+});
+
+describe("Philemon", () => {
+  it("Refreshed heals and steadies everyone; Receive Him raises a fallen ally, 80 with Paul", () => {
+    const s0 = createBattle(seeded(), ["philemon", "paul", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    s0.party.paul.hp = 50;
+    s0.party.paul.shaken = true;
+    const r = castSkill(s0, "refreshed");
+    expect([r.party.paul.hp, r.party.paul.shaken]).toEqual([50 + R.refreshHeal, false]);
+    s0.party.david.hp = 0;
+    const s = castSkill(s0, "receiveHim", "david");
+    expect(s.party.david.hp).toBe(R.receivePaulHp);
+    expect(s.receiveUsed).toBe(true);
+  });
+});
+
+describe("Onesimus", () => {
+  it("Now Profitable deals double with Philemon; A Brother Beloved gives Faith and steadies him", () => {
+    expect(skillDamage(createBattle(seeded(), ["onesimus", "david"]), "nowProfitable", "archer")).toBe(20);
+    expect(skillDamage(createBattle(seeded(), ["onesimus", "philemon"]), "nowProfitable", "archer")).toBe(40);
+    const s0 = createBattle(seeded(), ["onesimus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const s = castSkill(s0, "belovedBrother");
+    expect(s.energy.faith).toBe(R.brotherFaith);
+  });
+});

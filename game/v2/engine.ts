@@ -118,7 +118,7 @@ function checkVictory(s: BattleState) {
 
 function checkDefeat(s: BattleState) {
   // While Jesus lies in the tomb (or someone waits on Martha's word) the battle is not lost: they will rise.
-  const waiting = s.tomb !== null || s.lazarus === "tomb" || (s.riseAgain !== "unused" && s.riseAgain !== "ready" && s.riseAgain !== "used");
+  const waiting = s.tomb !== null || s.lazarus === "tomb" || s.dorcas === "asleep" || (s.riseAgain !== "unused" && s.riseAgain !== "ready" && s.riseAgain !== "used");
   if (s.result === "ongoing" && targetable(s).length === 0 && !waiting) {
     s.result = "defeat";
     log(s, "v2.log.defeat", "system");
@@ -154,6 +154,11 @@ function damageAlly(s: BattleState, id: CharacterId, base: number, from: EnemyId
     log(s, "v2.log.lionsShut", "player", { char: id });
     return;
   }
+  // Who have for my life laid down their own necks (Romans 16:4).
+  if (s.aquilaCovers === id && id !== "aquila" && isAlive(s, "aquila")) {
+    log(s, "v2.log.aquilaCovers", "detail", { char: id });
+    return damageAlly(s, "aquila", base, from);
+  }
   // Cast me forth into the sea; so shall the sea be calm unto you (Jonah 1:12).
   if (s.castIntoSea && id !== "jonah" && isAlive(s, "jonah")) return damageAlly(s, "jonah", base, from);
   // Aaron bears the names of the tribes upon his heart (Exodus 28:29): the leader's blows are halved.
@@ -186,6 +191,11 @@ function damageAlly(s: BattleState, id: CharacterId, base: number, from: EnemyId
     if (s.riseAgain === "ready" && id !== "jesusUR" && !(id === "jonah" && s.fish === "inside")) {
       s.riseAgain = id;
       log(s, "v2.log.riseAgainWaits", "player", { char: id });
+    }
+    // Tabitha, arise (Acts 9:40): with Peter beside her, she will be back next turn.
+    if (id === "dorcas" && s.dorcas === "ready" && isAlive(s, "peter")) {
+      s.dorcas = "asleep";
+      log(s, "v2.log.dorcasAsleep", "player");
     }
     // Lazarus, come forth (John 11:43): with Jesus beside him, he will be back next turn.
     if (id === "lazarus" && s.lazarus === "ready" && (isAlive(s, "jesus") || isAlive(s, "jesusUR"))) {
@@ -263,7 +273,11 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
   const stir = skill === "stirUpGift" && isAlive(s, "paul") ? R.stirWithPaul : 0;
   // They expounded unto him the way of God more perfectly (Acts 18:26).
   const taught = s.taught === def.owner ? R.expoundBonus : 0;
-  const base = (def.damage ?? 0) + giant + till + seed + blessing + hands + withJesus + brothers + cup + weak + example + stir + taught;
+  // An eloquent man, and mighty in the scriptures — taught the way more perfectly by Priscilla and Aquila (Acts 18:24, 26).
+  // Take Mark, and bring him with thee: for he is profitable to me for the ministry (2 Timothy 4:11).
+  const restored = skill === "profitable" && (isAlive(s, "barnabas") || isAlive(s, "paul")) ? R.profitableWith : 0;
+  const mighty = skill === "mightyScriptures" && (isAlive(s, "priscilla") || isAlive(s, "aquila")) ? R.scripturesWithTeachers : 0;
+  const base = (def.damage ?? 0) + giant + till + seed + blessing + hands + withJesus + brothers + cup + weak + example + stir + taught + mighty + restored + (skill === "nowProfitable" && (isAlive(s, "philemon") || isAlive(s, "paul")) ? SKILLS.nowProfitable.damage! : 0);
   if (!target) return base;
   // Now also the axe is laid unto the root of the trees (Matthew 3:10): wood enemies take double.
   if (skill === "axe" && ENEMY_ELEMENT[target] === "wood") return toTens(base * 2 * elementMultiplier(CHARACTER_ELEMENT[def.owner], ENEMY_ELEMENT[target]));
@@ -341,6 +355,20 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "abideHouse") return R.abideHeal;
   if (skill === "tentmaking") return R.tentShield;
   if (skill === "expound") return R.expoundBonus;
+  if (skill === "goInPeace") return R.peaceHeal;
+  if (skill === "garments") return R.garmentHeal;
+  if (skill === "almsdeeds") return R.almsHeal;
+  if (skill === "prayersAlms") return R.memorialFaith;
+  if (skill === "watered") return R.wateredHeal;
+  if (skill === "succourer") return R.succourHeal;
+  if (skill === "physician") return R.physicianHeal;
+  if (skill === "inOrder") return R.orderDraw;
+  if (skill === "departed") return R.departFaith;
+  if (skill === "earnestCare") return R.earnestShield;
+  if (skill === "refreshed") return R.refreshHeal;
+  if (skill === "receiveHim") return R.receiveHp;
+  if (skill === "belovedBrother") return R.brotherFaith;
+  if (skill === "bearLetter") return R.letterFaith;
   if (skill === "fourfold") return R.fourfoldAttack + R.fourfoldFaith;
   if (skill === "loaves") return R.loavesHeal;
   return 0;
@@ -357,6 +385,8 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "loveOneAnother" && (isAlive(s, "jesus") || isAlive(s, "jesusUR"))) return R.loveHeal * 2;
   // At midnight Paul and Silas prayed, and sang praises unto God (Acts 16:25).
   if (skill === "midnightHymns" && isAlive(s, "paul")) return R.hymnsPaulFaith;
+  if (skill === "earnestCare" && isAlive(s, "paul")) return R.earnestPaulShield;
+  if (skill === "receiveHim" && isAlive(s, "paul")) return R.receivePaulHp;
   // So built we the wall; and all the wall was joined together (Nehemiah 4:6): each course stands higher.
   if (skill === "buildWall") return Math.min(R.wallCap, R.wallShield + R.wallStep * s.wallCourses);
   return baseSupportAmount(skill);
@@ -412,6 +442,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     redeemerUsed: false,
     hannahSongUsed: false,
     saulRash: false,
+    markLeft: false,
+    receiveUsed: false,
     intercede: false,
     templeFireUsed: false,
     carmelUsed: false,
@@ -444,6 +476,9 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     prisonOpened: false,
     example: false,
     taught: null,
+    speakUsed: false,
+    aquilaCovers: null,
+    dorcas: "ready",
     tomb: null,
     risenUsed: false,
     enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
@@ -503,13 +538,13 @@ export function playCard(state: BattleState, uid: number): BattleState {
 // ---------- skills ----------
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift") return "enemy";
+  if (skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
   if (skill === "volley" || skill === "courage") return "anyEnemy";
-  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "leper" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth") return "ally";
-  if (skill === "whither" || skill === "expound") return "otherAlly";
-  if (skill === "arise" || skill === "restorer" || skill === "seenTheLord") return "fallenAlly";
-  if (skill === "helper" || skill === "comeAndSee") return "actedAlly";
+  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "leper" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician") return "ally";
+  if (skill === "whither" || skill === "expound" || skill === "layDownNeck") return "otherAlly";
+  if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim") return "fallenAlly";
+  if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord") return "actedAlly";
   return "none";
 }
 
@@ -574,6 +609,8 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   if (skill === "heavensOpened" && s.heavensUsed) return "v2.reason.ariseUsed";
   if (skill === "soldField" && s.fieldSold) return "v2.reason.ariseUsed";
   if (skill === "prisonOpened" && s.prisonOpened) return "v2.reason.ariseUsed";
+  if (skill === "speakLord" && s.speakUsed) return "v2.reason.ariseUsed";
+  if (skill === "receiveHim" && s.receiveUsed) return "v2.reason.ariseUsed";
   // Thou shalt be dumb, until the day that these things shall be performed (Luke 1:20).
   if (skill === "nameIsJohn" && s.turn < R.johnTurn) return "v2.reason.silent";
   // The ladder is for allies who have already acted: someone must have.
@@ -761,6 +798,147 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const gained = Math.min(R.fastingFaith, R.maxFaith - s.energy.faith);
       s.energy.faith += gained;
       log(s, "v2.log.fasting", "player", { n: gained, hp: c.hp, max: MAX_HP.esther });
+      break;
+    }
+    case "belovedBrother":
+      // Not now as a servant, but above a servant, a brother beloved (Philemon 1:16).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.brotherFaith);
+      s.party.onesimus.shaken = false;
+      log(s, "v2.log.belovedBrother", "player");
+      break;
+    case "refreshed":
+      // The bowels of the saints are refreshed by thee, brother (Philemon 1:7).
+      log(s, "v2.log.refreshed", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.refreshHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        c.shaken = false;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    case "receiveHim": {
+      // Receive him, as myself (Philemon 1:17).
+      const c = s.party[target as CharacterId];
+      c.hp = supportAmount(s, "receiveHim");
+      c.shaken = false;
+      c.shield = 0;
+      c.acted = false;
+      s.receiveUsed = true;
+      log(s, "v2.log.revive", "player", { char: target, hp: c.hp });
+      break;
+    }
+    case "setInOrder":
+      // That thou shouldest set in order the things that are wanting (Titus 1:5): one Faith becomes a Guard and an Attack.
+      s.energy.guard = Math.min(R.maxGuard, s.energy.guard + 1);
+      s.energy.attack += 1;
+      log(s, "v2.log.setInOrder", "player");
+      break;
+    case "earnestCare": {
+      // God, which put the same earnest care into the heart of Titus for you (2 Corinthians 8:16).
+      const n = supportAmount(s, "earnestCare");
+      log(s, "v2.log.earnestCare", "player", { n });
+      living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, n));
+      break;
+    }
+    case "departed": {
+      // John departing from them returned to Jerusalem (Acts 13:13).
+      const gained = Math.min(R.departFaith, R.maxFaith - s.energy.faith);
+      s.energy.faith += gained;
+      s.markLeft = true;
+      log(s, "v2.log.departed", "player", { n: gained });
+      break;
+    }
+    case "physician": {
+      // Luke, the beloved physician (Colossians 4:14) — twice the care for Paul.
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.physicianHeal * (ally === "paul" ? 2 : 1), MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      c.shaken = false;
+      log(s, "v2.log.physician", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "inOrder":
+      // To write unto thee in order (Luke 1:3).
+      log(s, "v2.log.inOrder", "player", { n: R.orderDraw });
+      draw(s, R.orderDraw, rng);
+      break;
+    case "succourer": {
+      // She hath been a succourer of many, and of myself also (Romans 16:2).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.succourHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      s.energy.guard = Math.min(R.maxGuard, s.energy.guard + 1);
+      log(s, "v2.log.succourer", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "bearLetter": {
+      // I commend unto you Phoebe our sister (Romans 16:1) — carrying Paul's letter to Rome.
+      const k = isAlive(s, "paul") ? 2 : 1;
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.letterFaith * k);
+      log(s, "v2.log.bearLetter", "player", { n: R.letterDraw * k });
+      draw(s, R.letterDraw * k, rng);
+      break;
+    }
+    case "watered":
+      // I have planted, Apollos watered; but God gave the increase (1 Corinthians 3:6).
+      log(s, "v2.log.watered", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.wateredHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    case "prayersAlms":
+      // Thy prayers and thine alms are come up for a memorial before God... call for Simon (Acts 10:4-5).
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.memorialFaith);
+      if (isAlive(s, "peter")) s.energy.attack += 1;
+      log(s, "v2.log.prayersAlms", "player");
+      break;
+    case "garments":
+      // The coats and garments which Dorcas made, while she was with them (Acts 9:39).
+      log(s, "v2.log.garments", "player");
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        c.hp += Math.min(R.garmentHeal, MAX_HP[id] - c.hp);
+        if (!NEVER_FALLS.has(id)) addShield(s, id, R.garmentShield);
+      });
+      break;
+    case "almsdeeds": {
+      // This woman was full of good works and almsdeeds (Acts 9:36).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.almsHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      log(s, "v2.log.almsdeeds", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "layDownNeck":
+      s.aquilaCovers = target as CharacterId;
+      log(s, "v2.log.layDownNeck", "player", { char: target as CharacterId });
+      if (isAlive(s, "priscilla")) addShield(s, "aquila", R.aquilaShield);
+      break;
+    case "goInPeace": {
+      // Go in peace: and the God of Israel grant thee thy petition (1 Samuel 1:17) — twice over for Hannah.
+      const ally = target as CharacterId;
+      const k = ally === "hannah" ? 2 : 1;
+      const c = s.party[ally];
+      const healed = Math.min(R.peaceHeal * k, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      s.energy.faith = Math.min(R.maxFaith, s.energy.faith + R.peaceFaith * k);
+      log(s, "v2.log.goInPeace", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "speakLord": {
+      // Speak, LORD; for thy servant heareth (1 Samuel 3:9).
+      const ally = target as CharacterId;
+      s.party[ally].acted = false;
+      s.speakUsed = true;
+      if (ally === "samuel") s.energy.faith = Math.min(R.maxFaith, s.energy.faith + 1);
+      log(s, "v2.log.speakLord", "player", { char: ally });
       break;
     }
     case "tentmaking":
@@ -1525,6 +1703,10 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
   s.covered = null;
   s.inTree = false;
   // To obey is better than sacrifice (1 Samuel 15:22).
+  if (s.markLeft) {
+    s.markLeft = false;
+    if (isAlive(s, "johnMark")) s.party.johnMark.shaken = true;
+  }
   if (s.saulRash) {
     s.saulRash = false;
     if (isAlive(s, "saul")) {
@@ -1535,6 +1717,7 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
   s.handsUp = false;
   s.example = false;
   s.taught = null;
+  s.aquilaCovers = null;
   s.breastplate = false;
   s.intercede = false;
   s.castIntoSea = false;
@@ -1545,6 +1728,11 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
     s.riseAgain = "used";
     s.party[back].hp = R.riseAgainHp;
     log(s, "v2.log.revive", "player", { char: back, hp: R.riseAgainHp });
+  }
+  if (s.dorcas === "asleep") {
+    s.dorcas = "raised";
+    s.party.dorcas.hp = MAX_HP.dorcas;
+    log(s, "v2.log.dorcasRaised", "player", { hp: MAX_HP.dorcas });
   }
   if (s.lazarus === "tomb") {
     s.lazarus = "raised";
@@ -1577,6 +1765,8 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random): Battl
   s.archerTarget = enemyAlive(s, "archer") ? randomAlly(s, rng) : null;
 
   log(s, "v2.log.turn", "system", { n: s.turn });
+  // Only Luke is with me (2 Timothy 4:11).
+  if (isAlive(s, "luke") && isAlive(s, "paul")) addShield(s, "luke", R.lukeShield);
   draw(s, R.drawPerTurn, rng);
   return s;
 }

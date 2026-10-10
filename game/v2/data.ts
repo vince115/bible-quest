@@ -208,6 +208,40 @@ export const RULES_V2 = {
   /** Priscilla: Tentmaking shields every ally; Expounding the Way strengthens one ally's attacks this turn. */
   tentShield: 20,
   expoundBonus: 30,
+  /** Eli: Go in Peace heals one ally and gives Faith (double for Hannah); Speak, Lord lets an ally act again. */
+  peaceHeal: 20,
+  peaceFaith: 1,
+  /** Aquila shields himself when he steps in front, with Priscilla beside him. */
+  aquilaShield: 20,
+  /** Dorcas: Garments heal and shield every ally a little; Almsdeeds heals one ally. */
+  garmentHeal: 10,
+  garmentShield: 10,
+  almsHeal: 30,
+  /** Cornelius' Prayers and Alms give Faith (+1 Attack with Peter in the line-up). */
+  memorialFaith: 1,
+  /** Apollos: Mighty in the Scriptures hits harder with Priscilla or Aquila; Watered heals every ally. */
+  scripturesWithTeachers: 20,
+  wateredHeal: 20,
+  /** Phoebe: Succourer of Many heals one ally and gives Guard; Bearer of the Letter gives Faith and draws (more with Paul). */
+  succourHeal: 30,
+  letterFaith: 1,
+  letterDraw: 1,
+  /** Luke: the Beloved Physician heals one ally (double for Paul); In Order draws cards; with Paul he is shielded each turn. */
+  physicianHeal: 40,
+  orderDraw: 2,
+  lukeShield: 10,
+  /** John Mark: Departing gives Faith but he is Shaken next turn; Profitable hits harder with Barnabas or Paul. */
+  departFaith: 2,
+  profitableWith: 20,
+  /** Titus: Set in Order gives a Guard and an Attack; Earnest Care shields every ally (more with Paul). */
+  earnestShield: 20,
+  earnestPaulShield: 30,
+  /** Philemon: Refreshed heals and steadies every ally; Receive Him raises a fallen ally (more with Paul). */
+  refreshHeal: 20,
+  receiveHp: 50,
+  receivePaulHp: 80,
+  /** Onesimus' Brother Beloved gives Faith. */
+  brotherFaith: 1,
 
   /** Eve's Mother of All Living: heals every ally. */
   motherHeal: 40,
@@ -301,6 +335,17 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   timothy: "fire",
   lydia: "water",
   priscilla: "wood",
+  eli: "fire",
+  aquila: "earth",
+  dorcas: "wood",
+  cornelius: "metal",
+  apollos: "water",
+  phoebe: "water",
+  luke: "water",
+  johnMark: "wood",
+  titus: "earth",
+  philemon: "wood",
+  onesimus: "wood",
   eve: "wood",
   archerP: "fire",
   bearerP: "wood",
@@ -317,7 +362,7 @@ export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -333,7 +378,7 @@ export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, eli: 90, aquila: 110, dorcas: 100, cornelius: 140, apollos: 110, phoebe: 100, luke: 110, johnMark: 100, titus: 120, philemon: 110, onesimus: 90, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -457,6 +502,28 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   abideHouse: { id: "abideHouse", owner: "lydia", kind: "guard", cost: 2 },
   tentmaking: { id: "tentmaking", owner: "priscilla", kind: "guard", cost: 1 },
   expound: { id: "expound", owner: "priscilla", kind: "guard", cost: 1 },
+  goInPeace: { id: "goInPeace", owner: "eli", kind: "guard", cost: 1 },
+  speakLord: { id: "speakLord", owner: "eli", kind: "guard", cost: 2 },
+  tentRope: { id: "tentRope", owner: "aquila", kind: "attack", cost: 1, damage: 20 },
+  layDownNeck: { id: "layDownNeck", owner: "aquila", kind: "guard", cost: 1 },
+  garments: { id: "garments", owner: "dorcas", kind: "guard", cost: 1 },
+  almsdeeds: { id: "almsdeeds", owner: "dorcas", kind: "guard", cost: 1 },
+  centurionCommand: { id: "centurionCommand", owner: "cornelius", kind: "attack", cost: 2, damage: 40 },
+  prayersAlms: { id: "prayersAlms", owner: "cornelius", kind: "guard", cost: 1 },
+  mightyScriptures: { id: "mightyScriptures", owner: "apollos", kind: "attack", cost: 1, damage: 30 },
+  watered: { id: "watered", owner: "apollos", kind: "guard", cost: 1 },
+  succourer: { id: "succourer", owner: "phoebe", kind: "guard", cost: 1 },
+  bearLetter: { id: "bearLetter", owner: "phoebe", kind: "guard", cost: 1 },
+  physician: { id: "physician", owner: "luke", kind: "guard", cost: 1 },
+  inOrder: { id: "inOrder", owner: "luke", kind: "guard", cost: 1 },
+  departed: { id: "departed", owner: "johnMark", kind: "guard", cost: 1 },
+  profitable: { id: "profitable", owner: "johnMark", kind: "attack", cost: 1, damage: 20 },
+  setInOrder: { id: "setInOrder", owner: "titus", kind: "faith", cost: 1 },
+  earnestCare: { id: "earnestCare", owner: "titus", kind: "guard", cost: 2 },
+  refreshed: { id: "refreshed", owner: "philemon", kind: "guard", cost: 1 },
+  receiveHim: { id: "receiveHim", owner: "philemon", kind: "guard", cost: 2 },
+  nowProfitable: { id: "nowProfitable", owner: "onesimus", kind: "attack", cost: 1, damage: 20 },
+  belovedBrother: { id: "belovedBrother", owner: "onesimus", kind: "guard", cost: 1 },
   volley: { id: "volley", owner: "archerP", kind: "attack", cost: 1, damage: 40 },
   shieldUp: { id: "shieldUp", owner: "bearerP", kind: "guard", cost: 1 },
   bash: { id: "bash", owner: "bearerP", kind: "attack", cost: 1, damage: 20 },
@@ -526,6 +593,17 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   timothy: ["example", "stirUpGift"],
   lydia: ["purpleCloth", "abideHouse"],
   priscilla: ["tentmaking", "expound"],
+  eli: ["goInPeace", "speakLord"],
+  aquila: ["tentRope", "layDownNeck"],
+  dorcas: ["garments", "almsdeeds"],
+  cornelius: ["centurionCommand", "prayersAlms"],
+  apollos: ["mightyScriptures", "watered"],
+  phoebe: ["succourer", "bearLetter"],
+  luke: ["physician", "inOrder"],
+  johnMark: ["departed", "profitable"],
+  titus: ["setInOrder", "earnestCare"],
+  philemon: ["refreshed", "receiveHim"],
+  onesimus: ["nowProfitable", "belovedBrother"],
   eve: ["mother", "helper"],
   archerP: ["volley"],
   bearerP: ["shieldUp", "bash"],
