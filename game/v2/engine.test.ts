@@ -14,6 +14,8 @@ import {
   resolveGoliath,
   skillBlockReason,
   startNextTurn,
+  cardBlockReason,
+  playableHand,
 } from "./engine";
 import type { BattleState, CardId, EnergyPool, SkillId } from "./types";
 
@@ -56,14 +58,31 @@ describe("setup", () => {
 });
 
 describe("cards become energy", () => {
-  it("each card adds 1 of its energy kind and goes to the discard pile", () => {
-    let s = battle(["stones", "covenant", "battle"]);
+  it("each card adds its energy and goes to the discard pile", () => {
+    let s = battle(["stones", "covenant", "delivered"]);
     s = playCard(s, 101);
     s = playCard(s, 102);
     s = playCard(s, 103);
     expect(s.energy).toEqual({ faith: 1, attack: 1, guard: 1 });
     expect(s.hand).toHaveLength(0);
     expect(s.discard).toHaveLength(3);
+  });
+
+  it("the big cards give 2 or 3, and wait for their moment", () => {
+    // Assurance of Things Hoped For: +2 Faith at once.
+    expect(playCard(battle(["assurance"]), 101).energy.faith).toBe(2);
+    // The Battle Is the LORD's waits for turn 3; it stays in hand until then.
+    const early = battle(["battle"]);
+    expect(cardBlockReason(early, "battle")).toBe("v2.reason.cardTurn3");
+    expect(playCard(early, 101)).toBe(early);
+    expect(playableHand(early)).toHaveLength(0);
+    const late = { ...early, turn: 3 };
+    expect(playCard(late, 101).energy.faith).toBe(3);
+    // I Come in the Name of the LORD needs some Faith in hand.
+    const noFaith = battle(["inname"]);
+    expect(cardBlockReason(noFaith, "inname")).toBe("v2.reason.cardNeedFaith");
+    expect(playCard(noFaith, 101)).toBe(noFaith);
+    expect(playCard(battle(["inname"], { faith: 1, attack: 0, guard: 0 }), 101).energy.attack).toBe(3);
   });
 
   it("Attack resets each turn; Faith and Guard carry over", () => {

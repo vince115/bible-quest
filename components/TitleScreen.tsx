@@ -13,12 +13,17 @@ export function TitleScreen() {
         <p className="mt-3 text-stone-400">{t("ui.subtitle")}</p>
       </div>
 
-      <Link
-        href="/battle-v3"
-        className="rounded-2xl bg-amber-500 px-8 py-4 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400"
-      >
-        {t("ui.start")}
-      </Link>
+      <div className="flex flex-col items-center gap-3">
+        <Link
+          href="/campaign"
+          className="rounded-2xl bg-amber-500 px-8 py-4 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400"
+        >
+          {t("ui.campaign")}
+        </Link>
+        <Link href="/battle-v3" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
+          {t("ui.free")}
+        </Link>
+      </div>
     </main>
   );
 }

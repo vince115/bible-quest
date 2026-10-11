@@ -1,7 +1,7 @@
 // Auto-battle: picks the player's next action from the current state, one step at a time.
 // Heuristic, not optimal: it saves Faith for Sling Stone and answers Goliath's telegraphed threats.
 import { CARDS_V2, CHARACTER_SKILLS, ENEMY_ORDER, MAX_HP, RULES_V2 as R, SKILLS } from "./data";
-import { attackableEnemies, enemyAlive, goodDamage, isAlive, payment, skillBlockReason, skillDamage, type Target } from "./engine";
+import { attackableEnemies, enemyAlive, goodDamage, isAlive, payment, playableHand, skillBlockReason, skillDamage, type Target } from "./engine";
 import type { BattleState, CharacterId, EnemyId, SkillId } from "./types";
 
 export type AutoAction =
@@ -58,7 +58,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
 
   // 1. Turn every card into energy (Faith first, so the Sling Stone check sees it).
   const order = ["faith", "guard", "attack"];
-  const card = [...s.hand].sort((a, b) => order.indexOf(CARDS_V2[a.card].energy) - order.indexOf(CARDS_V2[b.card].energy))[0];
+  const card = playableHand(s).sort((a, b) => order.indexOf(CARDS_V2[a.card].energy) - order.indexOf(CARDS_V2[b.card].energy))[0];
   if (card) return { type: "play", uid: card.uid };
 
   // 2. The climax.

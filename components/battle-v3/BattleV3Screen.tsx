@@ -18,17 +18,20 @@ import {
   RULES_V2 as R,
   SKILLS,
 } from "@/game/v2/data";
-import { bossOf, canAct, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
+import { bossOf, canAct, cardBlockReason, elementMultiplier, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
 import { NEVER_FALLS, PARTY_ORDER, personOf } from "@/game/v2/data";
 import type { BattleState, CharacterId, EnemyId, EnergyKind, Intent, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
+import { campaignStage, isUnlocked, nextStage, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
+import { useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, lookOf } from "@/components/cards/rarity";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
+import { ENERGY_ELEMENT, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 
 type T = ReturnType<typeof useT>;
@@ -538,20 +541,29 @@ function SkillFocus({
   );
 }
 
-/** Before battle: bring 1–3 characters and choose who starts on the front line. */
-/** How many characters can go to battle. */
+/** How many characters can go to battle in free mode. */
 const MAX_LINEUP = 3;
 
-function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], front: CharacterId, stage: StageId) => void }) {
+/**
+ * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
+ * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
+ */
+function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], front: CharacterId, stage: StageId) => void; campaign?: CampaignStage }) {
   const last = useBattleV3Store((st) => st.lastLineup);
-  const [stage, setStage] = useState<StageId>(last.stage);
+  const [stage, setStage] = useState<StageId>(campaign?.battle ?? last.stage);
   const unlocked = useAchievementStore((st) => st.unlocked);
-  const [lineup, setLineup] = useState<CharacterId[]>(last.lineup);
+  const pool = campaign?.pool ?? PARTY_ORDER;
+  const max = campaign?.pick ?? MAX_LINEUP;
+  // The last line-up, as far as this stage lends it; otherwise the first cards of the pool.
+  const [lineup, setLineup] = useState<CharacterId[]>(() => {
+    const kept = last.lineup.filter((id) => pool.includes(id));
+    return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
+  });
   const [front, setFront] = useState<CharacterId>(last.front);
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   const lead = chosen.includes(front) ? front : chosen[0];
   // At most three characters go to battle, and one card per person: picking another card of the same person swaps it in.
-  const full = chosen.length >= MAX_LINEUP;
+  const full = chosen.length >= max;
   const twin = (id: CharacterId) => chosen.find((x) => x !== id && personOf(x) === personOf(id));
   const toggle = (id: CharacterId) => {
     if (lineup.includes(id)) setLineup(lineup.filter((x) => x !== id));
@@ -563,11 +575,12 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
     <div className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-3 bg-gradient-to-b from-rose-950 via-stone-900 to-indigo-950 py-4 sm:gap-4 sm:py-6">
       <div className="px-4 text-center">
         <div className="text-[10px] uppercase tracking-widest text-stone-300/70 sm:text-[11px]">{t("v3.ui.title")}</div>
-        <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{t("v3.lineup.title")}</h1>
-        <p className="mt-1 max-w-md text-sm text-stone-300">{t("v3.lineup.hint")}</p>
+        <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{campaign ? t(`v3.campaign.${campaign.id}.name`) : t("v3.lineup.title")}</h1>
+        <p className="mt-1 max-w-md text-sm text-stone-300">{campaign ? t("v3.campaign.pick", { n: max, m: pool.length }) : t("v3.lineup.hint")}</p>
       </div>
 
-      {/* Stage */}
+      {/* Stage (free mode only; a campaign stage fixes it) */}
+      {!campaign && (
       <div role="radiogroup" aria-label={t("v3.stage.title")} className="flex flex-wrap justify-center gap-2 px-4">
         {(["goliath", "eden"] as StageId[]).map((st) => (
           <button
@@ -581,10 +594,11 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
           </button>
         ))}
       </div>
+      )}
 
       {/* Full character cards; on phones the row scrolls sideways. */}
       <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 pt-3 sm:gap-4">
-        {PARTY_ORDER.map((id) => {
+        {pool.map((id) => {
           const on = chosen.includes(id);
           return (
             <div key={id} className="flex shrink-0 snap-center flex-col items-center gap-2">
@@ -632,6 +646,7 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
       </button>
 
       {/* Achievements, one compact line each (details on hover) */}
+      {!campaign && (
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-xs">
         <span className="font-bold uppercase tracking-widest text-stone-400">{t("v3.ach.title")}</span>
         {ACHIEVEMENTS.map((id: AchievementId) => {
@@ -643,17 +658,22 @@ function LineupPicker({ t, onStart }: { t: T; onStart: (lineup: CharacterId[], f
           );
         })}
       </div>
+      )}
 
-      <Link href="/" className="text-xs text-stone-400 underline">
-        {t("v2.ui.backHome")}
+      <Link href={campaign ? "/campaign" : "/"} className="text-xs text-stone-400 underline">
+        {campaign ? `← ${t("v3.campaign.list")}` : t("v2.ui.backHome")}
       </Link>
     </div>
   );
 }
 
-export function BattleV3Screen() {
+export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, cast, swap, endTurn, newAchievements } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, cast, swap, endTurn, newAchievements, drop, enter } = useBattleV3Store();
+  const inCampaign = useBattleV3Store((st) => st.campaign);
+  const cleared = useProgressStore((st) => st.cleared);
+  const stage = campaign ? campaignStage(campaign) : undefined;
+  const next = campaign ? nextStage(campaign) : null;
   const [pending, setPending] = useState<Pending | null>(null);
   /** The character whose skill view is open. */
   const [acting, setActing] = useState<CharacterId | null>(null);
@@ -672,6 +692,10 @@ export function BattleV3Screen() {
   useEffect(() => {
     void useAchievementStore.persist.rehydrate();
   }, []);
+  // Entering a campaign stage (or free mode) starts from its line-up; coming back to the same one keeps the battle.
+  useEffect(() => {
+    enter(campaign ?? null);
+  }, [campaign, enter]);
   // Esc closes whatever is open: the enlarged card, the action panel, or targeting.
   useEffect(() => {
     const close = (e: KeyboardEvent) => {
@@ -688,7 +712,8 @@ export function BattleV3Screen() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [b?.log.length, showLog]);
 
-  if (!board || !b) return <LineupPicker t={t} onStart={start} />;
+  if (inCampaign !== (campaign ?? null)) return null; // until enter() has switched
+  if (!board || !b) return <LineupPicker t={t} onStart={start} campaign={stage} />;
 
   const locked = resolving || auto || b.result !== "ongoing";
   const promote = needsFront(board);
@@ -779,7 +804,8 @@ export function BattleV3Screen() {
         {/* Hand: Scripture cards fanned above our characters */}
         <section className="flex justify-center px-2 pb-2 pt-1 sm:pb-3">
           {hand.map((inst, i) => {
-            const kind = CARDS_V2[inst.card].energy;
+            const { energy: kind, amount } = CARDS_V2[inst.card];
+            const blocked = cardBlockReason(b, inst.card);
             const tilt = (i - (hand.length - 1) / 2) * 5;
             return (
               <button
@@ -793,13 +819,13 @@ export function BattleV3Screen() {
                 }}
                 onMouseEnter={() => setPreview(inst.uid)}
                 onMouseLeave={() => canHover && setPreview(null)}
-                disabled={locked || !!pending}
+                disabled={locked || !!pending || !!blocked}
+                title={blocked ? t(blocked) : undefined}
                 style={{ transform: `rotate(${tilt}deg) translateY(${(preview === inst.uid ? -14 : 0) + Math.abs(tilt) * 0.6}px)` }}
-                className={`-ml-3 flex h-[4.5rem] ${CARD_RATIO} shrink-0 ${preview === inst.uid ? "z-10 ring-2 ring-white" : ""} flex-col items-center justify-between rounded-md border-2 bg-stone-900 p-1 text-center shadow-xl transition first:ml-0 enabled:hover:z-10 enabled:hover:-translate-y-3 disabled:opacity-50 sm:h-24 sm:p-1.5 ${ENERGY_RING[kind]}`}
+                aria-label={`${t(`v2.card.${inst.card}.name`)} · ${t(`v2.energy.${kind}.name`)} +${amount}`}
+                className={`relative -ml-3 w-[52px] ${CARD_RATIO} shrink-0 text-[2.45px] ${preview === inst.uid ? "z-10 ring-2 ring-white" : ""} rounded-sm shadow-xl transition first:ml-0 enabled:hover:z-10 enabled:hover:-translate-y-3 disabled:opacity-50 sm:w-[70px] sm:text-[3.3px]`}
               >
-                <span className="text-xl sm:text-3xl">{ENERGY_ICON[kind]}</span>
-                <span className="text-[9px] font-bold sm:text-[10px]">{t(`v2.energy.${kind}.name`)} +1</span>
-                <span className="hidden text-[9px] leading-tight text-stone-300 sm:block">{t(`v2.card.${inst.card}.ref`)}</span>
+                <ScriptureCardFace id={inst.card} />
               </button>
             );
           })}
@@ -893,12 +919,10 @@ export function BattleV3Screen() {
           onClick={(e) => e.stopPropagation()}
           className={`fixed left-1/2 top-[4%] z-40 w-36 -translate-x-1/2 sm:top-[8%] sm:w-48 ${canHover ? "pointer-events-none" : ""}`}
         >
-          <div className={`flex ${CARD_RATIO} flex-col items-center justify-between rounded-xl border-4 bg-stone-900 p-3 text-center shadow-2xl ${ENERGY_RING[CARDS_V2[previewed.card].energy]}`}>
-            <span className="text-[11px] font-semibold text-stone-300">{t(`v2.card.${previewed.card}.ref`)}</span>
-            <span className="text-5xl">{ENERGY_ICON[CARDS_V2[previewed.card].energy]}</span>
-            <span className="text-sm font-black leading-snug text-white">「{t(`v2.card.${previewed.card}.name`)}」</span>
-            <span className="text-xs font-bold">→ {t(`v2.energy.${CARDS_V2[previewed.card].energy}.name`)} +1</span>
-            <span className="text-[10px] leading-tight text-stone-300">{t(`v2.energy.${CARDS_V2[previewed.card].energy}.desc`)}</span>
+          <div className="text-[6.75px] shadow-2xl sm:text-[9px]">
+            <HoloCard element={ENERGY_ELEMENT[CARDS_V2[previewed.card].energy]} rarity="N" touchTilt={false}>
+              <ScriptureCardFace id={previewed.card} />
+            </HoloCard>
           </div>
           {!canHover && (
             <button
@@ -992,6 +1016,15 @@ export function BattleV3Screen() {
             <h2 className="mt-2 text-3xl font-bold">{b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}</h2>
             <p className="mt-2 text-stone-300">{t("v2.ui.resultTurns", { n: b.turn })}</p>
             {board.lineup.length === 1 && <p className="mt-1 text-sm text-amber-200">{t("v3.lineup.solo")}</p>}
+            {drop && (
+              <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-amber-300 bg-amber-500/15 p-3">
+                <div className="text-xs font-bold text-amber-300">{t("v3.campaign.drop")}</div>
+                <HoloCard element={CHARACTER_ELEMENT[drop]} rarity={CARD_RARITY[drop]} touchTilt={false} figure={figureArea(drop)} className="w-[160px] text-[7.5px]">
+                  <CharacterCardFace id={drop} />
+                </HoloCard>
+                <div className="text-lg font-bold">{t(`char.${drop}.name`)}</div>
+              </div>
+            )}
             {newAchievements.map((id) => (
               <div key={id} className="mt-3 rounded-xl border border-amber-300 bg-amber-500/15 p-3">
                 <div className="text-xs font-bold text-amber-300">{t("v3.ach.unlocked")}</div>
@@ -1000,12 +1033,17 @@ export function BattleV3Screen() {
               </div>
             ))}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {campaign && b.result === "victory" && next && isUnlocked(next, cleared) && (
+                <Link href={`/campaign/${next}`} className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+                  {t("v3.campaign.next")} →
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setPending(null);
                   restart();
                 }}
-                className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400"
+                className={`rounded-xl px-4 py-2 font-semibold ${campaign && b.result === "victory" ? "border border-amber-500 text-amber-100 hover:bg-stone-800" : "bg-amber-500 text-stone-950 hover:bg-amber-400"}`}
               >
                 {t("v2.ui.playAgain")}
               </button>
@@ -1022,8 +1060,8 @@ export function BattleV3Screen() {
               <button onClick={() => setShowResult(false)} className="rounded-xl border border-stone-600 px-4 py-2 text-stone-200 hover:bg-stone-800">
                 {t("v2.ui.viewBattlefield")}
               </button>
-              <Link href="/" className="rounded-xl border border-stone-600 px-4 py-2 text-stone-200 hover:bg-stone-800">
-                {t("v2.ui.backHome")}
+              <Link href={campaign ? "/campaign" : "/"} className="rounded-xl border border-stone-600 px-4 py-2 text-stone-200 hover:bg-stone-800">
+                {campaign ? t("v3.campaign.list") : t("v2.ui.backHome")}
               </Link>
             </div>
           </div>

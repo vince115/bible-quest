@@ -3,13 +3,14 @@
 // /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size.
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
+import { CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
 import { translate } from "@/game/i18n";
-import type { CharacterId, EnemyId } from "@/game/v2/types";
+import type { CardId, CharacterId, EnemyId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
 import { HoloCard } from "./HoloCard";
+import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
 import { CARD_RARITY, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
@@ -21,11 +22,14 @@ const FILTER_KEY = "bq-card-demo-rarity";
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
 const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id, enemy: true } : { id }));
 
-type Viewed = { id: CharacterId | EnemyId; enemy?: boolean; rarity?: Rarity };
+type Viewed = { id: CharacterId | EnemyId | CardId; enemy?: boolean; scripture?: boolean; rarity?: Rarity };
 
-function CardFace({ id, enemy, rarity }: Viewed) {
+function CardFace({ id, enemy, scripture, rarity }: Viewed) {
+  if (scripture) return <ScriptureCardFace id={id as CardId} />;
   return enemy ? <EnemyCardFace id={id as EnemyId} /> : <CharacterCardFace id={id as CharacterId} rarity={rarity} />;
 }
+/** Scripture (energy) cards have no rarity; they print plain. */
+const rarityOf = (v: Viewed): Rarity => v.rarity ?? (v.scripture ? "N" : CARD_RARITY[v.id as CharacterId | EnemyId]);
 
 /** Other names a card is known by (other Chinese translations, Catholic names, alternate names), for search. */
 const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
@@ -168,12 +172,13 @@ function searchText({ id, enemy }: Viewed): string {
   const keys = enemy
     ? [`v2.enemy.${id}.name`, `v3.card.${id}.title`]
     : [`char.${id}.name`, `v3.card.${id}.title`, ...CHARACTER_SKILLS[id as CharacterId].map((k) => `v2.skill.${k}.name`)];
-  return [...(["zh", "en"] as const).flatMap((l) => keys.map((k) => translate(l, k))), ALIASES[id] ?? ""].join(" ").toLowerCase();
+  return [...(["zh", "en"] as const).flatMap((l) => keys.map((k) => translate(l, k))), ALIASES[id as CharacterId | EnemyId] ?? ""].join(" ").toLowerCase();
 }
 const SEARCH = new Map(CARDS.map((c) => [c.id, searchText(c)]));
 
-const figureOf = ({ id, enemy }: Viewed) => (enemy ? undefined : figureArea(id as CharacterId));
-const elementOf = ({ id, enemy }: Viewed) => (enemy ? ENEMY_ELEMENT[id as EnemyId] : CHARACTER_ELEMENT[id as CharacterId]);
+const figureOf = ({ id, enemy, scripture }: Viewed) => (enemy || scripture ? undefined : figureArea(id as CharacterId));
+const elementOf = ({ id, enemy, scripture }: Viewed) =>
+  scripture ? ENERGY_ELEMENT[CARDS_V2[id as CardId].energy] : enemy ? ENEMY_ELEMENT[id as EnemyId] : CHARACTER_ELEMENT[id as CharacterId];
 
 export function CardDemo() {
   const t = useT();
@@ -274,6 +279,21 @@ export function CardDemo() {
           </div>
         ))}
       </div>
+      {/* Scripture (energy) cards, printed at the same size */}
+      <section className="w-full max-w-7xl px-2">
+        <h2 className="text-center text-lg font-bold">{t("v3.scripture.title")}</h2>
+        <p className="mt-1 text-center text-sm text-stone-400">{t("v3.scripture.hint")}</p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">
+          {SCRIPTURE_CARDS.map((id) => (
+            <button key={id} type="button" onClick={() => setViewing({ id, scripture: true })} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
+              <HoloCard element={ENERGY_ELEMENT[CARDS_V2[id].energy]} effects={effects} rarity="N" className="w-[220px] text-[10.3px]">
+                <ScriptureCardFace id={id} />
+              </HoloCard>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => setEffects(!effects)}
@@ -333,11 +353,11 @@ export function CardDemo() {
             className={VIEWER_WIDTH}
             style={viewerStyle(scale)}
           >
-            <HoloCard element={elementOf(viewing)} effects={effects} rarity={viewing.rarity ?? CARD_RARITY[viewing.id]} figure={figureOf(viewing)}>
+            <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
               <CardFace {...viewing} />
             </HoloCard>
           </motion.div>
-          {showStory && <StoryPanel {...viewing} />}
+          {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}

@@ -1,7 +1,7 @@
 // Auto-battle for the v3 board: the v2 heuristic plus front-line decisions.
 import { nextAutoAction as nextV2Action } from "../v2/auto";
 import { MAX_HP, RULES_V2 as R } from "../v2/data";
-import { enemyAlive, enemyDamage, isAlive } from "../v2/engine";
+import { enemyAlive, enemyDamage, isAlive, playableHand } from "../v2/engine";
 import type { CharacterId, SkillId } from "../v2/types";
 import { boardBlockReason, canSwap, needsFront, standing, type Board } from "./engine";
 import type { Target } from "../v2/engine";
@@ -39,13 +39,13 @@ export function nextBoardAutoAction(b: Board): BoardAutoAction {
 
   // Raise a fallen member of the line-up (the v2 AI doesn't know who sat this battle out).
   const fallen = b.lineup.filter((id) => !isAlive(s, id));
-  if (!s.hand.length && fallen.length) {
+  if (!playableHand(s).length && fallen.length) {
     const target = fallen.includes("david") ? "david" : fallen[0];
     if (boardBlockReason(b, "arise", target) === null) return { type: "cast", skill: "arise", target };
   }
 
   // Swap once the cards are in, before anyone acts: put the sturdiest character in harm's way.
-  if (!s.hand.length && !b.swapped) {
+  if (!playableHand(s).length && !b.swapped) {
     const best = bestFront(b);
     if (best !== b.front && canSwap(b, best)) return { type: "front", id: best };
   }

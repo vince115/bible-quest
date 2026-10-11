@@ -195,8 +195,10 @@ const en = {
   "char.goliathP.name": "Goliath of Gath",
   "char.serpentP.name": "Serpent of Eden",
   "ui.tagline": "Scripture Card Adventure",
-  "ui.subtitle": "Gameplay prototype · Stage 1: David vs Goliath",
+  "ui.subtitle": "Gameplay prototype",
   "ui.start": "Start Battle",
+  "ui.campaign": "Campaign",
+  "ui.free": "Free mode (test)",
   "ui.switchLanguage": "Switch language",
 };
 
@@ -390,8 +392,10 @@ const zh: Record<MessageKey, string> = {
   "char.goliathP.name": "迦特人歌利亞",
   "char.serpentP.name": "伊甸古蛇",
   "ui.tagline": "經文卡牌冒險",
-  "ui.subtitle": "玩法原型 · 第一關：大衛與歌利亞",
+  "ui.subtitle": "玩法原型",
   "ui.start": "開始戰鬥",
+  "ui.campaign": "主線闖關",
+  "ui.free": "自由模式（測試）",
   "ui.switchLanguage": "切換語言",
 };
 

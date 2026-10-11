@@ -23,6 +23,7 @@ import {
   SKILLS,
 } from "./data";
 import type {
+  CardId,
   BattleState,
   CardInstance,
   CharacterId,
@@ -797,19 +798,30 @@ export function payment(s: BattleState, skill: SkillId): EnergyPool | null {
   return { faith, attack: kind === "attack" ? own : 0, guard: kind === "guard" ? own : 0 };
 }
 
+/** Why a scripture card can't be played right now, or null. */
+export function cardBlockReason(s: BattleState, card: CardId): string | null {
+  const def = CARDS_V2[card];
+  if (def.condition === "turn3" && s.turn < 3) return "v2.reason.cardTurn3";
+  if (def.condition === "needFaith" && s.energy.faith < 1) return "v2.reason.cardNeedFaith";
+  return null;
+}
+
+/** The cards in hand that can be played now. */
+export const playableHand = (s: BattleState): CardInstance[] => s.hand.filter((c) => cardBlockReason(s, c.card) === null);
+
 /** Turn a card into energy. Any number of cards may be played per turn. */
 export function playCard(state: BattleState, uid: number): BattleState {
   if (state.result !== "ongoing") return state;
   const i = state.hand.findIndex((c) => c.uid === uid);
-  if (i < 0) return state;
+  if (i < 0 || cardBlockReason(state, state.hand[i].card) !== null) return state;
   const s = clone(state);
   const [inst] = s.hand.splice(i, 1);
   s.discard.push(inst);
-  const kind = CARDS_V2[inst.card].energy;
+  const { energy: kind, amount } = CARDS_V2[inst.card];
   const cap = kind === "faith" ? R.maxFaith : kind === "guard" ? R.maxGuard : Infinity;
   if (s.energy[kind] >= cap) log(s, "v2.log.energyFull", "detail", { energy: kind });
-  s.energy[kind] = Math.min(cap, s.energy[kind] + 1);
-  log(s, "v2.log.play", "player", { card: inst.card, energy: kind });
+  s.energy[kind] = Math.min(cap, s.energy[kind] + amount);
+  log(s, "v2.log.play", "player", { card: inst.card, energy: kind, n: amount });
   return s;
 }
 

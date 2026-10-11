@@ -917,7 +917,7 @@ describe("Mary", () => {
     const start = mary({ faith: 3 });
     start.party.david.hp = 20;
     const s = castSkill(start, "magnificat");
-    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 50); // 220 / 4 = 55 → 50
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - Math.floor(ENEMY_HP.goliath / 40) * 10); // a quarter, rounded down to tens
     expect(s.party.david.hp).toBe(MAX_HP.david);
     expect(s.magnificatUsed).toBe(true);
   });

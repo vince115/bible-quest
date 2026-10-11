@@ -55,9 +55,16 @@ export interface SkillDef {
   damage?: number;
 }
 
+/** When a scripture card may be played: from turn 3, or only with some Faith in hand. */
+export type CardCondition = "turn3" | "needFaith";
+
 export interface CardDef {
   id: CardId;
   energy: EnergyKind;
+  /** Energy given when played (1–3). */
+  amount: number;
+  /** When the card may be played; none means any time. */
+  condition?: CardCondition;
 }
 
 export interface CardInstance {

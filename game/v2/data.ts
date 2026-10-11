@@ -781,7 +781,7 @@ export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = { goliath: ["bearer", "
 export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent" };
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
-export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 220, archer: 40, serpent: 250 };
+export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 280, archer: 40, serpent: 320 };
 
 export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, eli: 90, aquila: 110, dorcas: 100, cornelius: 140, apollos: 110, phoebe: 100, luke: 110, johnMark: 100, titus: 120, philemon: 110, onesimus: 90, nicodemus: 110, samaritan: 100, simeon: 100, anna: 90, loavesBoy: 80, judas: 100, philipApostle: 110, nathanael: 110, jamesAlph: 120, thaddaeus: 110, simonZealot: 120, matthias: 110, elizabeth: 100, mordecai: 130, sarah: 110, rebekah: 110, rachel: 100, barak: 130, jael: 100, josephArimathea: 110, ananias: 100, threeFriends: 150, job: 150, enoch: 110, melchizedek: 120, caleb: 140, jeremiah: 110, ezekiel: 120, ezra: 110, nathan: 110, hezekiah: 120, josiah: 120, magi: 150, shepherds: 140, bartimaeus: 100, centurion: 130, jairus: 110, simonCyrene: 140, thief: 80, jamesJust: 120, mockingThief: 90, jesusCross: 120, widow: 80, fisherman: 100, fourFriends: 160, goodSamaritan: 120, zarephath: 90, shunammite: 100, naaman: 140, maid: 70, bathsheba: 110, mephibosheth: 90, sheba: 110, leah: 110, esau: 140, hagar: 140, lot: 130, jochebed: 100, pharaohDaughter: 100, jethro: 120, zipporah: 100, loisEunice: 130, balaam: 130, pharaoh: 140, charioteer: 110, jezebel: 110, baalProphet: 100, haman: 120, delilah: 100, nebuchadnezzar: 140, ahab: 130, absalom: 120, sapphira: 110, pilate: 130, caiaphas: 120, herod: 120, barabbas: 110, herodias: 110, romanSoldier: 120, romanSpearman: 110, romanArcher: 90, romanCavalry: 130, romanCenturion: 140, sennacherib: 150, belshazzar: 120, korah: 130, achan: 110, sisera: 140, herodGreat: 130, legionFreed: 120, prodigal: 100, ethiopian: 110, johnPatmos: 120, ehud: 120, jephthah: 130, joab: 140, uriah: 140, cyrus: 130, zerubbabel: 130, vashti: 110, michal: 100, gehazi: 100, jehu: 140, canaanite: 100, richRuler: 110, cleopas: 110, malchus: 100, jailer: 120, rhoda: 80, simonMagus: 110, herodAgrippa: 130, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
 
@@ -1349,26 +1349,30 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   serpentP: ["venom", "beguile"],
 };
 
+/**
+ * Scripture cards give 1, 2 or 3 points of their energy. The big ones wait for their moment: the battle is the LORD's
+ * and new strength come from turn 3, and coming in the name of the LORD needs some Faith in hand.
+ */
 export const CARDS_V2: Record<CardId, CardDef> = {
-  delivered: { id: "delivered", energy: "faith" },
-  battle: { id: "battle", energy: "faith" },
-  trust: { id: "trust", energy: "faith" },
-  assurance: { id: "assurance", energy: "faith" },
-  inname: { id: "inname", energy: "attack" },
-  trains: { id: "trains", energy: "attack" },
-  stones: { id: "stones", energy: "attack" },
-  wings: { id: "wings", energy: "guard" },
-  shepherd: { id: "shepherd", energy: "guard" },
-  renewed: { id: "renewed", energy: "guard" },
-  bestrong: { id: "bestrong", energy: "guard" },
-  covenant: { id: "covenant", energy: "guard" },
+  delivered: { id: "delivered", energy: "faith", amount: 1 },
+  battle: { id: "battle", energy: "faith", amount: 3, condition: "turn3" },
+  trust: { id: "trust", energy: "faith", amount: 1 },
+  assurance: { id: "assurance", energy: "faith", amount: 2 },
+  inname: { id: "inname", energy: "attack", amount: 3, condition: "needFaith" },
+  trains: { id: "trains", energy: "attack", amount: 2 },
+  stones: { id: "stones", energy: "attack", amount: 1 },
+  wings: { id: "wings", energy: "guard", amount: 1 },
+  shepherd: { id: "shepherd", energy: "guard", amount: 1 },
+  renewed: { id: "renewed", energy: "guard", amount: 3, condition: "turn3" },
+  bestrong: { id: "bestrong", energy: "guard", amount: 2 },
+  covenant: { id: "covenant", energy: "guard", amount: 1 },
 };
 
-/** 15 energy cards: ✨ Faith 4, 🗡️ Attack 6, 🕊️ Guard 5. */
+/** 15 scripture cards: ✨ Faith 4, 🗡️ Attack 6, 🕊️ Guard 5 — eight +1, four +2, three +3 (about 25 energy in all). */
 export const DECK_V2: CardId[] = [
-  "delivered", "battle", "trust", "assurance",
-  "inname", "inname", "trains", "trains", "stones", "stones",
-  "wings", "shepherd", "renewed", "bestrong", "covenant",
+  "delivered", "trust", "assurance", "battle",
+  "stones", "stones", "stones", "trains", "trains", "inname",
+  "shepherd", "wings", "covenant", "bestrong", "renewed",
 ];
 
 export const PHASE1_CYCLE: GoliathActionId[] = ["defy", "spear", "raise", "crush"];

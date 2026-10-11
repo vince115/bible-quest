@@ -5,6 +5,8 @@ import { RULES_V2 } from "../v2/data";
 import type { Target } from "../v2/engine";
 import type { CharacterId, SkillId, StageId } from "../v2/types";
 import { earnedBy, useAchievementStore, type AchievementId } from "./achievements";
+import type { CampaignStageId } from "./campaign";
+import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
 import { castOnBoard, createBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
 
@@ -21,6 +23,12 @@ interface BattleV3Store {
   runId: number;
   /** Achievements unlocked by the battle that just ended. */
   newAchievements: AchievementId[];
+  /** The campaign stage being played, or null in free mode. */
+  campaign: CampaignStageId | null;
+  /** The card the campaign stage just dropped. */
+  drop: CharacterId | null;
+  /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
+  enter: (campaign: CampaignStageId | null) => void;
   start: (lineup: CharacterId[], front: CharacterId, stage: StageId) => void;
   restart: () => void;
   pickLineup: () => void;
@@ -38,7 +46,11 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     const was = get().board?.battle.result;
     set({ board });
     if (was === "ongoing" && board.battle.result !== "ongoing") {
-      set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)) });
+      const { campaign } = get();
+      set({
+        newAchievements: useAchievementStore.getState().unlock(earnedBy(board)),
+        drop: campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null,
+      });
     }
   };
 
@@ -72,6 +84,12 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     auto: false,
     runId: 0,
     newAchievements: [],
+    campaign: null,
+    drop: null,
+    enter: (campaign) => {
+      if (get().campaign === campaign) return;
+      set((st) => ({ campaign, board: null, drop: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
+    },
     start: (lineup, front, stage) =>
       set((st) => ({
         board: createBoard(lineup, front, Math.random, stage),
@@ -80,9 +98,10 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         auto: false,
         runId: st.runId + 1,
         newAchievements: [],
+        drop: null,
       })),
     restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage),
-    pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] })),
+    pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null })),
     play: (uid) => act((b) => playCardOnBoard(b, uid)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),
     cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
