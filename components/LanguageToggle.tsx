@@ -18,7 +18,7 @@ export function LanguageToggle() {
 
   return (
     <div
-      className="fixed bottom-3 right-3 z-40 flex overflow-hidden rounded-full border border-stone-600 bg-stone-900/90 text-xs font-semibold"
+      className="fixed top-2.5 right-2.5 sm:top-auto sm:bottom-3 sm:right-3 z-40 flex overflow-hidden rounded-full border border-stone-600 bg-stone-900/90 text-xs font-semibold shadow-lg backdrop-blur-sm"
       role="group"
       aria-label={t("ui.switchLanguage")}
     >

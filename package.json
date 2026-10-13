@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "paper": "vitest run --config vitest.paper.config.mts"
   },
   "dependencies": {
     "framer-motion": "^14.0.0",

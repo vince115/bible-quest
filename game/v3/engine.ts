@@ -1,14 +1,20 @@
 // Bible Quest v3 board rules: the v2 battle plus a chosen line-up and a front line.
 // - Bring 1–3 characters. Characters left behind sit out the whole battle (HP 0, can't be revived).
-// - A lone champion duels Goliath one-on-one (1 Sam 17): the shield bearer and the archer stand aside.
+// - A lone champion duels the boss one-on-one (1 Sam 17): the stage's guard and shooter stand aside.
 // - Spear Thrust, Crushing Blow and the archer's arrow hit the front line; Swing still hits everyone.
 // - Once per turn the front line may be swapped for free. When the front line falls, the player picks
 //   who steps up (also free) before doing anything else.
+// - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
+//   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
 // Everything else is the v2 engine, unchanged.
-import { NEVER_FALLS, PARTY_ORDER } from "../v2/data";
+import { HUNT_WEAKEST, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, STAGE_SHOOTER } from "../v2/data";
 import {
+  canDraw,
+  basicAttack,
+  canBasicAttack,
   castSkill,
   createBattle,
+  drawCard,
   enemyAlive,
   isAlive,
   playCard,
@@ -16,10 +22,11 @@ import {
   skillBlockReason,
   skillTargets,
   startNextTurn,
+  weakestAlly,
   type Rng,
   type Target,
 } from "../v2/engine";
-import type { BattleState, CharacterId, SkillId, StageId } from "../v2/types";
+import type { BattleState, CharacterId, EnemyId, PoolMode, SkillId, StageId } from "../v2/types";
 
 export interface Board {
   battle: BattleState;
@@ -28,6 +35,8 @@ export interface Board {
   front: CharacterId;
   /** The free swap has been used this turn. */
   swapped: boolean;
+  /** Cards still to be drawn from the deck this turn. */
+  draws: number;
 }
 
 const clone = (b: Board): Board => structuredClone(b);
@@ -39,22 +48,24 @@ function log(s: BattleState, key: string, params?: Record<string, string>) {
 /** Living members of the line-up. */
 export const standing = (b: Board) => b.lineup.filter((id) => isAlive(b.battle, id));
 
-/** One character against Goliath alone. */
+/** One character against the boss alone. */
 export const isDuel = (b: Board) => b.lineup.length === 1;
 
 /** The front line has fallen and someone must step up before anything else happens. */
 export const needsFront = (b: Board) => b.battle.result === "ongoing" && !isAlive(b.battle, b.front) && standing(b).length > 0;
 
-export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath"): Board {
+/** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
+export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode): Board {
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   if (!chosen.length) throw new Error("line-up needs at least one character");
-  const battle = createBattle(rng, chosen, stage);
-  if (chosen.length === 1 && stage === "goliath") {
-    battle.enemies.bearer.hp = 0;
-    battle.enemies.archer.hp = 0;
+  const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"));
+  const minions = [STAGE_GUARD[stage], STAGE_SHOOTER[stage]].filter((e) => e !== undefined);
+  if (chosen.length === 1 && minions.length) {
+    for (const e of minions) battle.enemies[e].hp = 0;
+    battle.archerTarget = null;
     log(battle, "v3.log.duel", { char: chosen[0] });
   }
-  const board: Board = { battle, lineup: chosen, front: chosen.includes(front) ? front : chosen[0], swapped: false };
+  const board: Board = { battle, lineup: chosen, front: chosen.includes(front) ? front : chosen[0], swapped: false, draws: R.openingHand };
   return aim(board, rng);
 }
 
@@ -77,22 +88,29 @@ export function swapFront(board: Board, id: CharacterId, rng: Rng = Math.random)
 }
 
 /**
- * Points the enemies at the front line: single-target hits and the arrow go to the front line,
- * and Defy re-picks its targets if any of them has left the battle.
+ * Points the enemies at the front line: single-target hits and the arrow go to the front line, the lions' Maul
+ * hunts the weakest ally wherever they stand, and multi-target actions (Defy, Pursuit, Roar, ...) re-pick their
+ * targets if any of them has left the battle.
  */
 function aim(b: Board, rng: Rng): Board {
   const s = b.battle;
   // Cards that never fall can stand at the front, but the blows land on the next ally in line.
   const front = isAlive(s, b.front) && !NEVER_FALLS.has(b.front) ? b.front : (standing(b).find((id) => !NEVER_FALLS.has(id)) ?? null);
   for (const intent of s.intents) {
-    if (["spear", "crush", "fang", "coil"].includes(intent.action)) intent.targets = front ? [front] : [];
-    if (intent.action === "defy" && intent.targets.some((id) => !isAlive(s, id))) {
-      const pool = [...standing(b)];
+    if (SINGLE_TARGET.includes(intent.action)) intent.targets = front ? [front] : [];
+    if (HUNT_WEAKEST.includes(intent.action)) {
+      const w = weakestAlly(s);
+      intent.targets = w ? [w] : [];
+    }
+    const many = MULTI_TARGETS[intent.action];
+    if (many && intent.targets.some((id) => !isAlive(s, id))) {
+      const pool = standing(b).filter((id) => !NEVER_FALLS.has(id));
       intent.targets = [];
-      while (pool.length && intent.targets.length < 2) intent.targets.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+      while (pool.length && intent.targets.length < many) intent.targets.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
     }
   }
-  s.archerTarget = enemyAlive(s, "archer") && front ? front : null;
+  const shooter = STAGE_SHOOTER[s.stage];
+  s.archerTarget = shooter && enemyAlive(s, shooter) && front ? front : null;
   return b;
 }
 
@@ -110,9 +128,27 @@ export function boardBlockReason(b: Board, skill: SkillId, target?: Target): str
   return null;
 }
 
-export function playCardOnBoard(board: Board, uid: number): Board {
-  const battle = playCard(board.battle, uid);
+/** Plays a scripture card. In the personal-pool battles `target` is the ally who receives it (the front line when left out). */
+export function playCardOnBoard(board: Board, uid: number, target?: CharacterId): Board {
+  const battle = playCard(board.battle, uid, board.battle.pools !== "team" ? (target ?? board.front) : undefined);
   return battle === board.battle ? board : { ...board, battle };
+}
+
+/** A card can be drawn from the deck pile now. */
+export const canDrawOnBoard = (b: Board): boolean => b.draws > 0 && canDraw(b.battle);
+
+/** Draw one card from the deck pile into the hand, using up one of this turn's draws. */
+export function drawOnBoard(board: Board, rng: Rng = Math.random): Board {
+  if (!canDrawOnBoard(board)) return board;
+  return { ...board, battle: drawCard(board.battle, rng), draws: board.draws - 1 };
+}
+
+/** The tabletop rules' free basic attack (see the v2 engine). */
+export function basicAttackOnBoard(board: Board, who: CharacterId, target: EnemyId, rng: Rng = Math.random): Board {
+  if (needsFront(board) || !canBasicAttack(board.battle, who)) return board;
+  const battle = basicAttack(board.battle, who, target);
+  if (battle === board.battle) return board;
+  return aim({ ...board, battle }, rng);
 }
 
 export function castOnBoard(board: Board, skill: SkillId, target?: Target, rng: Rng = Math.random): Board {
@@ -130,9 +166,9 @@ export function resolveBoard(board: Board, rng: Rng = Math.random): Board {
 }
 
 export function startNextBoardTurn(board: Board, rng: Rng = Math.random): Board {
-  const battle = startNextTurn(board.battle, rng);
+  const battle = startNextTurn(board.battle, rng, 0);
   if (battle === board.battle) return board;
-  return aim({ ...board, battle, swapped: false }, rng);
+  return aim({ ...board, battle, swapped: false, draws: R.drawPerTurn }, rng);
 }
 
 /** Convenience for tests and simulations. */

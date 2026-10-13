@@ -1,7 +1,7 @@
 "use client";
 
 // Printed enemy card, in the same style as the character cards: frame, ornaments, art, moves, weakness, verse.
-import { ENEMY_ELEMENT, ENEMY_HP, RULES_V2 as R } from "@/game/v2/data";
+import { ENEMY_ELEMENT, ENEMY_HP, RULES_V2 as R, SHOOTER_DAMAGE } from "@/game/v2/data";
 import { elementMultiplier } from "@/game/v2/engine";
 import type { EnemyId, GoliathActionId } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -18,12 +18,48 @@ const PORTRAIT: Record<EnemyId, string> = {
   bearer: "🛡️",
   archer: "🏹",
   serpent: "🐍",
+  flood: "🌊",
+  chariots: "🐎",
+  walls: "🧱",
+  baalProphets: "🔥",
+  lion: "🦁",
+  legion: "👥",
+  fountains: "🌀",
+  windows: "🌧️",
+  pharaohHost: "👑",
+  chariotCaptain: "🏹",
+  jerichoKing: "👑",
+  wallGuard: "🏹",
+  ahabKing: "👑",
+  jezebelQueen: "📜",
+  presidents: "📜",
+  princes: "🗡️",
+  uncleanSpirits: "👤",
+  swine: "🐗",
 };
 const CARD_NO: Record<EnemyId, string> = {
   goliath: "E01",
   bearer: "E02",
   archer: "E03",
   serpent: "E04",
+  flood: "E05",
+  chariots: "E06",
+  walls: "E07",
+  baalProphets: "E08",
+  lion: "E09",
+  legion: "E10",
+  fountains: "E11",
+  windows: "E12",
+  pharaohHost: "E13",
+  chariotCaptain: "E14",
+  jerichoKing: "E15",
+  wallGuard: "E16",
+  ahabKing: "E17",
+  jezebelQueen: "E18",
+  presidents: "E19",
+  princes: "E20",
+  uncleanSpirits: "E21",
+  swine: "E22",
 };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
@@ -32,7 +68,16 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
   // The serpent is coiled up the tree: frame the head and the tree, looking left.
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  // Enemy versions of villains who also exist as player cards share their art (see CharacterCardFace).
+  pharaohHost: { src: "/cards/pharaoh.jpg", figure: { cx: 0.5, head: 0.175, feet: 0.965 } },
+  chariotCaptain: { src: "/cards/charioteer.jpg", figure: { cx: 0.44, head: 0.105, feet: 0.94 } },
+  ahabKing: { src: "/cards/ahab.jpg", figure: { cx: 0.48, head: 0.08, feet: 0.95 } },
+  jezebelQueen: { src: "/cards/jezebel.jpg", figure: { cx: 0.47, head: 0.09, feet: 0.955 } },
 };
+
+/** A guard's and a shooter's printed moves. */
+const guardMoves = () => [{ key: "v3.ui.protects", amount: "🛡️" }];
+const shooterMoves = (id: EnemyId) => [{ key: id === "archer" ? "v3.action.arrow" : "v3.action.strike", amount: String(SHOOTER_DAMAGE[id] ?? 0) }];
 
 /** The moves printed on each enemy's card: [name key, amount]. */
 const MOVES: Record<
@@ -44,12 +89,54 @@ const MOVES: Record<
     { action: "crush", key: "v2.action.crush.name", amount: String(R.crush) },
     { action: "swing", key: "v2.action.swing.name", amount: String(R.swing) },
   ],
-  archer: [{ key: "v3.action.arrow", amount: String(R.archerDamage) }],
-  bearer: [{ key: "v3.ui.protects", amount: "🛡️" }],
+  archer: shooterMoves("archer"),
+  bearer: guardMoves(),
+  fountains: guardMoves(),
+  windows: shooterMoves("windows"),
+  pharaohHost: guardMoves(),
+  chariotCaptain: shooterMoves("chariotCaptain"),
+  jerichoKing: guardMoves(),
+  wallGuard: shooterMoves("wallGuard"),
+  ahabKing: guardMoves(),
+  jezebelQueen: shooterMoves("jezebelQueen"),
+  presidents: guardMoves(),
+  princes: shooterMoves("princes"),
+  uncleanSpirits: guardMoves(),
+  swine: shooterMoves("swine"),
   serpent: [
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
     { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
     { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
+  ],
+  flood: [
+    { action: "rain", key: "v2.action.rain.name", amount: `${R.rain}/${R.rain + R.prevailBonus}` },
+    { action: "surge", key: "v2.action.surge.name", amount: `${R.surge}/${R.surge + R.prevailBonus}` },
+    { action: "deluge", key: "v2.action.deluge.name", amount: `${R.deluge}/${R.deluge + R.prevailBonus}` },
+  ],
+  chariots: [
+    { action: "pursue", key: "v2.action.pursue.name", amount: `${R.pursue}×${R.pursueTargets}` },
+    { action: "charge", key: "v2.action.charge.name", amount: `${R.charge}/${R.chargeWheelsOff}` },
+    { action: "arrows", key: "v2.action.arrows.name", amount: String(R.arrows) },
+  ],
+  walls: [
+    { action: "stones", key: "v2.action.stones.name", amount: String(R.stones) },
+    { action: "repair", key: "v2.action.repair.name", amount: `+${R.repair}` },
+    { action: "boulder", key: "v2.action.boulder.name", amount: String(R.boulder) },
+  ],
+  baalProphets: [
+    { action: "cry", key: "v2.action.cry.name", amount: `—/✨-${R.cryFaith}` },
+    { action: "leap", key: "v2.action.leap.name", amount: String(R.leap) },
+    { action: "cut", key: "v2.action.cut.name", amount: `${R.cut}/${R.cutFrenzy}` },
+  ],
+  lion: [
+    { action: "roar", key: "v2.action.roar.name", amount: `😨×${R.roarTargets}` },
+    { action: "pounce", key: "v2.action.pounce.name", amount: String(R.pounce) },
+    { action: "maul", key: "v2.action.maul.name", amount: String(R.maul) },
+  ],
+  legion: [
+    { action: "many", key: "v2.action.many.name", amount: `${R.many}×${R.manyTargets}` },
+    { action: "chains", key: "v2.action.chains.name", amount: String(R.chains) },
+    { action: "torment", key: "v2.action.torment.name", amount: `😨×${R.tormentTargets}` },
   ],
 };
 

@@ -1,0 +1,205 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>Bible Quest 紙上原型：大衛與歌利亞</title><style>
+@page { size: A4; margin: 0 }
+* { box-sizing: border-box }
+body { margin: 0; font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; color: #1a202c; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+.page { width: 210mm; height: 297mm; padding: 16.5mm 10.5mm; page-break-after: always; position: relative }
+.sheet { display: grid; grid-template-columns: repeat(3, 63mm); grid-auto-rows: 88mm }
+.card { width: 63mm; height: 88mm; border: 0.35mm solid #1a202c; background: #fffdf7; position: relative; overflow: hidden; display: flex; flex-direction: column; outline: 0.2mm dashed #a0aec0; outline-offset: -0.2mm }
+.card header { display: flex; justify-content: space-between; align-items: flex-start; padding: 1.2mm 1.8mm; background: var(--accent); color: #fff; min-height: 9mm }
+.title { font-size: 6pt; opacity: .9 } .name { font-size: 11.5pt; font-weight: 800; line-height: 1.1 }
+.hp { display: flex; align-items: center; gap: 1.2mm } .rar { font-size: 7pt; font-weight: 800; background: #fff; color: var(--accent); border-radius: 1mm; padding: .2mm 1mm }
+.hp-num { font-size: 13pt; font-weight: 900; line-height: 1 } .hp-num small { font-size: 5pt; margin-right: .6mm; font-weight: 700 }
+.art { height: 28mm; background-size: cover; background-position: center 18%; background-color: #cbd5e0; border-bottom: 0.25mm solid #1a202c }
+.stats { display: flex; gap: 1.5mm; align-items: center; font-size: 6.2pt; padding: .8mm 1.8mm; background: #edf2f7; border-bottom: .2mm solid #cbd5e0 }
+.chip { background: #1a202c; color: #fff; border-radius: 1mm; padding: .1mm 1.2mm; font-weight: 800; font-size: 7pt } .wr { margin-left: auto; color: #4a5568 }
+.skills { padding: 1mm 1.6mm; display: flex; flex-direction: column; gap: 1mm; flex: 1 }
+.skill-head { display: flex; align-items: center; gap: 1mm } .pips { display: inline-flex; gap: .5mm } .pip { width: 3mm; height: 3mm; border-radius: 50%; border: .2mm solid #1a202c; display: inline-block }
+.skill-name { font-size: 9pt; font-weight: 800 } .basic { background: #fffaf0; border: .2mm dashed #d69e2e; border-radius: 1mm; padding: .4mm 1mm } .tag { font-size: 5pt; background: #1a202c; color: #fff; border-radius: .8mm; padding: 0 .8mm }
+.amt { margin-left: auto; font-size: 13pt; font-weight: 900 } .skill-desc { font-size: 7pt; line-height: 1.3; color: #2d3748 }
+.notes { font-size: 6.2pt; line-height: 1.3; padding: .8mm 1.8mm; background: #fffaf0; border-top: .2mm solid #ecc94b; color: #744210 }
+.scripture header { color: #fff } .val { font-size: 17pt; font-weight: 900; line-height: 1 } .scripture .art { height: 31mm }
+.verse { font-size: 7pt; line-height: 1.35; padding: 1.4mm 1.8mm; flex: 1 } .copy { position: absolute; right: 1.5mm; bottom: .8mm; font-size: 4.5pt; color: #a0aec0 }
+.track-note { font-size: 6.4pt; padding: 1mm 1.8mm; background: #fff5f5; color: #742a2a } .phase-name { font-size: 7.6pt; font-weight: 800; border-bottom: .2mm solid #1a202c; margin-bottom: .6mm }
+.step { display: flex; gap: 1mm; font-size: 6.8pt; line-height: 1.3; margin-bottom: .8mm } .no { width: 3.6mm; height: 3.6mm; flex: none; border-radius: 50%; background: #822727; color: #fff; text-align: center; font-weight: 800; line-height: 3.6mm }
+.act b { font-weight: 800 } .act span { color: #2d3748 }
+.rules { column-count: 2; column-gap: 8mm; font-size: 9.6pt; line-height: 1.5 } .rules h2 { font-size: 11pt; margin: 3mm 0 1mm; border-bottom: .3mm solid #1a202c } .rules h1 { column-span: all; font-size: 17pt; margin: 0 0 2mm }
+.rules ul { margin: 0 0 1mm 4mm; padding: 0 } .rules p { margin: 0 0 1mm } .rules .t { width: 100%; border-collapse: collapse; font-size: 7.8pt; margin: 1mm 0 } .rules .t td, .rules .t th { border: .2mm solid #718096; padding: .6mm 1.2mm; text-align: left }
+.tokens { display: flex; flex-wrap: wrap; gap: 2mm; align-content: flex-start } .tk { display: flex; align-items: center; justify-content: center; font-weight: 900; border: .3mm dashed #4a5568 }
+.tk.c { width: 14mm; height: 14mm; border-radius: 50% } .tk.s { width: 18mm; height: 14mm; border-radius: 1.5mm; font-size: 7pt }
+.rec table { width: 100%; border-collapse: collapse; font-size: 9pt } .rec td, .rec th { border: .3mm solid #4a5568; padding: 2.2mm; vertical-align: top } .rec h1 { font-size: 16pt; margin: 0 0 3mm } .rec p { font-size: 8.6pt; margin: 0 0 2mm }
+</style></head><body>
+<section class="page "><div class="rules"><h1>Bible Quest 紙上原型：大衛與歌利亞</h1>
+<p>合作對抗敵方。你從本關的 6 張角色卡中選 3 張出戰，打倒頭目就贏；三名角色全部倒下就輸。</p>
+<h2>準備</h2><ul><li>選 3 張角色卡排成一列，最左邊是<b>前線</b>。</li><li>敵人卡擺在對面：護衛、頭目、射手；把「行動軌」放在旁邊，標記放第 1 格。</li><li>經文牌 15 張洗好成牌庫，抽 5 張。</li><li>傷害指示物放在桌邊；角色與敵人的 HP 都是 10 的倍數，受傷就在卡上放指示物（10 一個，50 一個大的）。指示物數 ≥ HP 就倒下。</li></ul>
+<h2>每回合（玩家）</h2><ol><li><b>抽牌</b>：第 1 回合已抽 5 張；之後每回合抽 3 張。手牌上限 7 張。</li><li><b>貼能量（每回合最多 2 張）</b>：把紅卡或藍卡從手牌貼到角色旁（露出數值），<b>每回合最多貼 2 張</b>，想貼的選好給誰。每個角色身上的能量<b>總數值</b>不能超過卡上的「能量上限」。綠卡不算貼能量：選一名角色，他有受傷就回復 20×數值（移除傷害指示物，不超過已受的傷），沒受傷就加 20×數值 的<b>額外血量</b>，不受 2 張的限制。「第 3 回合起」的卡第 3 回合才能打。</li><li><b>行動</b>：每個角色可以用<b>一個技能，或做一次免費的基本攻擊</b>（卡面最上面那一行，不花能量，二選一）。費用是卡上的圓點，紅圓點用紅能量付、藍圓點用藍能量付：從該角色身上棄掉對應顏色的卡，總數值 ≥ 費用即可，<b>不找零</b>。用完把該角色卡橫放。</li><li><b>技能獲得能量</b>（例如「獲得 1 藍能量」）：拿能量代幣貼到任一角色旁，算在上限內。</li></ol>
+<h2>敵人回合</h2><ol><li>看行動軌標記所在的格子，頭目照做（傷害打前線或指定對象）。</li><li>射手攻擊前線。護衛只是擋人，不攻擊。</li><li>標記前進一格（頭目被「機弦甩石」擊中時改走第二階段，從第 1 格開始）。</li><li>護盾棄掉，角色卡轉回直立，驚恐標記拿掉。</li></ol>
+<h2>其他規則</h2><ul><li><b>屬性</b>：攻擊方的屬性剋制對方屬性時傷害 +10；被剋制時 −10（最少 0）。剋制圈：木剋土、土剋水、水剋火、火剋金、金剋木；光與暗互剋。風歸木、雷歸金。</li><li><b>額外血量</b>：綠色的 +10 指示物放在角色上，疊在原本血量之上；受傷時先扣額外血量，扣完才扣真正的血量。不會自己消失，回血也補不了它，最多 +60。技能裡寫的「護盾」就是額外血量。</li><li><b>驚恐</b>：放驚恐標記在角色上，他下回合不能行動；有額外血量的角色不會驚恐。</li><li><b>每場一次</b>：用過後在技能旁放「已使用」標記。</li><li><b>前線</b>：每回合開始前可以免費調換前線一次；前線倒下時，立刻選一個倒下前的隊友補上。</li><li><b>勝負</b>：頭目 HP 歸零贏；三人都倒下輸。</li></ul>
+<h2>要記錄的</h2><p>這是測試版，請玩完用最後一頁的紀錄表寫下：打了幾回合、哪裡卡住、哪些規則很難記、哪張牌或技能太強太弱。</p></div></section>
+<section class="page "><div class="sheet"><article class="card char" style="--accent:#b7791f">
+    <header><div><div class="title">牧羊少年</div><div class="name">大衛</div></div>
+      <div class="hp"><span class="rar">SSR</span><span class="hp-num"><small>HP</small>190</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/david.jpg)"></div>
+    <div class="stats"><span class="chip">光</span><span>能量上限 <b>6</b></span><span class="wr">弱 暗 ／ 抗 —</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">20</span></div><div class="skill-desc">不花能量，對一個敵人造成 20 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#c53030"></i></span><span class="skill-name">機弦</span><span class="amt">30</span></div><div class="skill-desc">30 傷害。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i><i class="pip" style="background:#2b6cb0"></i><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">機弦甩石</span><b class="tag">大招</b><span class="amt">140</span></div><div class="skill-desc">140 傷害。對歌利亞：固定 140 並使他暈眩。</div></div></div>
+    <div class="notes">對抗巨人：身上有 藍能量 3 以上時，大衛的機弦 +20<br>📖 對歌利亞：對抗巨人、機弦甩石 140 並暈眩</div>
+  </article><article class="card char" style="--accent:#2b6cb0">
+    <header><div><div class="title">王子</div><div class="name">約拿單</div></div>
+      <div class="hp"><span class="rar">SR</span><span class="hp-num"><small>HP</small>180</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/jonathan.jpg)"></div>
+    <div class="stats"><span class="chip">火</span><span>能量上限 <b>5</b></span><span class="wr">弱 水 ／ 抗 金</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">20</span></div><div class="skill-desc">不花能量，對一個敵人造成 20 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#c53030"></i></span><span class="skill-name">揮劍</span><span class="amt">30</span></div><div class="skill-desc">30 傷害。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">盟約之盾</span><span class="amt">+30</span></div><div class="skill-desc">所有隊友額外血量 30（有額外血量的隊友不會驚恐）。</div></div></div>
+    
+  </article><article class="card char" style="--accent:#2b6cb0">
+    <header><div><div class="title">先知</div><div class="name">撒母耳</div></div>
+      <div class="hp"><span class="rar">SR</span><span class="hp-num"><small>HP</small>120</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/samuel.jpg)"></div>
+    <div class="stats"><span class="chip">水</span><span>能量上限 <b>5</b></span><span class="wr">弱 土 ／ 抗 火</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">20</span></div><div class="skill-desc">不花能量，對一個敵人造成 20 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#c53030"></i></span><span class="skill-name">斥責</span><span class="amt">20</span></div><div class="skill-desc">20 傷害。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">醫治</span><span class="amt">+50</span></div><div class="skill-desc">一名隊友 +50 HP。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">起來</span><span class="amt">+70</span></div><div class="skill-desc">復活一名倒下的隊友（70 HP）。每場限一次。</div></div></div>
+    
+  </article><article class="card char" style="--accent:#b7791f">
+    <header><div><div class="title">以色列第一位王</div><div class="name">掃羅王</div></div>
+      <div class="hp"><span class="rar">SSR</span><span class="hp-num"><small>HP</small>250</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/saul.jpg)"></div>
+    <div class="stats"><span class="chip">金</span><span>能量上限 <b>6</b></span><span class="wr">弱 火 ／ 抗 木</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">20</span></div><div class="skill-desc">不花能量，對一個敵人造成 20 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#c53030"></i></span><span class="skill-name">擲槍</span><span class="amt">30</span></div><div class="skill-desc">30 傷害。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">強行獻祭</span></div><div class="skill-desc">立刻獲得 2 藍能量，但掃羅下回合驚恐。</div></div></div>
+    
+  </article><article class="card char" style="--accent:#2b6cb0">
+    <header><div><div class="title">聰明的婦人</div><div class="name">亞比該</div></div>
+      <div class="hp"><span class="rar">SR</span><span class="hp-num"><small>HP</small>120</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/abigail.jpg)"></div>
+    <div class="stats"><span class="chip">光</span><span>能量上限 <b>5</b></span><span class="wr">弱 暗 ／ 抗 —</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">20</span></div><div class="skill-desc">不花能量，對一個敵人造成 20 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">餅與葡萄酒</span><span class="amt">+20</span></div><div class="skill-desc">所有隊友回復 20。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">智慧的勸阻</span><span class="amt">+20</span></div><div class="skill-desc">本回合我方每次受到的傷害減少 20。</div></div></div>
+    
+  </article><article class="card char" style="--accent:#2f855a">
+    <header><div><div class="title">幫助大衛逃離危險的女子</div><div class="name">米甲</div></div>
+      <div class="hp"><span class="rar">R</span><span class="hp-num"><small>HP</small>100</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/michal.jpg)"></div>
+    <div class="stats"><span class="chip">木</span><span>能量上限 <b>4</b></span><span class="wr">弱 金 ／ 抗 土</span></div>
+    <div class="skills"><div class="skill basic"><div class="skill-head"><span class="skill-name">基本攻擊</span><b class="tag">免費</b><span class="amt">10</span></div><div class="skill-desc">不花能量，對一個敵人造成 10 傷害；用掉這回合的行動（和用技能二選一）。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">從窗戶縋下去</span><span class="amt">+30</span></div><div class="skill-desc">另一名隊友獲得額外血量 30（大衛為 50），並解除驚恐。</div></div><div class="skill"><div class="skill-head"><span class="pips"><i class="pip" style="background:#2b6cb0"></i></span><span class="skill-name">床上的神像</span><span class="amt">+20</span></div><div class="skill-desc">米甲獲得額外血量 20；抽 1 張牌。</div></div></div>
+    
+  </article><article class="card enemy" style="--accent:#822727">
+    <header><div><div class="title">護衛</div><div class="name">拿盾牌的</div></div>
+      <div class="hp"><span class="rar">敵</span><span class="hp-num"><small>HP</small>60</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/bearer.jpg);background-color:#2d3748"></div>
+    <div class="stats"><span class="chip">木</span><span class="wr">屬性剋制 +10／被剋 −10</span></div>
+    <div class="skills"><div class="skill"><div class="skill-head"><span class="skill-name">保護頭目</span></div><div class="skill-desc">他還站著時，一般攻擊不能選頭目為目標；他倒下後，頭目才能被攻擊。</div></div></div>
+  </article><article class="card enemy" style="--accent:#822727">
+    <header><div><div class="title">頭目</div><div class="name">迦特人歌利亞</div></div>
+      <div class="hp"><span class="rar">敵</span><span class="hp-num"><small>HP</small>280</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/goliath.jpg);background-color:#2d3748"></div>
+    <div class="stats"><span class="chip">金</span><span class="wr">屬性剋制 +10／被剋 −10</span></div>
+    <div class="skills"><div class="skill"><div class="skill-desc">行動見「行動軌」卡。頭目 HP 280，歸零即勝利。</div></div></div>
+  </article><article class="card enemy" style="--accent:#822727">
+    <header><div><div class="title">射手</div><div class="name">非利士弓箭手</div></div>
+      <div class="hp"><span class="rar">敵</span><span class="hp-num"><small>HP</small>40</span></div></header>
+    <div class="art" style="background-image:url(../../../public/cards/archer.jpg);background-color:#2d3748"></div>
+    <div class="stats"><span class="chip">火</span><span class="wr">屬性剋制 +10／被剋 −10</span></div>
+    <div class="skills"><div class="skill"><div class="skill-head"><span class="skill-name">攻擊前線</span><span class="amt">30</span></div><div class="skill-desc">敵人行動時，對前線角色造成 30 傷害。他倒下後不再攻擊。</div></div></div>
+  </article></div></section>
+<section class="page "><div class="sheet"><article class="card track" style="--accent:#822727">
+    <header><div><div class="title">行動軌</div><div class="name">迦特人歌利亞</div></div></header>
+    <div class="track-note">標記放在目前的格子；每回合敵人做完該格的行動後，標記前進一格，繞回第 1 格。下一格的行動也攤開，讓玩家看見。</div>
+    <div class="skills"><div class="phase"><div class="phase-name">第一階段（歌利亞被機弦甩石擊中前）</div><div class="step"><span class="no">1</span><div class="act"><b>向以色列軍隊罵陣</b> <span>使隨機 2 名隊友驚恐（有額外血量則無效）：下回合不能行動。</span></div></div><div class="step"><span class="no">2</span><div class="act"><b>長槍突刺</b> <span>對前線角色造成 30 傷害。</span></div></div><div class="step"><span class="no">3</span><div class="act"><b>舉起長槍</b> <span>蓄力。下一個行動是粉碎重擊。</span></div></div><div class="step"><span class="no">4</span><div class="act"><b>粉碎重擊</b> <span>對前線角色造成 90 傷害（需先蓄力）。</span></div></div></div><div class="phase"><div class="phase-name">第二階段（暴怒）</div><div class="step"><span class="no">1</span><div class="act"><b>狂怒橫掃</b> <span>所有隊友各受 50 傷害。</span></div></div><div class="step"><span class="no">2</span><div class="act"><b>舉起長槍</b> <span>蓄力。下一個行動是粉碎重擊。</span></div></div><div class="step"><span class="no">3</span><div class="act"><b>粉碎重擊</b> <span>對前線角色造成 90 傷害（需先蓄力）。</span></div></div></div></div>
+  </article><article class="card scripture" style="--accent:#2b6cb0">
+    <header style="background:#2b6cb0"><div><div class="title">藍・法術能量</div><div class="name">救我脫離獅熊的主</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/delivered.jpg)"></div>
+    <div class="verse">耶和華救我脫離獅子和熊的爪，也必救我脫離這非利士人的手。<br><b>— 撒母耳記上 17:37</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2b6cb0">
+    <header style="background:#2b6cb0"><div><div class="title">藍・法術能量</div><div class="name">靠著主凡事都能做</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/allThings.jpg)"></div>
+    <div class="verse">我靠著那加給我力量的，凡事都能做。<br><b>— 腓立比書 4:13</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2b6cb0">
+    <header style="background:#2b6cb0"><div><div class="title">藍・法術能量</div><div class="name">所望之事的實底</div></div><div class="val">2</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/assurance.jpg)"></div>
+    <div class="verse">信就是所望之事的實底，是未見之事的確據。<br><b>— 希伯來書 11:1</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2b6cb0">
+    <header style="background:#2b6cb0"><div><div class="title">藍・法術能量</div><div class="name">耶和華必為你們爭戰</div></div><div class="val">3</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/fightForYou.jpg)"></div>
+    <div class="verse">耶和華必為你們爭戰；你們只管靜默，不要作聲。<br><b>— 出埃及記 14:14</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）<br><b>第 3 回合起才能打出</b></div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">五塊光滑石子</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/stones.jpg)"></div>
+    <div class="verse">他手中拿杖，又在溪中挑選了五塊光滑石子⋯⋯手裡拿著甩石的機弦，就去迎那非利士人。<br><b>— 撒母耳記上 17:40</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">五塊光滑石子</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/stones.jpg)"></div>
+    <div class="verse">他手中拿杖，又在溪中挑選了五塊光滑石子⋯⋯手裡拿著甩石的機弦，就去迎那非利士人。<br><b>— 撒母耳記上 17:40</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy">第 2 張</div>
+  </article><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">五塊光滑石子</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/stones.jpg)"></div>
+    <div class="verse">他手中拿杖，又在溪中挑選了五塊光滑石子⋯⋯手裡拿著甩石的機弦，就去迎那非利士人。<br><b>— 撒母耳記上 17:40</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy">第 3 張</div>
+  </article><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">教導我的手爭戰</div></div><div class="val">2</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/trains.jpg)"></div>
+    <div class="verse">耶和華我的磐石是應當稱頌的！他教導我的手爭戰，教導我的指頭打仗。<br><b>— 詩篇 144:1</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy"></div>
+  </article></div></section>
+<section class="page "><div class="sheet"><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">教導我的手爭戰</div></div><div class="val">2</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/trains.jpg)"></div>
+    <div class="verse">耶和華我的磐石是應當稱頌的！他教導我的手爭戰，教導我的指頭打仗。<br><b>— 詩篇 144:1</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）</div>
+    <div class="copy">第 2 張</div>
+  </article><article class="card scripture" style="--accent:#c53030">
+    <header style="background:#c53030"><div><div class="title">紅・攻擊能量</div><div class="name">聖靈的寶劍</div></div><div class="val">3</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/spiritSword.jpg)"></div>
+    <div class="verse">並戴上救恩的頭盔，拿著聖靈的寶劍，就是神的道。<br><b>— 以弗所書 6:17</b></div>
+    <div class="notes" style="font-size:6.6pt">貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）<br><b>需要我方至少一個角色身上有藍能量</b></div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2f855a">
+    <header style="background:#2f855a"><div><div class="title">綠・護盾</div><div class="name">耶和華是我的牧者</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/shepherd.jpg)"></div>
+    <div class="verse">我雖然行過死蔭的幽谷，也不怕遭害，因為你與我同在；你的杖，你的竿，都安慰我。<br><b>— 詩篇 23:4</b></div>
+    <div class="notes" style="font-size:6.6pt">選一名角色：他有受傷就回復 20（移除傷害指示物，不超過已受的傷）；沒受傷就加 20 額外血量（不算貼能量）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2f855a">
+    <header style="background:#2f855a"><div><div class="title">綠・護盾</div><div class="name">投靠在祂翅膀底下</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/wings.jpg)"></div>
+    <div class="verse">他必用自己的翎毛遮蔽你；你要投靠在他的翅膀底下；他的誠實是大小的盾牌。<br><b>— 詩篇 91:4</b></div>
+    <div class="notes" style="font-size:6.6pt">選一名角色：他有受傷就回復 20（移除傷害指示物，不超過已受的傷）；沒受傷就加 20 額外血量（不算貼能量）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2f855a">
+    <header style="background:#2f855a"><div><div class="title">綠・護盾</div><div class="name">三股合成的繩子</div></div><div class="val">1</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/threefoldCord.jpg)"></div>
+    <div class="verse">有人攻勝孤身一人，若有二人便能敵擋他；三股合成的繩子不容易折斷。<br><b>— 傳道書 4:12</b></div>
+    <div class="notes" style="font-size:6.6pt">選一名角色：他有受傷就回復 20（移除傷害指示物，不超過已受的傷）；沒受傷就加 20 額外血量（不算貼能量）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2f855a">
+    <header style="background:#2f855a"><div><div class="title">綠・護盾</div><div class="name">剛強壯膽</div></div><div class="val">2</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/bestrong.jpg)"></div>
+    <div class="verse">你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往哪裡去，耶和華你的神必與你同在。<br><b>— 約書亞記 1:9</b></div>
+    <div class="notes" style="font-size:6.6pt">選一名角色：他有受傷就回復 40（移除傷害指示物，不超過已受的傷）；沒受傷就加 40 額外血量（不算貼能量）</div>
+    <div class="copy"></div>
+  </article><article class="card scripture" style="--accent:#2f855a">
+    <header style="background:#2f855a"><div><div class="title">綠・護盾</div><div class="name">從新得力</div></div><div class="val">3</div></header>
+    <div class="art" style="background-image:url(../../../public/cards/scripture/renewed.jpg)"></div>
+    <div class="verse">但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦。<br><b>— 以賽亞書 40:31</b></div>
+    <div class="notes" style="font-size:6.6pt">選一名角色：他有受傷就回復 60（移除傷害指示物，不超過已受的傷）；沒受傷就加 60 額外血量（不算貼能量）<br><b>第 3 回合起才能打出</b></div>
+    <div class="copy"></div>
+  </article></div></section>
+<section class="page "><h2 style="margin:0 0 3mm">指示物（剪下使用）</h2><div class="tokens"><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt">10</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#c53030;color:#fff">紅 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:8pt;background:#2b6cb0;color:#fff">藍 1</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e9d8fd">驚恐</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#e2e8f0">已使用</div><div class="tk s" style="background:#fed7d7">行動軌標記 ▶</div><div class="tk s" style="background:#fed7d7">前線</div></div></section>
+<section class="page "><div class="rec"><h1>測試紀錄表（每場一張）</h1><p>日期：______　選的角色：______________________　結果：勝／敗　共 ____ 回合</p>
+<table><tr><th style="width:35%">問題</th><th>紀錄</th></tr>
+<tr><td>哪裡讓你卡住、要翻規則？</td><td style="height:22mm"></td></tr>
+<tr><td>貼能量時有沒有為難（每回合 2 張夠不夠、不知道給誰、上限太緊或太鬆、不找零太浪費）？</td><td style="height:22mm"></td></tr>
+<tr><td>手牌有沒有打不出去、或一直爆手牌？</td><td style="height:16mm"></td></tr>
+<tr><td>哪個技能太強、太弱、或根本用不到？</td><td style="height:22mm"></td></tr>
+<tr><td>屬性 ±10 有感覺嗎？</td><td style="height:12mm"></td></tr>
+<tr><td>每回合大約花多久？有哪一步要算很久？</td><td style="height:16mm"></td></tr>
+<tr><td>想改的規則、想要的功能</td><td style="height:26mm"></td></tr></table></div></section>
+</body></html>

@@ -361,13 +361,15 @@ export function CardDemo() {
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
-            <button
-              onClick={toggleStory}
-              aria-pressed={showStory}
-              className={`rounded-full border px-3 py-1 text-xs ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
-            >
-              {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
-            </button>
+            {!viewing.scripture && (
+              <button
+                onClick={toggleStory}
+                aria-pressed={showStory}
+                className={`rounded-full border px-3 py-1 text-xs ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+              >
+                {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
+              </button>
+            )}
             <span className="text-stone-400">{t("v3.demo.calibrate")}</span>
             <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
               −

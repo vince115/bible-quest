@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
 import { useT } from "@/game/locale";
-import { CAMPAIGN, campaignBoss, isPlayable, isUnlocked } from "@/game/v3/campaign";
+import { CAMPAIGN, TESTAMENTS, campaignBoss } from "@/game/v3/campaign";
 import { ownedCards, useProgressStore } from "@/game/v3/progress";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
@@ -33,19 +33,25 @@ export function CampaignScreen() {
         <p className="mt-2 text-sm text-stone-400">{t("v3.campaign.hint")}</p>
       </div>
 
-      <ol className="flex w-full max-w-2xl flex-col gap-3">
-        {CAMPAIGN.map((stage, i) => {
+      {/* Old Testament, then New Testament; stages numbered straight through */}
+      {TESTAMENTS.map(({ testament, stages }) => (
+      <section key={testament} className="w-full max-w-2xl">
+      <h2 className="mb-3 text-lg font-bold">{t(`v3.campaign.${testament}`)}</h2>
+      <ol className="flex w-full flex-col gap-3">
+        {stages.map((stage) => {
+          const i = CAMPAIGN.indexOf(stage);
           const boss = campaignBoss(stage);
           const times = cleared[stage.id] ?? 0;
-          const playable = ready && isPlayable(stage.id, cleared);
-          const status = !stage.battle ? t("v3.campaign.soon") : times > 0 ? t("v3.campaign.cleared", { n: times }) : ready && !isUnlocked(stage.id, cleared) ? t("v3.campaign.locked") : null;
+          // 測試中：先不鎖關卡，全部開放測試遊玩
+          const playable = true;
+          const status = times > 0 ? t("v3.campaign.cleared", { n: times }) : null;
           const body = (
             <>
-              {/* Stage art, or the boss card, or a placeholder while the boss is still being built */}
-              <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-800 sm:h-28 sm:w-24">
+              {/* Stage art (1:1 square), or the boss card, or a placeholder while the boss is still being built */}
+              <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
                 {stage.art ? (
                   // eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public
-                  <img src={stage.art} alt="" className="h-full w-full object-cover" />
+                  <img src={stage.art} alt="" className="aspect-square h-full w-full object-cover" />
                 ) : boss ? (
                   <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
                     <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
@@ -53,7 +59,7 @@ export function CampaignScreen() {
                     </HoloCard>
                   </div>
                 ) : (
-                  <div className="flex h-full items-center justify-center text-2xl text-stone-600">✦</div>
+                  <div className="flex h-full items-center justify-center text-2xl text-amber-500/70">✦</div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -64,25 +70,23 @@ export function CampaignScreen() {
                 <p className="text-sm text-stone-300">
                   {t("v3.campaign.boss")}：{t(`v3.campaign.${stage.id}.boss`)}
                 </p>
-                {status && <p className={`mt-1 text-xs ${times > 0 ? "text-emerald-300" : "text-stone-500"}`}>{status}</p>}
+                {status && <p className="mt-1 text-xs text-emerald-300">{status}</p>}
               </div>
-              {playable && <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950">{t("v3.campaign.play")}</span>}
+              <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = `flex items-center gap-4 rounded-2xl border-2 p-3 ${playable ? "border-amber-400/70 bg-stone-900 hover:bg-stone-800" : "border-stone-700 bg-stone-900/60 opacity-70"}`;
+          const frame = "group flex items-center gap-4 rounded-2xl border-2 p-3 border-amber-400/70 bg-stone-900 transition hover:bg-stone-800/90 shadow-md";
           return (
             <li key={stage.id}>
-              {playable ? (
-                <Link href={`/campaign/${stage.id}`} className={frame}>
-                  {body}
-                </Link>
-              ) : (
-                <div className={frame}>{body}</div>
-              )}
+              <Link href={`/campaign/${stage.id}`} className={frame}>
+                {body}
+              </Link>
             </li>
           );
         })}
       </ol>
+      </section>
+      ))}
 
       {/* The collection: every card dropped so far, with how many copies */}
       <section className="w-full max-w-2xl">

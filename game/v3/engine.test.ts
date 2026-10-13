@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RULES_V2 as R } from "../v2/data";
+import { MAX_HP, RULES_V2 as R } from "../v2/data";
 import { enemyDamage, isAlive } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { earnedBy } from "./achievements";
@@ -10,6 +10,7 @@ import {
   canSwap,
   castOnBoard,
   createBoard,
+  drawOnBoard,
   endBoardTurn,
   needsFront,
   playCardOnBoard,
@@ -42,8 +43,10 @@ function autoBattle(lineup: CharacterId[], seed: number): Board {
   for (let steps = 0; b.battle.result === "ongoing" && steps < 800; steps++) {
     const a = nextBoardAutoAction(b);
     const next =
-      a.type === "play"
-        ? playCardOnBoard(b, a.uid)
+      a.type === "draw"
+        ? drawOnBoard(b, rng)
+        : a.type === "play"
+        ? playCardOnBoard(b, a.uid, a.target)
         : a.type === "cast"
           ? castOnBoard(b, a.skill, a.target, rng)
           : a.type === "front"
@@ -54,6 +57,31 @@ function autoBattle(lineup: CharacterId[], seed: number): Board {
   }
   return b;
 }
+
+describe("energy deck", () => {
+  it("deals no cards: the player draws them one at a time, up to the turn's allowance", () => {
+    let b = createBoard(["david", "samuel"], "david", seeded());
+    expect(b.battle.hand).toHaveLength(0);
+    expect(b.draws).toBe(R.openingHand);
+    for (let i = 0; i < R.openingHand; i++) b = drawOnBoard(b, seeded(i));
+    expect(b.battle.hand).toHaveLength(R.openingHand);
+    expect(b.draws).toBe(0);
+    expect(drawOnBoard(b)).toBe(b);
+  });
+
+  it("a played card frees a slot, and unused draws don't carry over", () => {
+    let b = createBoard(["david", "samuel"], "david", seeded());
+    b.battle.deck[0] = { ...b.battle.deck[0], card: "delivered" };
+    b = drawOnBoard(b);
+    b = playCardOnBoard(b, b.battle.hand[0].uid);
+    expect(b.battle.hand).toHaveLength(0);
+    b = drawOnBoard(b);
+    expect(b.battle.hand).toHaveLength(1);
+    b = endBoardTurn(b, seeded(3));
+    expect(b.draws).toBe(R.drawPerTurn);
+    expect(b.battle.hand).toHaveLength(1);
+  });
+});
 
 describe("line-up", () => {
   it("characters left behind sit the battle out", () => {
@@ -98,8 +126,8 @@ describe("front line", () => {
     // Metal Goliath hits light David normally; fire Jonathan resists metal (×0.75).
     const david = resolveBoard(spearTurn(["david", "jonathan"], "david"));
     const jonathan = resolveBoard(spearTurn(["david", "jonathan"], "jonathan"));
-    expect(120 - david.battle.party.david.hp).toBe(R.spear);
-    expect(140 - jonathan.battle.party.jonathan.hp).toBe(Math.floor((R.spear * 0.75) / 10) * 10);
+    expect(MAX_HP.david - david.battle.party.david.hp).toBe(R.spear);
+    expect(MAX_HP.jonathan - jonathan.battle.party.jonathan.hp).toBe(Math.floor((R.spear * 0.75) / 10) * 10);
   });
 
   it("allows one free swap per turn", () => {

@@ -1,5 +1,6 @@
-// Card rarity: presentation only. It decides how a card looks (frame, ornaments, foil, light effects), never its
-// numbers, and is not tied to draws or drop rates.
+// Card rarity decides how a card looks (frame, ornaments, foil, light effects) and the band its HP sits in
+// (N 60–110, R 100–140, SR 120–190, SSR 160–250, UR 220–330; see MAX_HP in game/v2/data.ts). Skill damage does not
+// depend on it, and it is not tied to draws or drop rates.
 import type { CharacterId, EnemyId } from "@/game/v2/types";
 import type { Ornament } from "./CardFrame";
 
@@ -13,6 +14,7 @@ export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
   jonathan: "SR",
   cain: "SR",
   abel: "SR",
+  seth: "R",
   noah: "SSR",
   abraham: "SSR",
   isaac: "SR",
@@ -197,6 +199,24 @@ export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
   herodAgrippa: "SR",
   gehazi: "N",
   serpent: "SSR",
+  flood: "SSR",
+  chariots: "SSR",
+  walls: "SSR",
+  baalProphets: "SSR",
+  lion: "SSR",
+  legion: "SSR",
+  fountains: "N",
+  windows: "N",
+  pharaohHost: "SR",
+  chariotCaptain: "N",
+  jerichoKing: "R",
+  wallGuard: "N",
+  ahabKing: "SR",
+  jezebelQueen: "SR",
+  presidents: "R",
+  princes: "N",
+  uncleanSpirits: "N",
+  swine: "N",
 };
 
 export interface RarityLook {

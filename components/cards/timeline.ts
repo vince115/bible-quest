@@ -7,7 +7,7 @@ type Card = CharacterId | EnemyId;
 
 /** Each period in story order; within a period, roughly in the order the people appear. */
 export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
-  { era: "creation", cards: ["adam", "eve", "serpent", "serpentP", "cain", "abel", "enoch", "noah"] },
+  { era: "creation", cards: ["adam", "eve", "serpent", "serpentP", "cain", "abel", "seth", "enoch", "noah", "fountains", "flood", "windows"] },
   {
     era: "patriarchs",
     // Job is usually placed in the patriarchs' time.
@@ -15,7 +15,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   },
   {
     era: "exodus",
-    cards: ["jochebed", "pharaohDaughter", "moses", "zipporah", "pharaoh", "charioteer", "aaron", "miriam", "jethro", "mosesSinai", "korah", "caleb", "balaam", "joshua", "rahab", "achan"],
+    cards: ["jochebed", "pharaohDaughter", "moses", "zipporah", "pharaoh", "charioteer", "pharaohHost", "chariots", "chariotCaptain", "aaron", "miriam", "jethro", "mosesSinai", "korah", "caleb", "balaam", "joshua", "rahab", "jerichoKing", "walls", "wallGuard", "achan"],
   },
   { era: "judges", cards: ["ehud", "deborah", "barak", "sisera", "jael", "gideon", "jephthah", "delilah", "samson", "ruth", "naomi", "boaz"] },
   {
@@ -24,15 +24,15 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   },
   {
     era: "prophets",
-    cards: ["elijah", "ahab", "jezebel", "baalProphet", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah"],
+    cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah"],
   },
-  { era: "exile", cards: ["ezekiel", "daniel", "nebuchadnezzar", "threeFriends", "belshazzar", "cyrus", "zerubbabel", "vashti", "esther", "mordecai", "haman", "ezra", "nehemiah"] },
+  { era: "exile", cards: ["ezekiel", "daniel", "presidents", "lion", "princes", "nebuchadnezzar", "threeFriends", "belshazzar", "cyrus", "zerubbabel", "vashti", "esther", "mordecai", "haman", "ezra", "nehemiah"] },
   { era: "nativity", cards: ["zechariah", "elizabeth", "mary", "josephNaz", "shepherds", "magi", "herodGreat", "simeon", "anna", "johnBaptist", "romanSoldier", "herodias"] },
   {
     era: "ministry",
     cards: [
       "jesusUR", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
-      "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
+      "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "uncleanSpirits", "legion", "swine", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
       "lazarus", "richRuler", "bartimaeus", "zacchaeus", "widow",
     ],
   },

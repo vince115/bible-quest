@@ -1,27 +1,29 @@
 // Auto-battle for the v3 board: the v2 heuristic plus front-line decisions.
-import { nextAutoAction as nextV2Action } from "../v2/auto";
-import { MAX_HP, RULES_V2 as R } from "../v2/data";
-import { enemyAlive, enemyDamage, isAlive, playableHand } from "../v2/engine";
-import type { CharacterId, SkillId } from "../v2/types";
-import { boardBlockReason, canSwap, needsFront, standing, type Board } from "./engine";
+import { cardsLeftToPlay, nextAutoAction as nextV2Action } from "../v2/auto";
+import { MAX_HP, MULTI_TARGETS, SHOOTER_DAMAGE, SINGLE_TARGET } from "../v2/data";
+import { actionBase, bossOf, enemyAlive, enemyDamage, hitsEveryone, isAlive, shooterOf } from "../v2/engine";
+import type { CharacterId, EnemyId, SkillId } from "../v2/types";
+import { boardBlockReason, canDrawOnBoard, canSwap, needsFront, standing, type Board } from "./engine";
 import type { Target } from "../v2/engine";
 
 export type BoardAutoAction =
-  | { type: "play"; uid: number }
+  | { type: "draw" }
+  | { type: "play"; uid: number; target?: CharacterId }
   | { type: "cast"; skill: SkillId; target?: Target }
+  | { type: "basic"; who: CharacterId; target: EnemyId }
   | { type: "front"; id: CharacterId }
   | { type: "end" };
 
-/** Damage the front line is about to take from single-target hits this turn. */
+/** Damage `id` is about to take this turn if they stand at the front (the lions' Maul picks its own prey). */
 function incoming(b: Board, id: CharacterId): number {
   const s = b.battle;
-  let n = enemyAlive(s, "archer") ? enemyDamage("archer", id, R.archerDamage) : 0;
-  const { action } = s.intents[0];
+  const shooter = shooterOf(s);
+  let n = shooter && enemyAlive(s, shooter) ? enemyDamage(shooter, id, SHOOTER_DAMAGE[shooter] ?? 0, s.pools) : 0;
+  const { action, targets } = s.intents[0];
   if (!s.goliath.stunned) {
-    if (action === "spear") n += enemyDamage("goliath", id, R.spear);
-    if (action === "crush" && s.goliath.charging) n += enemyDamage("goliath", id, R.crush);
-    if (action === "fang") n += enemyDamage("serpent", id, s.goliath.enraged ? R.fangShed : R.fang);
-    if (action === "coil") n += enemyDamage("serpent", id, R.coil);
+    const charged = (action !== "crush" && action !== "deluge") || s.goliath.charging;
+    const hits = SINGLE_TARGET.includes(action) || hitsEveryone(s, action) || (!!MULTI_TARGETS[action] && targets.includes(id)) || (action === "maul" && targets.includes(id));
+    if (charged && hits) n += enemyDamage(bossOf(s), id, actionBase(s, action), s.pools);
   }
   return n;
 }
@@ -36,16 +38,18 @@ export function nextBoardAutoAction(b: Board): BoardAutoAction {
   const s = b.battle;
   if (s.result !== "ongoing") return { type: "end" };
   if (needsFront(b)) return { type: "front", id: bestFront(b) };
+  // Draw the turn's cards from the deck first.
+  if (canDrawOnBoard(b)) return { type: "draw" };
 
   // Raise a fallen member of the line-up (the v2 AI doesn't know who sat this battle out).
   const fallen = b.lineup.filter((id) => !isAlive(s, id));
-  if (!playableHand(s).length && fallen.length) {
+  if (!cardsLeftToPlay(s) && fallen.length) {
     const target = fallen.includes("david") ? "david" : fallen[0];
     if (boardBlockReason(b, "arise", target) === null) return { type: "cast", skill: "arise", target };
   }
 
   // Swap once the cards are in, before anyone acts: put the sturdiest character in harm's way.
-  if (!playableHand(s).length && !b.swapped) {
+  if (!cardsLeftToPlay(s) && !b.swapped) {
     const best = bestFront(b);
     if (best !== b.front && canSwap(b, best)) return { type: "front", id: best };
   }

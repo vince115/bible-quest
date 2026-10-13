@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LINEUP as PARTY_ORDER, ENEMY_HP, MAX_HP, RULES_V2 as R } from "./data";
+import { DEFAULT_LINEUP as PARTY_ORDER, ENEMY_HP, ENEMY_ORDER, MAX_HP, RULES_V2 as R } from "./data";
 import {
   attackableEnemies,
   canAct,
@@ -51,7 +51,8 @@ describe("setup", () => {
     expect(totalCards(s)).toBe(15);
     expect(s.hand).toHaveLength(R.openingHand);
     expect(s.energy).toEqual({ faith: 0, attack: 0, guard: 0 });
-    expect(s.enemies).toEqual({ bearer: { hp: ENEMY_HP.bearer }, goliath: { hp: ENEMY_HP.goliath }, archer: { hp: ENEMY_HP.archer }, serpent: { hp: 0 } });
+    // Goliath's three are on the field; every other stage's boss sits this one out.
+    expect(s.enemies).toEqual(Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: ["bearer", "goliath", "archer"].includes(id) ? ENEMY_HP[id] : 0 }])));
     expect(s.archerTarget).not.toBeNull();
     expect(s.intents.map((i) => i.action)).toEqual(["defy", "spear"]);
   });
@@ -59,7 +60,7 @@ describe("setup", () => {
 
 describe("cards become energy", () => {
   it("each card adds its energy and goes to the discard pile", () => {
-    let s = battle(["stones", "covenant", "delivered"]);
+    let s = battle(["stones", "threefoldCord", "delivered"]);
     s = playCard(s, 101);
     s = playCard(s, 102);
     s = playCard(s, 103);
@@ -71,18 +72,18 @@ describe("cards become energy", () => {
   it("the big cards give 2 or 3, and wait for their moment", () => {
     // Assurance of Things Hoped For: +2 Faith at once.
     expect(playCard(battle(["assurance"]), 101).energy.faith).toBe(2);
-    // The Battle Is the LORD's waits for turn 3; it stays in hand until then.
-    const early = battle(["battle"]);
-    expect(cardBlockReason(early, "battle")).toBe("v2.reason.cardTurn3");
+    // The LORD Shall Fight for You waits for turn 3; it stays in hand until then.
+    const early = battle(["fightForYou"]);
+    expect(cardBlockReason(early, "fightForYou")).toBe("v2.reason.cardTurn3");
     expect(playCard(early, 101)).toBe(early);
     expect(playableHand(early)).toHaveLength(0);
     const late = { ...early, turn: 3 };
     expect(playCard(late, 101).energy.faith).toBe(3);
-    // I Come in the Name of the LORD needs some Faith in hand.
-    const noFaith = battle(["inname"]);
-    expect(cardBlockReason(noFaith, "inname")).toBe("v2.reason.cardNeedFaith");
+    // The Sword of the Spirit needs some Faith in hand.
+    const noFaith = battle(["spiritSword"]);
+    expect(cardBlockReason(noFaith, "spiritSword")).toBe("v2.reason.cardNeedFaith");
     expect(playCard(noFaith, 101)).toBe(noFaith);
-    expect(playCard(battle(["inname"], { faith: 1, attack: 0, guard: 0 }), 101).energy.attack).toBe(3);
+    expect(playCard(battle(["spiritSword"], { faith: 1, attack: 0, guard: 0 }), 101).energy.attack).toBe(3);
   });
 
   it("Attack resets each turn; Faith and Guard carry over", () => {
@@ -92,7 +93,7 @@ describe("cards become energy", () => {
   });
 
   it("Faith and Guard are capped", () => {
-    expect(playCard(battle(["battle"], { faith: R.maxFaith }), 101).energy.faith).toBe(R.maxFaith);
+    expect(playCard(battle(["fightForYou"], { faith: R.maxFaith }), 101).energy.faith).toBe(R.maxFaith);
     expect(playCard(battle(["wings"], { guard: R.maxGuard }), 101).energy.guard).toBe(R.maxGuard);
   });
 

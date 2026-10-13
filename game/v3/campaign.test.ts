@@ -23,19 +23,25 @@ describe("the campaign", () => {
     }
   });
 
-  it("unlocks a stage once the built stages before it are cleared, skipping stages still being built", () => {
+  it("every stage has its boss built", () => {
+    for (const stage of CAMPAIGN) expect(stage.battle, `${stage.id} has no battle`).not.toBeNull();
+  });
+
+  it("unlocks a stage once the stages before it are cleared", () => {
     expect(isUnlocked("eden", {})).toBe(true);
-    expect(isUnlocked("goliath", {})).toBe(false);
-    expect(isUnlocked("goliath", { eden: 1 })).toBe(true); // the ark, the Red Sea and Jericho are not built yet
-    expect(isPlayable("ark", { eden: 1 })).toBe(false); // unlocked, but not built
-    expect(nextStage("eden")).toBe("goliath");
+    expect(isUnlocked("ark", {})).toBe(false);
+    expect(isPlayable("ark", { eden: 1 })).toBe(true);
+    expect(isUnlocked("goliath", { eden: 1 })).toBe(false); // the ark, the Red Sea and Jericho come first
+    expect(isUnlocked("goliath", { eden: 1, ark: 1, redSea: 1, jericho: 2 })).toBe(true);
+    expect(nextStage("eden")).toBe("ark");
+    expect(nextStage("jericho")).toBe("goliath");
     expect(nextStage("gerasa")).toBeNull();
   });
 
   it("drops one of the stage's cards", () => {
     expect(dropFor("eden", () => 0)).toBe("adam");
-    expect(dropFor("eden", () => 0.999)).toBe("noah");
-    expect(dropFor("eden", () => 1)).toBe("noah");
+    expect(dropFor("eden", () => 0.999)).toBe("enoch");
+    expect(dropFor("eden", () => 1)).toBe("enoch");
   });
 });
 
@@ -49,6 +55,6 @@ describe("campaign progress", () => {
     expect(after.cleared.eden).toBe(3);
     expect([after.collection.adam, after.collection.abel, after.collection.eve]).toEqual([2, 1, undefined]);
     expect(after.history.map((d) => d.card)).toEqual(["adam", "adam", "abel"]);
-    expect(isPlayable("goliath", after.cleared)).toBe(true);
+    expect(isPlayable("ark", after.cleared)).toBe(true);
   });
 });
