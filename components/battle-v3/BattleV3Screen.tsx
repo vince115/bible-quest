@@ -29,7 +29,7 @@ import {
   STAGE_SHOOTER,
 } from "@/game/v2/data";
 import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
-import { NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
+import { MAGIC_VERSION_ENABLED, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
@@ -900,7 +900,7 @@ const MAX_LINEUP = 3;
  */
 function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode: PoolMode) => void; campaign?: CampaignStage }) {
   const last = useBattleV3Store((st) => st.lastLineup);
-  const [mode, setMode] = useState<PoolMode>(last.mode === "team" ? "personal" : last.mode);
+  const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
   const [stage, setStage] = useState<StageId>(campaign?.battle ?? "goliath");
   const unlocked = useAchievementStore((st) => st.unlocked);
   const pool = campaign?.pool ?? PARTY_ORDER;
@@ -1078,6 +1078,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
 
       {/* Which energy rules: the free digital version (MP and SP) or the tabletop version (energy cards under characters). */}
+      {MAGIC_VERSION_ENABLED && (
       <div role="radiogroup" aria-label={t("v3.mode.title")} className="flex flex-wrap justify-center gap-2 px-4">
         {(["personal", "table"] as PoolMode[]).map((m) => (
           <button
@@ -1092,6 +1093,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
           </button>
         ))}
       </div>
+      )}
       <p className="max-w-md px-4 text-center text-xs text-stone-300">{t(`v3.mode.${mode}.desc`)}</p>
 
       <button

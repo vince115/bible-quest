@@ -857,6 +857,12 @@ export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Stages played with each character's own MP and SP (every campaign stage); a battle created without a stage mode still uses the shared team energy. */
+/**
+ * The magic version (personal MP and SP) is parked on the `feat/magic-version` branch: the main line is built on the
+ * tabletop rules. The engine still supports it; this keeps it out of the screens until it is picked up again.
+ */
+export const MAGIC_VERSION_ENABLED = false;
+
 export const PERSONAL_POOL_STAGES: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
 
 /** The most MP a character can hold: on the same scale as their HP (in steps of 10), so sturdier characters carry more. */

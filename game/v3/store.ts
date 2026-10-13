@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { RULES_V2 } from "../v2/data";
+import { MAGIC_VERSION_ENABLED, RULES_V2 } from "../v2/data";
 import type { Target } from "../v2/engine";
 import type { CharacterId, EnemyId, PoolMode, SkillId, StageId } from "../v2/types";
 import { earnedBy, useAchievementStore, type AchievementId } from "./achievements";
@@ -89,7 +89,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
 
   return {
     board: null,
-    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: "personal" },
+    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
     resolving: false,
     auto: false,
     runId: 0,
