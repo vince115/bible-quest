@@ -73,6 +73,12 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   flood: { src: "/cards/flood.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  // The king sits at the left of a throne-room scene.
+  jerichoKing: { src: "/cards/jerichoKing.jpg", figure: { cx: 0.3, head: 0.2, feet: 0.8 } },
+  // The shut gate of Jericho, dead centre.
+  walls: { src: "/cards/walls.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  // The guards on the wall look out to the right.
+  wallGuard: { src: "/cards/wallGuard.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
   // The chariots charge in from the left, so the frame leans left of centre.
   chariots: { src: "/cards/chariots.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
   // Enemy versions of villains who also exist as player cards share their art (see CharacterCardFace).
