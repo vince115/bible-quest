@@ -65,19 +65,11 @@ export function ScriptureCardFace({ id }: { id: CardId }) {
     // A white border with the gilt rule running round it, then a strip of the leather, then the face (the picture
     // with small rounded corners).
     <div className="absolute inset-0 overflow-hidden rounded-[2.5%] bg-white [container-type:inline-size]">
-    {/* Delicate antique gold floral frame (細金線花框) */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src="/cards/scripture-gilt-frame.png"
-      alt=""
-      draggable={false}
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)]"
-    />
-    {/* The frame's ornament picks up the card's colour (50% see-through), cut out with the frame itself. */}
+    {/* The floral frame (細金線花框) is drawn in the card's own colour at 50% see-through, cut out with the frame
+        image itself; laid over the gold it muddied the blue, so it stands alone on the white border. */}
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-10 opacity-50"
+      className="pointer-events-none absolute inset-0 z-10 opacity-50 drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)]"
       style={{ backgroundColor: FRAME_TINT[kind], WebkitMaskImage: "url(/cards/scripture-gilt-frame.png)", maskImage: "url(/cards/scripture-gilt-frame.png)", WebkitMaskSize: "100% 100%", maskSize: "100% 100%" }}
     />
     {/* 色彩帶（皮革底層）：外圈到內圈具備 50% 半透明黑色漸層，模擬外圍白框落下的相框陰影 (Photo Frame Inner Drop Shadow) */}
