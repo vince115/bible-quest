@@ -73,8 +73,11 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   flood: { src: "/cards/flood.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
-  // The governors petition the king; the speaker stands left of centre.
+  // Daniel's rivals: the presidents go through the scrolls, the princes petition the king (the speaker stands left of centre).
   presidents: { src: "/cards/presidents.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
+  princes: { src: "/cards/princes.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
+  // The lions in the den: the great lion stands left of centre.
+  lion: { src: "/cards/lion.jpg", figure: { cx: 0.38, head: 0.02, feet: 0.98 } },
   // The prophets of Baal crying out around the altar: the whole scene is the frame.
   baalProphets: { src: "/cards/baalProphets.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   // The king sits at the left of a throne-room scene.
