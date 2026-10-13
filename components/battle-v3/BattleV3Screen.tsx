@@ -1060,15 +1060,30 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         </div>
       ) : (
         <>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("v3.demo.search")}
-          aria-label={t("v3.demo.search")}
-          className="w-full max-w-sm rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none"
-        />
-        <div role="tablist" aria-label={t("v3.demo.filter")} className="flex flex-wrap justify-center gap-2 px-4">
+        {/* Search and rarity share one row on a phone (the rarity as a drop-down); on wider screens the rarity is a row of tabs below. */}
+        <div className="flex w-full max-w-sm items-center gap-2 px-4 sm:justify-center">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("v3.demo.search")}
+            aria-label={t("v3.demo.search")}
+            className="min-w-0 flex-1 rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none"
+          />
+          <select
+            value={rarity}
+            onChange={(e) => setRarity(e.target.value as Rarity | "all")}
+            aria-label={t("v3.demo.filter")}
+            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 px-3 py-2 text-sm font-bold text-amber-100 focus:outline-none sm:hidden"
+          >
+            {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => (
+              <option key={f} value={f}>
+                {f === "all" ? t("v3.demo.all") : f} {f === "all" ? matching.length : matching.filter((id) => CARD_RARITY[id] === f).length}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div role="tablist" aria-label={t("v3.demo.filter")} className="hidden flex-wrap justify-center gap-2 px-4 sm:flex">
           {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => {
             const count = f === "all" ? matching.length : matching.filter((id) => CARD_RARITY[id] === f).length;
             return (
