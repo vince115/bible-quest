@@ -199,7 +199,7 @@ function Header({ id, light }: { id: EnemyId; light?: boolean }) {
 /** A move's number; "60/80" is two stages (before / after the boss falls to half HP), the second in red. */
 function MoveAmount({ value, hint }: { value: string; hint: string }) {
   // eslint-disable-next-line @next/next/no-img-element -- small icon
-  if (value === SHIELD) return <img src="/icons/shield.png" alt="" aria-hidden draggable={false} className="h-[1.5em] w-[1.5em] object-contain" />;
+  if (value === SHIELD) return <img src="/icons/shield.png" alt="" aria-hidden draggable={false} className="h-[1.5em] w-[1.5em] object-contain drop-shadow-[0_0.06em_0.1em_rgb(0_0_0/0.5)]" />;
   const [first, second] = value.split("/");
   if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
   return (
