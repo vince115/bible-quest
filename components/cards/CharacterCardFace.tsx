@@ -15,6 +15,7 @@ import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
 import { EnergyIcon } from "./EnergyIcon";
 import { PoolModeContext } from "./PoolModeContext";
+import { asset } from "@/game/assets";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", seth: "🌱", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", elizabeth: "🤰", mordecai: "🚪", sarah: "😄", rebekah: "🏺", rachel: "🐑", barak: "⛰️", jael: "⛺", josephArimathea: "🪨", ananias: "👁️", threeFriends: "🔥", job: "🌾", enoch: "🚶", melchizedek: "🍞", caleb: "⛰️", jeremiah: "🌸", ezekiel: "🦴", ezra: "📜", nathan: "👉", hezekiah: "✉️", josiah: "📖", magi: "⭐", shepherds: "🐑", bartimaeus: "👁️", centurion: "🪖", jairus: "🙏", simonCyrene: "✝️", thief: "🕊️", jamesJust: "👂", mockingThief: "😠", jesusCross: "✝️", widow: "🪙", fisherman: "🎣", fourFriends: "🛏️", goodSamaritan: "🫒", zarephath: "🫓", shunammite: "🛏️", naaman: "🌊", maid: "🧺", bathsheba: "👑", mephibosheth: "🍞", sheba: "💎", leah: "🌾", esau: "🏹", hagar: "💧", lot: "🧂", jochebed: "🧺", pharaohDaughter: "👶", jethro: "⛺", zipporah: "🐑", loisEunice: "📜", balaam: "🫏", legionFreed: "🌊", prodigal: "🏠", ethiopian: "📜", johnPatmos: "🏝️", ehud: "🗡️", jephthah: "🛡️", joab: "⚔️", uriah: "🛡️", cyrus: "📜", zerubbabel: "🧱", vashti: "👑", michal: "🪢", jehu: "🏇", canaanite: "🍞", richRuler: "💎", cleopas: "🔥", malchus: "👂", jailer: "🔑", rhoda: "🚪", pharaoh: "𓂀", charioteer: "🐎", jezebel: "👑", baalProphet: "🗿", haman: "💍", delilah: "✂️", nebuchadnezzar: "🔥", ahab: "🍇", absalom: "💇", sapphira: "💰", pilate: "⚖️", caiaphas: "🕯️", herod: "𥥻", barabbas: "⛓️", herodias: "🍷", romanSoldier: "🛡️", romanSpearman: "🔱", romanArcher: "🏹", romanCavalry: "🐎", romanCenturion: "⚜️", sennacherib: "🦁", belshazzar: "🍷", korah: "🔥", achan: "🪙", sisera: "🛞", herodGreat: "👑", simonMagus: "💰", herodAgrippa: "🎭", gehazi: "🧥", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
@@ -395,11 +396,11 @@ function ParallaxArt({ src, alt, figure }: { src: string; alt: string; figure: F
     <>
       <div className="absolute inset-0" style={{ transform: shift(0.08) }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo */}
-        <img src={src} alt={alt} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
+        <img src={asset(src)} alt={alt} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
       </div>
       <div aria-hidden className="absolute inset-0" style={{ transform: shift(0.004), maskImage: cut, WebkitMaskImage: cut }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the same art, cut down to the figure */}
-        <img src={src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
+        <img src={asset(src)} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
       </div>
     </>
   );
@@ -429,7 +430,7 @@ export function CharacterCardFace({ id, ornament, rarity: printed }: { id: Chara
             <ParallaxArt src={art.src} alt={t(`char.${id}.name`)} figure={art.figure} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo
-            <img src={art.src} alt={t(`char.${id}.name`)} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(art.figure)} />
+            <img src={asset(art.src)} alt={t(`char.${id}.name`)} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(art.figure)} />
           )}
           {/* Real art gets a light foil so the illustration stays readable. */}
           {RARITY[rarity].foil > 0 && <Foil element={element} strength={0.12} />}

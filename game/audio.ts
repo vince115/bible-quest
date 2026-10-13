@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { asset } from "./assets";
 import { safeStorage } from "./locale";
 
 interface AudioStore {
@@ -69,12 +70,12 @@ function fadeVolume(audio: HTMLAudioElement, target: number, durationMs = 1000, 
 
 function getAudioElement(src: string): HTMLAudioElement {
   if (!activeAudio) {
-    activeAudio = new Audio(src);
+    activeAudio = new Audio(asset(src));
     activeAudio.loop = true;
     activeAudio.preload = "auto";
     currentSrc = src;
   } else if (currentSrc !== src) {
-    activeAudio.src = src;
+    activeAudio.src = asset(src);
     currentSrc = src;
   }
   return activeAudio;

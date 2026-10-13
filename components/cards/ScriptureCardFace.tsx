@@ -8,6 +8,7 @@ import { CARDS_V2 } from "@/game/v2/data";
 import type { CardId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
 import { EnergyIcon } from "./EnergyIcon";
+import { asset } from "@/game/assets";
 
 export const ENERGY_ELEMENT: Record<EnergyKind, Element> = { faith: "water", attack: "fire", guard: "wood" };
 export { ENERGY_ICON_SRC } from "./EnergyIcon";
@@ -85,7 +86,7 @@ export function ScriptureCardFace({ id }: { id: CardId }) {
       {art ? (
         <div className="absolute overflow-hidden rounded-[2.2cqw]" style={{ inset: "1.35cqw" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- static card art */}
-          <img src={art} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+          <img src={asset(art)} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-[0.4em] bg-gradient-to-b from-black/75 via-black/35 to-transparent px-[5%] pb-[12%] pt-[5%]">
             <div className="min-w-0 flex flex-col items-start text-left">
               {label}

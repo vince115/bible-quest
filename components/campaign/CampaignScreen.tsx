@@ -13,6 +13,7 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
 import type { CharacterId } from "@/game/v2/types";
+import { asset } from "@/game/assets";
 
 export function CampaignScreen() {
   const t = useT();
@@ -51,7 +52,7 @@ export function CampaignScreen() {
               <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
                 {stage.art ? (
                   // eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public
-                  <img src={stage.art} alt="" className="aspect-square h-full w-full object-cover" />
+                  <img src={asset(stage.art)} alt="" className="aspect-square h-full w-full object-cover" />
                 ) : boss ? (
                   <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
                     <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">

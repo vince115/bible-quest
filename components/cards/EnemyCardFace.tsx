@@ -12,6 +12,7 @@ import { ElementIcon } from "./ElementIcon";
 import { Foil } from "./HoloCard";
 import { CARD_RARITY, lookOf } from "./rarity";
 import { RarityMark } from "./RarityMark";
+import { asset } from "@/game/assets";
 
 const PORTRAIT: Record<EnemyId, string> = {
   goliath: "🗿",
@@ -244,7 +245,7 @@ export function EnemyCardFace({ id }: { id: EnemyId }) {
           <div className="relative h-full overflow-hidden rounded-[0.6%]">
             {/* eslint-disable-next-line @next/next/no-img-element -- static card art */}
             <img
-              src={art.src}
+              src={asset(art.src)}
               alt={t(`v2.enemy.${id}.name`)}
               draggable={false}
               className="absolute inset-0 h-full w-full object-cover"

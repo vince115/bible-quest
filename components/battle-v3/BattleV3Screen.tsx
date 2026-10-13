@@ -43,6 +43,7 @@ import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
+import { asset } from "@/game/assets";
 import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
@@ -612,7 +613,7 @@ function CastBurst({ kind, label, art }: { kind: EnergyKind; label: string; art?
           className="absolute inset-0 overflow-hidden rounded-xs"
         >
           <motion.img
-            src={art}
+            src={asset(art)}
             alt=""
             initial={{ scale: 1.15 }}
             animate={{ scale: 1.3 }}
@@ -939,7 +940,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={stageArt}
+            src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter transition-all duration-700"
           />
@@ -957,7 +958,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bq-reveal-spotlight">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={stageArt}
+            src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter brightness-105"
           />
@@ -1249,7 +1250,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={stageArt}
+            src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter transition-all duration-700"
           />
@@ -1267,7 +1268,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bq-reveal-spotlight">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={stageArt}
+            src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter brightness-105"
           />
