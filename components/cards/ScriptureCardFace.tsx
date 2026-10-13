@@ -19,6 +19,9 @@ const GROUND: Record<EnergyKind, string> = {
   guard: "radial-gradient(ellipse at 50% 45%, #249e5a 0%, #15733f 55%, #0f5930 100%)",
 };
 
+/** The gilt frame's tint: the energy's colour, at half strength. */
+const FRAME_TINT: Record<EnergyKind, string> = { faith: "#3f80dc", attack: "#c63e43", guard: "#249e5a" };
+
 /** Card illustrations in /public/cards/scripture (all 12 scripture cards have their full art). */
 const ART: Record<CardId, string> = {
   delivered: "/cards/scripture/delivered.jpg",
@@ -70,6 +73,12 @@ export function ScriptureCardFace({ id }: { id: CardId }) {
       draggable={false}
       aria-hidden
       className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)]"
+    />
+    {/* The frame's ornament picks up the card's colour (50% see-through), cut out with the frame itself. */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-10 opacity-50"
+      style={{ backgroundColor: FRAME_TINT[kind], WebkitMaskImage: "url(/cards/scripture-gilt-frame.png)", maskImage: "url(/cards/scripture-gilt-frame.png)", WebkitMaskSize: "100% 100%", maskSize: "100% 100%" }}
     />
     {/* 色彩帶（皮革底層）：外圈到內圈具備 50% 半透明黑色漸層，模擬外圍白框落下的相框陰影 (Photo Frame Inner Drop Shadow) */}
     <div
