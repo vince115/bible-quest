@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IoMusicalNotes } from "react-icons/io5";
-import { MdMusicOff } from "react-icons/md";
+import { Volume2, VolumeX } from "lucide-react";
 import { useAudioStore } from "@/game/audio";
 import { useT } from "@/game/locale";
 
@@ -31,7 +30,7 @@ export function AudioToggle() {
       }`}
     >
       <span className="select-none text-base text-white" aria-hidden="true">
-        {isMuted ? <MdMusicOff /> : <IoMusicalNotes />}
+        {isMuted ? <VolumeX size="1em" /> : <Volume2 size="1em" />}
       </span>
     </button>
   );
