@@ -73,6 +73,8 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   flood: { src: "/cards/flood.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  // The chariots charge in from the left, so the frame leans left of centre.
+  chariots: { src: "/cards/chariots.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
   // Enemy versions of villains who also exist as player cards share their art (see CharacterCardFace).
   pharaohHost: { src: "/cards/pharaoh.jpg", figure: { cx: 0.5, head: 0.175, feet: 0.965 } },
   chariotCaptain: { src: "/cards/charioteer.jpg", figure: { cx: 0.44, head: 0.105, feet: 0.94 } },
