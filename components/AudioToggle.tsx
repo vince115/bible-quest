@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IoMusicalNotes } from "react-icons/io5";
+import { MdMusicOff } from "react-icons/md";
 import { useAudioStore } from "@/game/audio";
 import { useT } from "@/game/locale";
 
@@ -25,11 +27,11 @@ export function AudioToggle() {
       aria-label={isMuted ? t("ui.soundOff") : t("ui.soundOn")}
       title={isMuted ? t("ui.soundOff") : t("ui.soundOn")}
       className={`fixed top-2.5 right-24 sm:top-auto sm:bottom-3 sm:right-28 z-40 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-stone-600 bg-stone-900/90 text-xs sm:text-sm shadow-lg backdrop-blur-sm transition active:scale-95 hover:bg-stone-800 ${
-        isMuted ? "opacity-70 hover:opacity-100" : "text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.25)]"
+        isMuted ? "opacity-70 hover:opacity-100" : "shadow-[0_0_10px_rgba(255,255,255,0.2)]"
       }`}
     >
-      <span className="select-none" aria-hidden="true">
-        {isMuted ? "🔇" : "🎵"}
+      <span className="select-none text-base text-white" aria-hidden="true">
+        {isMuted ? <MdMusicOff /> : <IoMusicalNotes />}
       </span>
     </button>
   );
