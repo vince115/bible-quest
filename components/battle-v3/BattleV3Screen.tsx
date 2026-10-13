@@ -896,6 +896,13 @@ function SkillFocus({
 /** How many characters can go to battle in free mode. */
 const MAX_LINEUP = 3;
 
+/** The drop-down arrow of the phone selects, drawn as a background so it can sit a little in from the edge. */
+const SELECT_ARROW = {
+  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fef3c7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+  backgroundPosition: "right 0.7rem center",
+  backgroundSize: "0.9em",
+} as const;
+
 /**
  * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
  * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
@@ -992,7 +999,8 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         value={stage}
         onChange={(e) => setStage(e.target.value as StageId)}
         aria-label={t("v3.stage.title")}
-        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 px-4 py-1.5 text-center text-base font-bold text-amber-100 focus:outline-none sm:hidden"
+        style={SELECT_ARROW}
+        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 pl-4 pr-9 py-1.5 text-center text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
       >
         {STAGE_ORDER.map((st) => (
           <option key={st} value={st}>
@@ -1073,7 +1081,8 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             value={rarity}
             onChange={(e) => setRarity(e.target.value as Rarity | "all")}
             aria-label={t("v3.demo.filter")}
-            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 px-3 py-2 text-base font-bold text-amber-100 focus:outline-none sm:hidden"
+            style={SELECT_ARROW}
+            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 pl-3 pr-8 py-2 text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
           >
             {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => (
               <option key={f} value={f}>
