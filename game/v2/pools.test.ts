@@ -153,10 +153,18 @@ describe("tabletop mode", () => {
     expect(s.party.david.cards).toEqual(under([2], [], [2]));
     expect([s.party.david.sp, s.party.david.mp]).toEqual([2, 2]);
     expect(s.attached).toBe(2);
-    expect(playCard(s, 202, "david")).toBe(s); // wings (green) is a third card this turn
+    expect(playCard(s, 202, "samuel")).toBe(s); // wings (green) is a third card this turn
     s = startNextTurn(s, seeded(), 0);
-    s = playCard(s, 202, "david");
-    expect(s.party.david.cards).toEqual(under([2], [1], [2]));
+    s = playCard(s, 202, "samuel");
+    expect(s.party.david.cards).toEqual(under([2], [], [2]));
+    expect(s.party.samuel.cards).toEqual(under([], [1]));
+  });
+
+  it("only takes a card for someone who has a skill of its colour", () => {
+    const s = withHand(tabletop(), "wings", "stones");
+    expect(playCard(s, 200, "david")).toBe(s); // David has no green skill
+    expect(playCard(withHand(tabletop(), "assurance"), 200, "jonathan")).not.toBe(s); // Jonathan's Covenant Shield is magic: blue goes to him
+    expect(playCard(s, 200, "samuel")).not.toBe(s);
   });
 
   it("allows only two energy cards a turn, whatever their colour", () => {

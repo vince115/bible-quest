@@ -28,7 +28,7 @@ import {
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
-import { actionBase, attachedTotal, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
+import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
 import { NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
@@ -43,7 +43,7 @@ import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
-import { EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
+import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
 
@@ -154,7 +154,7 @@ function EnemyCard({
           else if (!pending) onView();
         }}
         aria-label={t(`v2.enemy.${id}.name`)}
-        className={`relative w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
+        className={`relative z-10 w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
           isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
         }`}
       >
@@ -249,18 +249,26 @@ function PoolBars({ b, id, t }: { b: BattleState; id: CharacterId; t: T }) {
   // The tabletop rules: the energy cards stuck under the character, each as a chip with its value, and the total against the cap.
   if (b.pools === "table") {
     const cards = cardsOf(b, id);
+    // Each attached card is a little card tucked under the character, fanned out so every one and its value can be seen.
+    const tiles: { kind: EnergyKind; v: number }[] = [
+      ...cards.red.map((v) => ({ kind: "attack" as const, v })),
+      ...cards.green.map((v) => ({ kind: "guard" as const, v })),
+      ...cards.blue.map((v) => ({ kind: "faith" as const, v })),
+    ];
     return (
-      <div className="pointer-events-none flex w-full flex-wrap items-center gap-0.5 px-0.5" title={t("v3.pool.table.desc")}>
-        {cards.red.map((v, i) => (
-          <span key={`r${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#9b1e23] text-[10px] font-black leading-none text-white">{v}</span>
-        ))}
-        {cards.green.map((v, i) => (
-          <span key={`g${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#15733f] text-[10px] font-black leading-none text-white">{v}</span>
-        ))}
-        {cards.blue.map((v, i) => (
-          <span key={`b${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#205ec0] text-[10px] font-black leading-none text-white">{v}</span>
-        ))}
-        <span className="ml-auto text-[9px] font-black tabular-nums text-stone-200 sm:text-[10px]">{attachedTotal(b, id)}/{energyCap(id)}</span>
+      <div className="pointer-events-none relative z-20 -mt-[26px] flex w-full items-end justify-between gap-1 px-0.5" title={t("v3.pool.table.desc")}>
+        <div className="flex min-h-11 items-end pl-1">
+          {tiles.map((c, i) => (
+            <span
+              key={i}
+              className="-ml-1.5 flex h-11 w-8 shrink-0 items-center justify-center rounded-[3px] border border-white/80 shadow-[0_2px_4px_rgb(0_0_0/0.55)] first:ml-0"
+              style={{ background: ENERGY_DISC[c.kind], zIndex: i, transform: `rotate(${(i - (tiles.length - 1) / 2) * 3}deg)` }}
+            >
+              <span className="self-center text-xl font-black leading-none text-white [-webkit-text-stroke:2.5px_rgb(0_0_0/0.5)] [paint-order:stroke_fill]">{c.v}</span>
+            </span>
+          ))}
+        </div>
+        <span className="shrink-0 text-[9px] font-black tabular-nums text-stone-200 sm:text-[10px]">{attachedTotal(b, id)}/{energyCap(id)}</span>
       </div>
     );
   }
@@ -337,11 +345,12 @@ function CharacterSlot({
           </span>
         )}
       </button>
+      {b.pools === "table" && alive && <PoolBars b={b} id={id} t={t} />}
       {/* Front-line tag under the card */}
       <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
         {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
       </div>
-      {b.pools !== "team" && alive && <PoolBars b={b} id={id} t={t} />}
+      {b.pools !== "team" && b.pools !== "table" && alive && <PoolBars b={b} id={id} t={t} />}
     </div>
   );
 }
@@ -1484,10 +1493,12 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                     {b.lineup.filter((cid) => isAlive(b, cid)).map((cid) => {
                       const ch = b.party[cid];
                       const room = b.pools === "table" ? energyRoom(b, cid) - cardValue(cardId) + 1 : kind === "attack" ? R.pools.spCap - ch.sp : kind === "faith" ? mpCap(cid) - ch.mp : Infinity;
+                      // The tabletop rules: a colour only goes to someone with a skill of that colour.
+                      const useless = b.pools === "table" && !hasSkillOfColor(cid, kind);
                       return (
                         <button
                           key={cid}
-                          disabled={!playable || (b.pools === "table" && room <= 0)}
+                          disabled={!playable || (b.pools === "table" && (room <= 0 || useless))}
                           onClick={() => {
                             if (viewingScripture.uid !== undefined && playable) {
                               play(viewingScripture.uid, cid);
@@ -1499,7 +1510,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                           <span className="text-sm font-black">{t(`char.${cid}.name`)}</span>
                           <span className="text-[11px] font-bold tabular-nums text-slate-600">
                             {b.pools === "table" ? `🔴${ch.sp} 🟢${cardsOf(b, cid).green.reduce((n, v) => n + v, 0)} 🔵${ch.mp} · ${attachedTotal(b, cid)}/${energyCap(cid)}` : `MP ${ch.mp}/${mpCap(cid)} · SP ${ch.sp}/${R.pools.spCap}`}
-                            {room <= 0 && <span className="ml-1 text-red-700">{t("v3.pool.full")}</span>}
+                            {useless ? <span className="ml-1 text-red-700">{t("v3.pool.noSkill")}</span> : room <= 0 && <span className="ml-1 text-red-700">{t("v3.pool.full")}</span>}
                           </span>
                         </button>
                       );

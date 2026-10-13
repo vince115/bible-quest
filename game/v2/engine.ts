@@ -2,6 +2,7 @@
 // Cards turn into energy; characters spend energy on skills (one skill per character per turn).
 import {
   CARDS_V2,
+  CHARACTER_SKILLS,
   CHARACTER_ELEMENT,
   DECK_V2,
   DEFAULT_LINEUP,
@@ -1163,6 +1164,11 @@ export const cardValue = (card: CardId): number => (R.table.flatValues ? 1 : CAR
  * Personal pools: `target` is the ally who receives it. Red (attack) cards give them SP, blue (faith) cards MP,
  * and green (guard) cards a Shield of R.pools.cardShield per point that lasts until the end of the turn.
  */
+/** The tabletop rules: a card only goes to someone who has a skill of its colour (otherwise it would just take up room). */
+export function hasSkillOfColor(who: CharacterId, kind: "attack" | "guard" | "faith"): boolean {
+  return CHARACTER_SKILLS[who].some((k) => tableKind(k) === kind);
+}
+
 export function playCard(state: BattleState, uid: number, target?: CharacterId): BattleState {
   if (state.result !== "ongoing") return state;
   const i = state.hand.findIndex((c) => c.uid === uid);
@@ -1170,6 +1176,7 @@ export function playCard(state: BattleState, uid: number, target?: CharacterId):
   if (perChar(state) && (target === undefined || !isAlive(state, target))) return state;
   // The tabletop rules: the card's value has to fit under the character's energy cap.
   if (table(state) && cardValue(state.hand[i].card) > energyRoom(state, target!)) return state;
+  if (table(state) && !hasSkillOfColor(target!, CARDS_V2[state.hand[i].card].energy === "attack" ? "attack" : CARDS_V2[state.hand[i].card].energy === "guard" ? "guard" : "faith")) return state;
   const s = clone(state);
   const [inst] = s.hand.splice(i, 1);
   s.discard.push(inst);
