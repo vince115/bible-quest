@@ -195,6 +195,19 @@ function Header({ id, light }: { id: EnemyId; light?: boolean }) {
   );
 }
 
+/** A move's number; "60/80" is two stages (before / after the boss falls to half HP), the second in red. */
+function MoveAmount({ value }: { value: string }) {
+  const [first, second] = value.split("/");
+  if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
+  return (
+    <span className="text-[1.15em] font-black">
+      {first}
+      <span className="px-[0.1em] text-stone-900/50">/</span>
+      <span className="text-[#c0281f]">{second}</span>
+    </span>
+  );
+}
+
 function Body({ id }: { id: EnemyId }) {
   const t = useT();
   const element = ENEMY_ELEMENT[id];
@@ -211,7 +224,7 @@ function Body({ id }: { id: EnemyId }) {
             className="flex items-center gap-[3%] border-b border-stone-900/15 pb-[1%] last:border-0"
           >
             <span className="flex-1 text-[0.95em] font-black">{t(m.key)}</span>
-            <span className="text-[1.15em] font-black">{m.amount}</span>
+            <MoveAmount value={m.amount} />
           </div>
         ))}
       </div>
