@@ -1,8 +1,9 @@
 "use client";
 
+import { useContext } from "react";
 // Full-size character card face (TCG layout): name/HP, art, skills, passive, weakness/resistance, verse.
 // With an illustration the card is full-art; without one it uses an art window with the character's emoji.
-import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, mpCap, NEVER_FALLS, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, CHARACTER_SKILLS, energyCap, MAX_HP, mpCap, NEVER_FALLS, RULES_V2 as R, SKILLS, STORY, tableKind } from "@/game/v2/data";
 import { baseSupportAmount, elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -13,6 +14,7 @@ import { CARD_RARITY, RARITY, type Rarity } from "./rarity";
 import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
 import { EnergyIcon } from "./EnergyIcon";
+import { PoolModeContext } from "./PoolModeContext";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
 const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", seth: "🌱", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", elizabeth: "🤰", mordecai: "🚪", sarah: "😄", rebekah: "🏺", rachel: "🐑", barak: "⛰️", jael: "⛺", josephArimathea: "🪨", ananias: "👁️", threeFriends: "🔥", job: "🌾", enoch: "🚶", melchizedek: "🍞", caleb: "⛰️", jeremiah: "🌸", ezekiel: "🦴", ezra: "📜", nathan: "👉", hezekiah: "✉️", josiah: "📖", magi: "⭐", shepherds: "🐑", bartimaeus: "👁️", centurion: "🪖", jairus: "🙏", simonCyrene: "✝️", thief: "🕊️", jamesJust: "👂", mockingThief: "😠", jesusCross: "✝️", widow: "🪙", fisherman: "🎣", fourFriends: "🛏️", goodSamaritan: "🫒", zarephath: "🫓", shunammite: "🛏️", naaman: "🌊", maid: "🧺", bathsheba: "👑", mephibosheth: "🍞", sheba: "💎", leah: "🌾", esau: "🏹", hagar: "💧", lot: "🧂", jochebed: "🧺", pharaohDaughter: "👶", jethro: "⛺", zipporah: "🐑", loisEunice: "📜", balaam: "🫏", legionFreed: "🌊", prodigal: "🏠", ethiopian: "📜", johnPatmos: "🏝️", ehud: "🗡️", jephthah: "🛡️", joab: "⚔️", uriah: "🛡️", cyrus: "📜", zerubbabel: "🧱", vashti: "👑", michal: "🪢", jehu: "🏇", canaanite: "🍞", richRuler: "💎", cleopas: "🔥", malchus: "👂", jailer: "🔑", rhoda: "🚪", pharaoh: "𓂀", charioteer: "🐎", jezebel: "👑", baalProphet: "🗿", haman: "💍", delilah: "✂️", nebuchadnezzar: "🔥", ahab: "🍇", absalom: "💇", sapphira: "💰", pilate: "⚖️", caiaphas: "🕯️", herod: "𥥻", barabbas: "⛓️", herodias: "🍷", romanSoldier: "🛡️", romanSpearman: "🔱", romanArcher: "🏹", romanCavalry: "🐎", romanCenturion: "⚜️", sennacherib: "🦁", belshazzar: "🍷", korah: "🔥", achan: "🪙", sisera: "🛞", herodGreat: "👑", simonMagus: "💰", herodAgrippa: "🎭", gehazi: "🧥", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
@@ -265,6 +267,7 @@ const MP_COLOR: Record<Element, string> = {
 /** Name, title, HP and element. */
 function Header({ id, light }: { id: CharacterId; light?: boolean }) {
   const t = useT();
+  const mode = useContext(PoolModeContext);
   return (
     <div className={`flex items-end justify-between px-[6%] ${light ? "text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]" : ""}`}>
       <div className="min-w-0">
@@ -285,8 +288,8 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
           <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute -left-[0.68em] -top-[0.11em] -z-10 h-[0.95em] w-[0.8em] overflow-visible [text-shadow:none]">
             <line x1="3" y1="97" x2="97" y2="3" stroke="black" strokeOpacity="0.1" strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           </svg>
-          <span className="text-[0.5em] font-bold">MP</span>
-          <span className="text-[1.05em] font-black leading-none">{mpCap(id)}</span>
+          <span className="text-[0.5em] font-bold">{mode === "table" ? "能量" : "MP"}</span>
+          <span className="text-[1.05em] font-black leading-none">{mode === "table" ? energyCap(id) : mpCap(id)}</span>
         </span>
       </div>
     </div>
@@ -296,6 +299,7 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
 /** Passive, skills, weakness/resistance, verse and card number. */
 function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rarity: Rarity }) {
   const t = useT();
+  const mode = useContext(PoolModeContext);
   const element = CHARACTER_ELEMENT[id];
   // A card that never falls takes no damage, so it has no weakness or resistance to show.
   const weak = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
@@ -323,9 +327,9 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
           return (
             <div key={skill} className={`border-b border-stone-900/15 last:border-0 ${compact ? "pb-[1%]" : "pb-[2%]"}`}>
               <div className="flex items-center gap-[3%]">
-                <span className="w-[22%] shrink-0 flex items-center gap-[0.1em]">
+                <span className="w-[22%] shrink-0 flex items-center gap-[0.2em]">
                   {Array.from({ length: def.cost }, (_, i) => (
-                    <EnergyIcon key={i} kind={def.kind} className="h-[1.1em] w-[1.1em] object-contain drop-shadow" />
+                    <EnergyIcon key={i} kind={mode === "table" ? tableKind(skill) : def.kind} circle className="h-[0.9em] w-[0.9em]" />
                   ))}
                 </span>
                 <span className="flex-1 text-[0.95em] font-black">{t(`v2.skill.${skill}.name`)}</span>

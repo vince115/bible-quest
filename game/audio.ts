@@ -15,7 +15,7 @@ interface AudioStore {
 export const useAudioStore = create<AudioStore>()(
   persist(
     (set) => ({
-      muted: false,
+      muted: true, // music starts off; the toggle turns it on and the choice is remembered
       volume: 0.45,
       setMuted: (muted) => set({ muted }),
       toggleMuted: () => set((s) => ({ muted: !s.muted })),

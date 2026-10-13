@@ -37,6 +37,7 @@ import {
   STORY,
   RULES_V2 as R,
   SKILLS,
+  tableKind,
 } from "./data";
 import type {
   CardId,
@@ -835,7 +836,7 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
           acted: false,
           mp: pools === "personal" && lineup.includes(id) ? Math.round((mpCap(id) * R.pools.startMpFraction) / 10) * 10 : 0,
           sp: pools === "personal" && lineup.includes(id) ? R.pools.startSp : 0,
-          ...(pools === "table" ? { cards: { red: [], blue: [] } } : {}),
+          ...(pools === "table" ? { cards: { red: [], green: [], blue: [] } } : {}),
         },
       ]),
     ) as BattleState["party"],
@@ -966,9 +967,14 @@ export const perChar = (s: BattleState): boolean => s.pools !== "team";
 const sumOf = (a: number[]) => a.reduce((n, v) => n + v, 0);
 
 /** The energy cards stuck under `id` (tabletop mode). */
-export function cardsOf(s: BattleState, id: CharacterId): { red: number[]; blue: number[] } {
-  return (s.party[id].cards ??= { red: [], blue: [] });
+export function cardsOf(s: BattleState, id: CharacterId): { red: number[]; green: number[]; blue: number[] } {
+  const c = (s.party[id].cards ??= { red: [], green: [], blue: [] });
+  c.green ??= [];
+  return c as { red: number[]; green: number[]; blue: number[] };
 }
+
+/** Which colour of energy card pays for a skill of this kind: strikes red, heals and defence (guard) green, magic (faith) blue. */
+export const energyColor = (kind: "attack" | "guard" | "faith"): "red" | "green" | "blue" => (kind === "attack" ? "red" : kind === "guard" ? "green" : "blue");
 
 /** Keeps the MP and SP totals in step with the cards under the character (tabletop mode). */
 function sync(s: BattleState, id: CharacterId) {
@@ -978,7 +984,7 @@ function sync(s: BattleState, id: CharacterId) {
 }
 
 /** Total value of the energy cards under `id`. */
-export const attachedTotal = (s: BattleState, id: CharacterId): number => sumOf(cardsOf(s, id).red) + sumOf(cardsOf(s, id).blue);
+export const attachedTotal = (s: BattleState, id: CharacterId): number => sumOf(cardsOf(s, id).red) + sumOf(cardsOf(s, id).green) + sumOf(cardsOf(s, id).blue);
 
 /** How much more energy can be stuck under `id` before they reach their cap (tabletop mode). */
 export const energyRoom = (s: BattleState, id: CharacterId): number => energyCap(id) - attachedTotal(s, id);
@@ -1048,9 +1054,15 @@ export function gainAttack(s: BattleState, who: CharacterId, n: number): number 
   return n;
 }
 
-/** Gives `who` Guard energy. With personal pools or the tabletop rules Guard skills are paid with MP (blue), so this is MP. */
+/** Gives `who` Guard energy: green cards of value 1 in the tabletop mode; with personal pools Guard skills are paid with MP, so this is MP. */
 export function gainGuard(s: BattleState, who: CharacterId, n: number): number {
-  if (perChar(s)) return gainFaith(s, who, n);
+  if (table(s)) {
+    const gained = Math.max(0, Math.min(n, energyRoom(s, who)));
+    for (let i = 0; i < gained; i++) cardsOf(s, who).green.push(1);
+    sync(s, who);
+    return gained;
+  }
+  if (personal(s)) return gainFaith(s, who, n);
   const gained = Math.max(0, Math.min(n, R.maxGuard - s.energy.guard));
   s.energy.guard += gained;
   return gained;
@@ -1096,7 +1108,7 @@ export function drainFaith(s: BattleState, who: CharacterId | null, n: number): 
 export function payment(s: BattleState, skill: SkillId): EnergyPool | null {
   const { kind, cost, owner } = SKILLS[skill];
   // The tabletop rules: the owner discards their cards of the skill's colour, worth at least the cost (no change given).
-  if (table(s)) return pickCards(cardsOf(s, owner)[kind === "attack" ? "red" : "blue"], cost) ? { faith: 0, attack: 0, guard: 0 } : null;
+  if (table(s)) return pickCards(cardsOf(s, owner)[energyColor(tableKind(skill))], cost) ? { faith: 0, attack: 0, guard: 0 } : null;
   // Personal pools: strikes are paid with the owner's SP, everything else with the owner's MP (nothing comes from a team pool).
   if (personal(s)) return (kind === "attack" ? s.party[owner].sp >= spCost(skill) : s.party[owner].mp >= mpCost(skill)) ? { faith: 0, attack: 0, guard: 0 } : null;
   if (kind === "faith") return s.energy.faith >= cost ? { faith: cost, attack: 0, guard: 0 } : null;
@@ -1104,6 +1116,20 @@ export function payment(s: BattleState, skill: SkillId): EnergyPool | null {
   const faith = cost - own;
   if (faith > s.energy.faith) return null;
   return { faith, attack: kind === "attack" ? own : 0, guard: kind === "guard" ? own : 0 };
+}
+
+/**
+ * The tabletop rules: which of the owner's cards would be spent on a skill and how much of their value is wasted
+ * (no change is given), or null when they cannot pay. `spent` are the values of the cards discarded.
+ */
+export function paymentPreview(s: BattleState, skill: SkillId): { spent: number[]; waste: number } | null {
+  if (!table(s)) return null;
+  const { cost, owner } = SKILLS[skill];
+  const arr = cardsOf(s, owner)[energyColor(tableKind(skill))];
+  const pick = pickCards(arr, cost);
+  if (!pick) return null;
+  const spent = pick.map((i) => arr[i]);
+  return { spent, waste: sumOf(spent) - cost };
 }
 
 /** What a skill costs in this battle, and which pool pays it: SP (strikes) or MP (everything else). Points in the team and tabletop modes. */
@@ -1120,8 +1146,8 @@ export function cardBlockReason(s: BattleState, card: CardId): string | null {
   if (def.condition === "turn3" && s.turn < 3) return "v2.reason.cardTurn3";
   // "Needs some Faith": any ally with MP in the personal mode (a blue card in the tabletop mode), else the team pool.
   if (def.condition === "needFaith" && (table(s) ? !living(s).some((id) => s.party[id].mp >= 1) : personal(s) ? !living(s).some((id) => s.party[id].mp >= R.pools.mpUnit) : s.energy.faith < 1)) return "v2.reason.cardNeedFaith";
-  // The tabletop rules: only so many energy cards can be stuck on in a turn (a Shield card is not energy).
-  if (table(s) && def.energy !== "guard" && s.attached >= R.table.attachPerTurn) return "v2.reason.attachLimit";
+  // The tabletop rules: only so many energy cards can be stuck on in a turn.
+  if (table(s) && s.attached >= R.table.attachPerTurn) return "v2.reason.attachLimit";
   return null;
 }
 
@@ -1132,7 +1158,8 @@ export const playableHand = (s: BattleState): CardInstance[] => s.hand.filter((c
 export const cardValue = (card: CardId): number => (R.table.flatValues ? 1 : CARDS_V2[card].amount);
 
 /**
- * Turn a card into energy. Any number of cards may be played per turn (in the tabletop mode at most R.table.attachPerTurn energy cards).
+ * Turn a card into energy. Any number of cards may be played per turn (in the tabletop mode at most R.table.attachPerTurn
+ * are stuck on, red, green or blue by the card's colour).
  * Personal pools: `target` is the ally who receives it. Red (attack) cards give them SP, blue (faith) cards MP,
  * and green (guard) cards a Shield of R.pools.cardShield per point that lasts until the end of the turn.
  */
@@ -1142,33 +1169,18 @@ export function playCard(state: BattleState, uid: number, target?: CharacterId):
   if (i < 0 || cardBlockReason(state, state.hand[i].card) !== null) return state;
   if (perChar(state) && (target === undefined || !isAlive(state, target))) return state;
   // The tabletop rules: the card's value has to fit under the character's energy cap.
-  if (table(state) && CARDS_V2[state.hand[i].card].energy !== "guard" && cardValue(state.hand[i].card) > energyRoom(state, target!)) return state;
+  if (table(state) && cardValue(state.hand[i].card) > energyRoom(state, target!)) return state;
   const s = clone(state);
   const [inst] = s.hand.splice(i, 1);
   s.discard.push(inst);
   const { energy: kind, amount } = CARDS_V2[inst.card];
   if (table(s)) {
     const who = target!;
-    if (kind === "guard") {
-      // A green card heals a hurt character (not past their maximum); one who is unhurt gets the same amount as extra HP instead.
-      const value = R.table.cardGreen * amount;
-      const hurt = MAX_HP[who] - s.party[who].hp;
-      if (hurt > 0) {
-        const healed = Math.min(value, hurt);
-        s.party[who].hp += healed;
-        log(s, "v2.log.playHeal", "player", { card: inst.card, char: who, n: healed, hp: s.party[who].hp });
-      } else {
-        const before = s.party[who].shield;
-        addShield(s, who, value);
-        log(s, "v2.log.playBonus", "player", { card: inst.card, char: who, n: s.party[who].shield - before, total: s.party[who].shield });
-      }
-    } else {
-      const value = cardValue(inst.card);
-      cardsOf(s, who)[kind === "attack" ? "red" : "blue"].push(value);
-      sync(s, who);
-      s.attached += 1;
-      log(s, "v2.log.playTo", "player", { card: inst.card, char: who, energy: kind === "attack" ? "attack" : "faith", n: value });
-    }
+    const value = cardValue(inst.card);
+    cardsOf(s, who)[energyColor(kind === "attack" ? "attack" : kind === "guard" ? "guard" : "faith")].push(value);
+    sync(s, who);
+    s.attached += 1;
+    log(s, "v2.log.playTo", "player", { card: inst.card, char: who, energy: kind === "attack" ? "attack" : kind === "guard" ? "guard" : "faith", n: value });
     return s;
   }
   if (personal(s)) {
@@ -1399,10 +1411,13 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
   s.energy.attack -= pay.attack;
   s.energy.guard -= pay.guard;
   if (table(s)) {
-    const arr = cardsOf(s, def.owner)[def.kind === "attack" ? "red" : "blue"];
+    const arr = cardsOf(s, def.owner)[energyColor(tableKind(skill))];
     const pick = pickCards(arr, def.cost) ?? [];
+    const spent = pick.map((i) => arr[i]);
     for (const i of [...pick].sort((a, b) => b - a)) arr.splice(i, 1);
     sync(s, def.owner);
+    // No change is given: say so when a bigger card paid for a smaller cost.
+    if (sumOf(spent) > def.cost) log(s, "v2.log.wasted", "detail", { char: def.owner, n: sumOf(spent) - def.cost, spent: spent.join("+") });
   } else if (personal(s)) {
     if (def.kind === "attack") s.party[def.owner].sp -= spCost(skill);
     else s.party[def.owner].mp -= mpCost(skill);

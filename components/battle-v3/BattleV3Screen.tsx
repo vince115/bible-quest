@@ -28,8 +28,8 @@ import {
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
-import { actionBase, attachedTotal, attackableEnemies, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
-import { NEVER_FALLS, PARTY_ORDER, personOf } from "@/game/v2/data";
+import { actionBase, attachedTotal, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
+import { NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
@@ -43,7 +43,8 @@ import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
-import { EnergyIcon } from "@/components/cards/EnergyIcon";
+import { EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
+import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
 
 type T = ReturnType<typeof useT>;
@@ -231,12 +232,11 @@ function HpBadge({ hp, max, shield = 0, big, endless, bonus }: { hp: number; max
  * status chips on the other. Clicking it opens the skill view, picks it as a target, or promotes it to the front line.
  */
 /** What a scripture card does when it is played at the table, in the personal-pool battles: SP, MP, or a Shield. */
-function cardEffect(kind: EnergyKind, amount: number, mode: PoolMode = "personal", card?: CardId): { icon: string; text: string } {
+function cardEffect(kind: EnergyKind, amount: number, mode: PoolMode = "personal", card?: CardId): { icon: string; text: string; disc?: EnergyKind } {
   if (mode === "table") {
     const value = card ? cardValue(card) : amount;
-    if (kind === "attack") return { icon: "🔴", text: `紅 +${value}` };
-    if (kind === "faith") return { icon: "🔵", text: `藍 +${value}` };
-    return { icon: "💚", text: `回血 ${R.table.cardGreen * amount}（滿血＝額外血量）` };
+    // Just the coloured circle and the value: the colour says which energy it is.
+    return { icon: "", text: `${value}`, disc: kind };
   }
   if (kind === "attack") return { icon: "⚔️", text: `SP +${amount * R.pools.spUnit}` };
   if (kind === "faith") return { icon: "✨", text: `MP +${amount * R.pools.mpUnit}` };
@@ -252,18 +252,21 @@ function PoolBars({ b, id, t }: { b: BattleState; id: CharacterId; t: T }) {
     return (
       <div className="pointer-events-none flex w-full flex-wrap items-center gap-0.5 px-0.5" title={t("v3.pool.table.desc")}>
         {cards.red.map((v, i) => (
-          <span key={`r${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-red-600 text-[10px] font-black leading-none text-white">{v}</span>
+          <span key={`r${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#9b1e23] text-[10px] font-black leading-none text-white">{v}</span>
+        ))}
+        {cards.green.map((v, i) => (
+          <span key={`g${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#15733f] text-[10px] font-black leading-none text-white">{v}</span>
         ))}
         {cards.blue.map((v, i) => (
-          <span key={`b${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-sky-500 text-[10px] font-black leading-none text-white">{v}</span>
+          <span key={`b${i}`} className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#205ec0] text-[10px] font-black leading-none text-white">{v}</span>
         ))}
         <span className="ml-auto text-[9px] font-black tabular-nums text-stone-200 sm:text-[10px]">{attachedTotal(b, id)}/{energyCap(id)}</span>
       </div>
     );
   }
   const rows = [
-    { key: "mp", label: "MP", value: c.mp, max: mpCap(id), bar: "bg-sky-400", title: t("v3.pool.mp.desc") },
-    { key: "sp", label: "SP", value: c.sp, max: R.pools.spCap, bar: "bg-red-500", title: t("v3.pool.sp.desc") },
+    { key: "mp", label: "MP", value: c.mp, max: mpCap(id), bar: "bg-[#3f80dc]", title: t("v3.pool.mp.desc") },
+    { key: "sp", label: "SP", value: c.sp, max: R.pools.spCap, bar: "bg-[#c63e43]", title: t("v3.pool.sp.desc") },
   ];
   return (
     <div className="pointer-events-none grid w-full gap-0.5 px-0.5">
@@ -490,9 +493,15 @@ function SkillSlotsRow({
                   </span>
 
                   {/* Top-Right: Energy Amount Badge */}
-                  <span className="absolute -right-1 -top-2 z-20 flex items-center gap-0.5 rounded-full border border-white bg-slate-900/90 px-1 py-0.2 shadow sm:-right-1.5 sm:-top-2.5 sm:px-1.5">
+                  <span className={`absolute -right-1 -top-2 z-20 flex items-center gap-0.5 sm:-right-1.5 sm:-top-2.5 ${b.pools === "team" ? "rounded-full border border-white bg-slate-900/90 px-1 py-0.2 shadow sm:px-1.5" : "[filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.9))]"}`}>
                     {b.pools !== "team" ? (
-                      <span className="text-[9px] font-black text-amber-200 sm:text-[11px]">{cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}</span>
+                      cardEffect(kind, amount, b.pools, cardId).disc ? (
+                        <EnergyDisc kind={cardEffect(kind, amount, b.pools, cardId).disc!} className="h-6 w-6 text-sm sm:h-7 sm:w-7 sm:text-base">
+                          {cardEffect(kind, amount, b.pools, cardId).text}
+                        </EnergyDisc>
+                      ) : (
+                        <span className="text-[10px] font-black text-amber-200 sm:text-[11px]">{cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}</span>
+                      )
                     ) : (
                       <>
                         <EnergyIcon kind={kind} className="h-3 w-3 sm:h-3.5 sm:w-3.5 object-contain" />
@@ -787,42 +796,64 @@ function SkillFocus({
               // Charge toward the cost, one segment per point: Faith pays for itself; Attack or Guard can be topped up with Faith.
               // Personal pools: strikes are paid with the character's SP, everything else with their MP (nothing is topped up).
               const mine = b.pools === "personal";
+              // The tabletop rules re-sort some skills into blue magic; the other versions keep each skill's own kind.
+              const kind = b.pools === "table" ? tableKind(skill) : def.kind;
               const tab = b.pools === "table";
-              const pool = tab ? (def.kind === "attack" ? b.party[id].sp : b.party[id].mp) : Math.floor((def.kind === "attack" ? b.party[id].sp / R.pools.spUnit : b.party[id].mp / R.pools.mpUnit)); // in points
-              const charged = mine || tab ? Math.min(def.cost, pool) : Math.min(def.cost, def.kind === "faith" ? b.energy.faith : b.energy[def.kind] + b.energy.faith);
+              const pool = tab ? cardsOf(b, id)[energyColor(kind)].reduce((n, v) => n + v, 0) : Math.floor((kind === "attack" ? b.party[id].sp / R.pools.spUnit : b.party[id].mp / R.pools.mpUnit)); // in points
+              const charged = mine || tab ? Math.min(def.cost, pool) : Math.min(def.cost, kind === "faith" ? b.energy.faith : b.energy[kind] + b.energy.faith);
               // Segments paid by the skill's own energy come first, in its colour; any topped up with Faith show yellow.
-              const own = mine || tab ? charged : def.kind === "faith" ? charged : Math.min(def.cost, b.energy[def.kind]);
-              const segmentKind: EnergyKind = mine || tab ? (def.kind === "attack" ? "attack" : "faith") : def.kind;
+              const own = mine || tab ? charged : kind === "faith" ? charged : Math.min(def.cost, b.energy[kind]);
+              const segmentKind: EnergyKind = mine || tab ? (kind === "attack" ? "attack" : "faith") : kind;
               return (
                 <button
                   key={skill}
                   onClick={() => cast(skill)}
                   disabled={!ready || !!casting}
                   title={reason ? t(reason) : t(`v2.skill.${skill}.desc`, { n: amount })}
-                  className={`group flex items-center gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 enabled:hover:from-white disabled:cursor-not-allowed ${short ? "disabled:opacity-50" : "disabled:opacity-70 disabled:grayscale"}`}
+                  className={`group flex items-center gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-left text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 enabled:hover:from-white disabled:cursor-not-allowed ${short ? "disabled:opacity-60" : "disabled:opacity-80"}`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
+                      {/* The energy that pays for it, at a glance: red for strikes, green for heals and defence, blue for magic. */}
+                      <EnergyIcon kind={kind} circle className="h-[1.1em] w-[1.1em] text-sm" />
                       <span className="text-sm font-black">{t(`v2.skill.${skill}.name`)}</span>
                       {def.cost > 0 && (
                         <span className="flex items-center gap-0.5" aria-label={`${charged}/${def.cost}`}>
                           {mine ? (
                             <>
-                              <span className="mr-0.5 text-[9px] font-black text-slate-600">{def.kind === "attack" ? `SP ${spCost(skill)}` : `MP ${mpCost(skill)}`}</span>
+                              <span className="mr-0.5 text-[9px] font-black text-slate-600">{kind === "attack" ? `SP ${spCost(skill)}` : `MP ${mpCost(skill)}`}</span>
                               {/* Costs differ from skill to skill, so show how much of this one is charged. */}
                               <span className="h-1.5 w-10 overflow-hidden rounded-full bg-slate-900/25">
-                                <span className={`block h-full ${def.kind === "attack" ? SEGMENT_COLOR.attack : "bg-sky-400"}`} style={{ width: `${Math.min(100, ((def.kind === "attack" ? b.party[id].sp : b.party[id].mp) / (def.kind === "attack" ? spCost(skill) : mpCost(skill))) * 100)}%` }} />
+                                <span className={`block h-full ${kind === "attack" ? "bg-[#c63e43]" : "bg-[#3f80dc]"}`} style={{ width: `${Math.min(100, ((kind === "attack" ? b.party[id].sp : b.party[id].mp) / (kind === "attack" ? spCost(skill) : mpCost(skill))) * 100)}%` }} />
                               </span>
                             </>
                           ) : (
                             Array.from({ length: def.cost }, (_, i) => (
-                              <span key={i} className={`h-1.5 w-2 rounded-full ${i < own ? (tab && def.kind !== "attack" ? "bg-sky-400" : SEGMENT_COLOR[segmentKind]) : i < charged ? SEGMENT_COLOR.faith : "bg-slate-900/25"}`} />
+                              <span
+                                key={i}
+                                className={`h-2.5 w-2.5 rounded-full border-2 ${
+                                  i < own
+                                    ? tab ? (kind === "attack" ? "border-[#9b1e23] bg-[#c63e43]" : kind === "guard" ? "border-[#15733f] bg-[#249e5a]" : "border-[#205ec0] bg-[#3f80dc]") : `${kind === "attack" ? "border-[#9b1e23]" : "border-amber-500"} ${kind === "attack" ? "bg-[#c63e43]" : SEGMENT_COLOR[segmentKind]}`
+                                    : i < charged ? "border-amber-500 bg-yellow-400"
+                                    // Not paid yet: an empty ring in the colour of the energy that pays for it.
+                                    : tab || kind === "attack" ? (kind === "attack" ? "border-[#9b1e23]/80 bg-[#c63e43]/15" : kind === "guard" ? "border-[#15733f]/80 bg-[#249e5a]/15" : "border-[#205ec0]/80 bg-[#3f80dc]/15") : kind === "guard" ? "border-emerald-500/80 bg-emerald-100" : "border-amber-500/80 bg-amber-100"
+                                }`}
+                              />
                             ))
                           )}
                         </span>
                       )}
                     </span>
                     <span className="block text-[11px] leading-snug text-slate-600">{t(`v2.skill.${skill}.desc`, { n: amount })}</span>
+                    {/* The tabletop rules give no change: say which cards would be spent and how much of them is wasted. */}
+                    {tab && (() => {
+                      const pay = paymentPreview(b, skill);
+                      return pay && pay.waste > 0 ? (
+                        <span className="block text-[10px] font-bold leading-snug text-amber-700">
+                          {t("v3.pool.waste", { spent: pay.spent.join("+"), n: pay.waste })}
+                        </span>
+                      ) : null;
+                    })()}
                     {reason && reason !== "v2.reason.over" && !short && <span className="block text-[11px] font-semibold text-red-700">{t(reason)}</span>}
                   </span>
                   <span className="text-xl font-black leading-none">
@@ -1193,6 +1224,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   };
 
   return (
+    <PoolModeContext.Provider value={b.pools}>
     <div
       onPointerMove={onPointerMove}
       onClick={() => {
@@ -1417,9 +1449,15 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                 <CardShine />
 
                 {/* Energy Amount Badge */}
-                <div className="absolute -right-3 -top-3 z-30 flex items-center gap-1.5 rounded-full border-2 border-white bg-slate-900/95 px-3 py-1 shadow-xl">
+                <div className={`absolute -right-3 -top-3 z-30 flex items-center gap-1.5 ${b && b.pools !== "team" ? "[filter:drop-shadow(0_1px_3px_rgb(0_0_0/0.9))]" : "rounded-full border-2 border-white bg-slate-900/95 px-3 py-1 shadow-xl"}`}>
                   {b && b.pools !== "team" ? (
-                    <span className="text-xs font-black text-amber-200">{cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}</span>
+                    cardEffect(kind, amount, b.pools, cardId).disc ? (
+                      <EnergyDisc kind={cardEffect(kind, amount, b.pools, cardId).disc!} className="h-12 w-12 text-3xl">
+                        {cardEffect(kind, amount, b.pools, cardId).text}
+                      </EnergyDisc>
+                    ) : (
+                      <span className="text-xs font-black text-amber-200">{cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}</span>
+                    )
                   ) : (
                     <>
                       <EnergyIcon kind={kind} className="h-4.5 w-4.5 sm:h-5.5 sm:w-5.5 object-contain" />
@@ -1442,10 +1480,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
               <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-md flex-col items-stretch gap-2.5 lg:w-80 lg:justify-center">
                 {inHand && b && b.pools !== "team" && (
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-center text-xs font-bold text-amber-200">{t("v3.pool.giveTo")} · {cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}{b.pools === "table" && kind !== "guard" ? ` · ${t("v3.pool.attached", { n: b.attached, m: R.table.attachPerTurn })}` : ""}</p>
+                    <p className="text-center text-xs font-bold text-amber-200">{t("v3.pool.giveTo")} · {cardEffect(kind, amount, b.pools, cardId).disc ? <EnergyDisc kind={cardEffect(kind, amount, b.pools, cardId).disc!} className="mx-0.5 h-3.5 w-3.5 align-[-0.15em]" /> : cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}{b.pools === "table" ? ` · ${t("v3.pool.attached", { n: b.attached, m: R.table.attachPerTurn })}` : ""}</p>
                     {b.lineup.filter((cid) => isAlive(b, cid)).map((cid) => {
                       const ch = b.party[cid];
-                      const room = b.pools === "table" ? (kind === "guard" ? Infinity : energyRoom(b, cid) - cardValue(cardId) + 1) : kind === "attack" ? R.pools.spCap - ch.sp : kind === "faith" ? mpCap(cid) - ch.mp : Infinity;
+                      const room = b.pools === "table" ? energyRoom(b, cid) - cardValue(cardId) + 1 : kind === "attack" ? R.pools.spCap - ch.sp : kind === "faith" ? mpCap(cid) - ch.mp : Infinity;
                       return (
                         <button
                           key={cid}
@@ -1460,7 +1498,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                         >
                           <span className="text-sm font-black">{t(`char.${cid}.name`)}</span>
                           <span className="text-[11px] font-bold tabular-nums text-slate-600">
-                            {b.pools === "table" ? `🔴${ch.sp} 🔵${ch.mp} · ${attachedTotal(b, cid)}/${energyCap(cid)}` : `MP ${ch.mp}/${mpCap(cid)} · SP ${ch.sp}/${R.pools.spCap}`}
+                            {b.pools === "table" ? `🔴${ch.sp} 🟢${cardsOf(b, cid).green.reduce((n, v) => n + v, 0)} 🔵${ch.mp} · ${attachedTotal(b, cid)}/${energyCap(cid)}` : `MP ${ch.mp}/${mpCap(cid)} · SP ${ch.sp}/${R.pools.spCap}`}
                             {room <= 0 && <span className="ml-1 text-red-700">{t("v3.pool.full")}</span>}
                           </span>
                         </button>
@@ -1660,5 +1698,6 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </button>
       )}
     </div>
+    </PoolModeContext.Provider>
   );
 }

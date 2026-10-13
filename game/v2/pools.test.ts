@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_HP, RULES_V2 as R, basicDamage, energyCap, mpCap } from "./data";
-import { basicAttack, canBasicAttack, cardValue, castSkill, createBattle, elementAdjust, enemyDamage, gainFaith, mpCost, payment, pickCards, playCard, skillBlockReason, spCost, startNextTurn } from "./engine";
+import { CHARACTER_SKILLS, MAX_HP, RULES_V2 as R, basicDamage, energyCap, mpCap, tableKind } from "./data";
+import { basicAttack, canBasicAttack, cardValue, castSkill, paymentPreview, createBattle, elementAdjust, enemyDamage, gainFaith, mpCost, payment, pickCards, playCard, skillBlockReason, spCost, startNextTurn } from "./engine";
 import type { BattleState, CardId, CharacterId } from "./types";
 
 function seeded(seed = 1) {
@@ -134,92 +134,110 @@ describe("tabletop mode", () => {
     s.hand = cards.map((card, i) => ({ uid: 200 + i, card }));
     return s;
   };
+  const under = (red: number[] = [], green: number[] = [], blue: number[] = []) => ({ red, green, blue });
+  const total = (a: number[]) => a.reduce((n, v) => n + v, 0);
 
   it("starts empty-handed: no energy under anyone, nothing attached yet", () => {
     const s = tabletop();
     for (const id of s.lineup) {
       expect(s.party[id].mp + s.party[id].sp).toBe(0);
-      expect(s.party[id].cards).toEqual({ red: [], blue: [] });
+      expect(s.party[id].cards).toEqual(under());
     }
     expect(s.attached).toBe(0);
   });
 
-  it("sticks red and blue cards under the chosen character, with their printed values", () => {
-    let s = withHand(tabletop(), "trains", "assurance");
+  it("sticks red, green and blue cards under the chosen character, with their printed values", () => {
+    let s = withHand(tabletop(), "trains", "assurance", "wings");
     s = playCard(s, 200, "david"); // trains: red 2
     s = playCard(s, 201, "david"); // assurance: blue 2
-    expect(s.party.david.cards).toEqual({ red: [2], blue: [2] });
+    expect(s.party.david.cards).toEqual(under([2], [], [2]));
     expect([s.party.david.sp, s.party.david.mp]).toEqual([2, 2]);
     expect(s.attached).toBe(2);
+    expect(playCard(s, 202, "david")).toBe(s); // wings (green) is a third card this turn
+    s = startNextTurn(s, seeded(), 0);
+    s = playCard(s, 202, "david");
+    expect(s.party.david.cards).toEqual(under([2], [1], [2]));
   });
 
-  it("allows only two energy cards a turn, and a Shield card does not count", () => {
-    let s = withHand(tabletop(), "stones", "stones", "stones", "shepherd");
+  it("allows only two energy cards a turn, whatever their colour", () => {
+    let s = withHand(tabletop(), "stones", "stones", "shepherd");
     s = playCard(s, 200, "david");
     s = playCard(s, 201, "jonathan");
-    const third = playCard(s, 202, "samuel");
-    expect(third).toBe(s); // blocked: two attached already
-    s = playCard(s, 203, "samuel"); // a green card is a Shield, not energy
-    expect(s.party.samuel.shield).toBe(R.table.cardGreen * 1); // at full HP a green card gives extra HP
+    expect(playCard(s, 202, "samuel")).toBe(s); // a green card counts too
     expect(s.attached).toBe(2);
     s = startNextTurn(s, seeded(), 0);
     expect(s.attached).toBe(0);
-    expect(s.party.samuel.shield).toBe(R.table.cardGreen * 1); // extra HP stays until damage uses it up
   });
 
   it("a character holds only up to their energy cap, by rarity", () => {
     let s = withHand(tabletop(), "spiritSword", "spiritSword", "trains");
-    s.party.david.cards = { red: [], blue: [1] }; // needs some blue for the Spirit Sword
+    s.party.david.cards = under([], [], [1]); // needs some blue for the Spirit Sword
     s.party.david.mp = 1;
     expect(energyCap("david")).toBeGreaterThan(energyCap("samuel"));
     // Samuel (SR, cap 5) already holds 3: a 3-valued card does not fit, a smaller one does.
-    s.party.samuel.cards = { red: [1, 1, 1], blue: [] };
+    s.party.samuel.cards = under([1, 1, 1]);
     s.party.samuel.sp = 3;
     expect(playCard(s, 200, "samuel")).toBe(s);
     s = playCard(s, 202, "samuel"); // trains is worth 2: 3 + 2 = 5, just fits
     expect(s.party.samuel.sp).toBe(5);
   });
 
-  it("pays with the owner's cards of the right colour, giving no change", () => {
+  it("each colour pays its own kind of skill: strikes red, heals and defence green, magic blue", () => {
     let s = tabletop();
-    s.party.david.cards = { red: [3], blue: [] };
+    s.party.david.cards = under([3]);
     s.party.david.sp = 3;
-    expect(payment(s, "sling")).not.toBeNull(); // cost 1: the 3-card is spent, the extra is lost
+    expect(payment(s, "sling")).not.toBeNull(); // a strike: red, cost 1, the 3-card is spent and the extra is lost
     s = castSkill(s, "sling", "goliath", seeded());
-    expect(s.party.david.cards).toEqual({ red: [], blue: [] });
-    expect(s.party.david.sp).toBe(0);
-    // Blue cards do not pay a strike.
-    s.party.david.cards = { red: [], blue: [1, 1, 1] };
-    s.party.david.mp = 3;
-    s.party.david.acted = false;
-    expect(payment(s, "sling")).toBeNull();
+    expect(s.party.david.cards).toEqual(under());
+    // Samuel's Heal (guard) needs green; blue and red do not pay it.
+    s.party.samuel.cards = under([2], [], [2]);
+    expect(payment(s, "heal")).toBeNull();
+    s.party.samuel.cards = under([], [1]);
+    expect(payment(s, "heal")).not.toBeNull();
+    // Jonathan's Covenant Shield is magic in the tabletop rules: blue pays it, green does not.
+    s.party.jonathan.cards = under([2], [2]);
+    expect(payment(s, "covshield")).toBeNull();
+    s.party.jonathan.cards = under([], [], [1]);
+    expect(payment(s, "covshield")).not.toBeNull();
+    // David's Sling Stone (faith) needs 3 blue.
+    s.party.david.cards = under([], [3], [2]);
+    expect(payment(s, "slingStone")).toBeNull();
+    s.party.david.cards = under([], [], [1, 2]);
+    expect(payment(s, "slingStone")).not.toBeNull();
     // The cheapest set that covers the cost is chosen: 2 from [1, 2, 2] leaves a 1 and a 2.
     expect(pickCards([1, 2, 2], 2)).toEqual([1]);
     expect(pickCards([1, 1], 3)).toBeNull();
   });
 
-  it("a green card heals a hurt character (not past their maximum) and shields one who is unhurt", () => {
-    let s = withHand(tabletop(), "renewed", "renewed", "shepherd");
-    s.turn = 3; // "renewed" can be played from turn 3
-    s.party.samuel.hp = MAX_HP.samuel - 50;
-    s = playCard(s, 200, "samuel"); // renewed: green 3 = 60, but only 50 was lost
-    expect(s.party.samuel.hp).toBe(MAX_HP.samuel);
-    expect(s.party.samuel.shield).toBe(0);
-    s = playCard(s, 201, "samuel"); // unhurt now: the same 60 as extra HP, up to the cap
-    expect(s.party.samuel.shield).toBe(Math.min(R.table.bonusCap, R.table.cardGreen * 3));
-    s.party.david.hp = MAX_HP.david - 10;
-    s = playCard(s, 202, "david"); // shepherd: green 1 = 20, heals the 10 lost
-    expect(s.party.david.hp).toBe(MAX_HP.david);
-    expect(s.attached).toBe(0); // green cards are not energy
+  it("shows which cards would be spent and how much is wasted, and says so when it happens", () => {
+    let s = tabletop();
+    s.party.jonathan.cards = under([], [], [3]);
+    // Covenant Shield costs 1: a blue 3 pays it and 2 of it is lost.
+    expect(paymentPreview(s, "covshield")).toEqual({ spent: [3], waste: 2 });
+    s = castSkill(s, "covshield", undefined, seeded());
+    expect(s.log.some((l) => l.key === "v2.log.wasted" && l.params?.n === 2)).toBe(true);
+    s.party.jonathan.cards = under();
+    expect(paymentPreview(s, "covshield")).toBeNull(); // cannot pay at all
+  });
+
+  it("gives every character a blue (magic) skill in the tabletop rules, keeping the cheap ones green or red", () => {
+    expect(tableKind("covshield")).toBe("faith");
+    expect(tableKind("heal")).toBe("guard");
+    expect(tableKind("sling")).toBe("attack");
+    // Native faith skills stay blue.
+    expect(tableKind("slingStone")).toBe("faith");
+    // Everyone with more than one skill can use blue cards.
+    const lonely = Object.entries(CHARACTER_SKILLS).filter(([, ks]) => ks.length > 1 && !ks.some((k) => tableKind(k) === "faith"));
+    expect(lonely.map(([id]) => id)).toEqual([]);
   });
 
   it("does not regenerate between turns", () => {
     let s = tabletop();
-    s.party.david.cards = { red: [1], blue: [2] };
+    s.party.david.cards = under([1], [], [2]);
     s.party.david.sp = 1;
     s.party.david.mp = 2;
     s = startNextTurn(s, seeded(), 0);
-    expect(s.party.david.cards).toEqual({ red: [1], blue: [2] });
+    expect(s.party.david.cards).toEqual(under([1], [], [2]));
   });
 
   it("elements add or take away a flat 10 instead of multiplying", () => {
@@ -231,10 +249,11 @@ describe("tabletop mode", () => {
     expect(enemyDamage("goliath", "eve", 100)).toBe(150); // the digital rules still multiply
   });
 
-  it("skills that give energy put value-1 cards under the caster, up to the cap", () => {
+  it("skills that give energy put value-1 cards of the right colour under the caster, up to the cap", () => {
     const s = tabletop();
     expect(gainFaith(s, "samuel", 9)).toBe(energyCap("samuel"));
     expect(s.party.samuel.cards!.blue).toEqual(Array(energyCap("samuel")).fill(1));
+    expect(total(s.party.samuel.cards!.green)).toBe(0);
     expect(cardValue("assurance")).toBe(2);
   });
 });

@@ -1,7 +1,7 @@
 // Auto-battle: picks the player's next action from the current state, one step at a time.
 // Heuristic, not optimal: it saves Faith for Sling Stone and answers Goliath's telegraphed threats.
-import { CARDS_V2, CHARACTER_SKILLS, ENEMY_ORDER, energyCap, MAX_HP, mpCap, RULES_V2 as R, SHAKES, SKILLS } from "./data";
-import { actionBase, attachedTotal, attackableEnemies, bossOf, canBasicAttack, cardValue, enemyAlive, goodDamage, guardOf, hitsEveryone, isAlive, mpCost, payment, playableHand, shooterOf, skillBlockReason, skillDamage, skillTargetKind, spCost, type Target } from "./engine";
+import { CARDS_V2, CHARACTER_SKILLS, ENEMY_ORDER, energyCap, MAX_HP, mpCap, RULES_V2 as R, SHAKES, SKILLS, tableKind } from "./data";
+import { actionBase, attachedTotal, attackableEnemies, bossOf, canBasicAttack, cardsOf, cardValue, energyColor, enemyAlive, goodDamage, guardOf, hitsEveryone, isAlive, mpCost, payment, playableHand, shooterOf, skillBlockReason, skillDamage, skillTargetKind, spCost, type Target } from "./engine";
 import type { BattleState, CharacterId, EnemyId, SkillId } from "./types";
 
 export type AutoAction =
@@ -80,33 +80,23 @@ function withEnergyView(s: BattleState): BattleState {
 const skillsPaidBy = (id: CharacterId, pool: "sp" | "mp") => CHARACTER_SKILLS[id].filter((k) => (SKILLS[k].kind === "attack") === (pool === "sp"));
 
 /**
- * The tabletop rules: the next card to attach or play and to whom, or null to hold the rest. Attach the most valuable
- * card that fits under someone who is short of that colour (up to the per-turn limit); shields only when the boss is about to hit.
+ * The tabletop rules: the next card to stick on and to whom, or null to hold the rest. Each colour goes to someone who
+ * has skills of that kind: the most valuable card that fits under a character who is still short of that colour.
  */
 function tableCardPlay(s: BattleState): AutoAction | null {
   const alive = s.lineup.filter((id) => isAlive(s, id));
   let best: { uid: number; target: CharacterId; score: number } | null = null;
   for (const card of playableHand(s)) {
-    const { energy, amount } = CARDS_V2[card.card];
-    if (energy === "guard") {
-      // Heal whoever is most hurt, if it is worth it; otherwise keep the card for a Shield when the boss is about to hit.
-      const value = R.table.cardGreen * amount;
-      const hurt = [...alive].sort((a, b) => MAX_HP[b] - s.party[b].hp - (MAX_HP[a] - s.party[a].hp))[0];
-      if (hurt && MAX_HP[hurt] - s.party[hurt].hp >= Math.min(value, 20) * 1.5) return { type: "play", uid: card.uid, target: hurt };
-      if (!underThreat(s)) continue;
-      const aimed = s.intents[0].targets.find((id) => alive.includes(id));
-      const target = aimed ?? [...alive].sort((a, b) => (s.party[a].hp + s.party[a].shield) / MAX_HP[a] - (s.party[b].hp + s.party[b].shield) / MAX_HP[b])[0];
-      if (target) return { type: "play", uid: card.uid, target };
-      continue;
-    }
-    const color = energy === "attack" ? "red" : "blue";
+    const { energy } = CARDS_V2[card.card];
+    const kind = energy === "attack" ? "attack" : energy === "guard" ? "guard" : "faith";
+    const color = energyColor(kind);
     const value = cardValue(card.card);
     for (const id of alive) {
-      const skills = CHARACTER_SKILLS[id].filter((k) => (SKILLS[k].kind === "attack") === (color === "red"));
+      const skills = CHARACTER_SKILLS[id].filter((k) => tableKind(k) === kind);
       if (!skills.length) continue;
       const room = energyCap(id) - attachedTotal(s, id);
       if (value > room) continue;
-      const have = color === "red" ? s.party[id].sp : s.party[id].mp;
+      const have = cardsOf(s, id)[color].reduce((n, v) => n + v, 0);
       const wanted = Math.max(...skills.map((k) => SKILLS[k].cost));
       // Short of the dearest skill's cost: worth a lot; otherwise worth a little. Prefer the biggest card that is still useful.
       const score = (have < wanted ? 10 : 1) * 10 + Math.min(value, Math.max(1, wanted - have)) * 3 - have;

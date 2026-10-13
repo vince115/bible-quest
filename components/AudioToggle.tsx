@@ -15,8 +15,8 @@ export function AudioToggle() {
     void Promise.resolve(useAudioStore.persist.rehydrate()).then(() => setMounted(true));
   }, []);
 
-  // Before rehydrating, render with default to prevent hydration mismatch
-  const isMuted = mounted ? muted : false;
+  // Before rehydrating, render with the default (off) to prevent a hydration mismatch
+  const isMuted = mounted ? muted : true;
 
   return (
     <button

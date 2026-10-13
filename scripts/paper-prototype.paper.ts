@@ -33,6 +33,7 @@ import {
   STAGE_SHOOTER,
   WALLS_CRACKED_CYCLE,
   WALLS_CYCLE,
+  tableKind,
 } from "@/game/v2/data";
 import { actionBase, baseSupportAmount, elementMultiplier } from "@/game/v2/engine";
 import type { BattleState, CardId, CharacterId, Element, EnemyId, GoliathActionId, SkillId } from "@/game/v2/types";
@@ -57,7 +58,7 @@ const img = (path: string) => `../../../public/cards/${path}`;
 // ---------------------------------------------------------------- characters
 
 function pips(kind: "attack" | "guard" | "faith", cost: number) {
-  const color = kind === "attack" ? ENERGY_COLOR.red : ENERGY_COLOR.blue;
+  const color = kind === "attack" ? ENERGY_COLOR.red : kind === "guard" ? ENERGY_COLOR.green : ENERGY_COLOR.blue;
   return Array.from({ length: cost }, () => `<i class="pip" style="background:${color}"></i>`).join("");
 }
 
@@ -67,7 +68,7 @@ function skillRow(skill: SkillId): string {
   const desc = adapt(zh(`v2.skill.${skill}.desc`, { n }));
   const ultimate = def.kind === "faith" ? `<b class="tag">大招</b>` : "";
   const value = def.damage ? `<span class="amt">${def.damage}</span>` : n >= 10 ? `<span class="amt">+${n}</span>` : "";
-  return `<div class="skill"><div class="skill-head"><span class="pips">${pips(def.kind, def.cost)}</span><span class="skill-name">${esc(zh(`v2.skill.${skill}.name`))}</span>${ultimate}${value}</div><div class="skill-desc">${esc(desc)}</div></div>`;
+  return `<div class="skill"><div class="skill-head"><span class="pips">${pips(tableKind(skill), def.cost)}</span><span class="skill-name">${esc(zh(`v2.skill.${skill}.name`))}</span>${ultimate}${value}</div><div class="skill-desc">${esc(desc)}</div></div>`;
 }
 
 function characterCard(id: CharacterId): string {
@@ -143,8 +144,8 @@ function trackCard(boss: EnemyId): string {
 function scriptureCard(id: CardId, copy: number): string {
   const def = CARDS_V2[id];
   const color = def.energy === "attack" ? ENERGY_COLOR.red : def.energy === "faith" ? ENERGY_COLOR.blue : ENERGY_COLOR.green;
-  const kind = def.energy === "attack" ? "紅・攻擊能量" : def.energy === "faith" ? "藍・法術能量" : "綠・護盾";
-  const rule = def.energy === "guard" ? `選一名角色：他有受傷就回復 ${20 * def.amount}（移除傷害指示物，不超過已受的傷）；沒受傷就加 ${20 * def.amount} 額外血量（不算貼能量）` : `貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）`;
+  const kind = def.energy === "attack" ? "紅・攻擊能量" : def.energy === "faith" ? "藍・法力能量" : "綠・回血能量";
+  const rule = `貼在一名角色旁（算入他的能量上限；每回合最多貼 2 張）`;
   const cond = def.condition === "turn3" ? "第 3 回合起才能打出" : def.condition === "needFaith" ? "需要我方至少一個角色身上有藍能量" : "";
   return `<article class="card scripture" style="--accent:${color}">
     <header style="background:${color}"><div><div class="title">${kind}</div><div class="name">${esc(zh(`v2.card.${id}.name`))}</div></div><div class="val">${def.energy === "guard" ? def.amount : def.amount}</div></header>
@@ -224,17 +225,18 @@ it("builds the paper prototype", () => {
   const rules = `<div class="rules"><h1>Bible Quest 紙上原型：${esc(stageName)}</h1>
 <p>合作對抗敵方。你從本關的 ${stage.pool.length} 張角色卡中選 ${stage.pick} 張出戰，打倒頭目就贏；三名角色全部倒下就輸。</p>
 <h2>準備</h2><ul><li>選 ${stage.pick} 張角色卡排成一列，最左邊是<b>前線</b>。</li><li>敵人卡擺在對面：護衛、頭目、射手；把「行動軌」放在旁邊，標記放第 1 格。</li><li>經文牌 ${DECK_V2.length} 張洗好成牌庫，抽 5 張。</li><li>傷害指示物放在桌邊；角色與敵人的 HP 都是 10 的倍數，受傷就在卡上放指示物（10 一個，50 一個大的）。指示物數 ≥ HP 就倒下。</li></ul>
-<h2>每回合（玩家）</h2><ol><li><b>抽牌</b>：第 1 回合已抽 5 張；之後每回合抽 3 張。手牌上限 7 張。</li><li><b>貼能量（每回合最多 2 張）</b>：把紅卡或藍卡從手牌貼到角色旁（露出數值），<b>每回合最多貼 2 張</b>，想貼的選好給誰。每個角色身上的能量<b>總數值</b>不能超過卡上的「能量上限」。綠卡不算貼能量：選一名角色，他有受傷就回復 20×數值（移除傷害指示物，不超過已受的傷），沒受傷就加 20×數值 的<b>額外血量</b>，不受 2 張的限制。「第 3 回合起」的卡第 3 回合才能打。</li><li><b>行動</b>：每個角色可以用<b>一個技能，或做一次免費的基本攻擊</b>（卡面最上面那一行，不花能量，二選一）。費用是卡上的圓點，紅圓點用紅能量付、藍圓點用藍能量付：從該角色身上棄掉對應顏色的卡，總數值 ≥ 費用即可，<b>不找零</b>。用完把該角色卡橫放。</li><li><b>技能獲得能量</b>（例如「獲得 1 藍能量」）：拿能量代幣貼到任一角色旁，算在上限內。</li></ol>
+<h2>每回合（玩家）</h2><ol><li><b>抽牌</b>：第 1 回合已抽 5 張；之後每回合抽 3 張。手牌上限 7 張。</li><li><b>貼能量（每回合最多 2 張）</b>：把紅卡、綠卡或藍卡從手牌貼到角色旁（露出數值），<b>每回合最多貼 2 張</b>，想貼的選好給誰。每個角色身上的能量<b>總數值</b>不能超過卡上的「能量上限」。「第 3 回合起」的卡第 3 回合才能打。</li><li><b>行動</b>：每個角色可以用<b>一個技能，或做一次免費的基本攻擊</b>（卡面最上面那一行，不花能量，二選一）。費用是卡上的圓點，<b>紅點用紅能量付（攻擊）、綠點用綠能量付（回血與防禦）、藍點用藍能量付（法力：依角色可以回血或傷敵）</b>：從該角色身上棄掉對應顏色的卡，總數值 ≥ 費用即可，<b>不找零</b>。用完把該角色卡橫放。</li><li><b>技能獲得能量</b>（例如「獲得 1 藍能量」）：拿對應顏色的能量代幣貼到任一角色旁，算在上限內。</li></ol>
 <h2>敵人回合</h2><ol><li>看行動軌標記所在的格子，頭目照做（傷害打前線或指定對象）。</li><li>射手攻擊前線。護衛只是擋人，不攻擊。</li><li>標記前進一格（頭目被「機弦甩石」擊中時改走第二階段，從第 1 格開始）。</li><li>護盾棄掉，角色卡轉回直立，驚恐標記拿掉。</li></ol>
-<h2>其他規則</h2><ul><li><b>屬性</b>：攻擊方的屬性剋制對方屬性時傷害 +10；被剋制時 −10（最少 0）。剋制圈：木剋土、土剋水、水剋火、火剋金、金剋木；光與暗互剋。風歸木、雷歸金。</li><li><b>額外血量</b>：綠色的 +10 指示物放在角色上，疊在原本血量之上；受傷時先扣額外血量，扣完才扣真正的血量。不會自己消失，回血也補不了它，最多 +60。技能裡寫的「護盾」就是額外血量。</li><li><b>驚恐</b>：放驚恐標記在角色上，他下回合不能行動；有額外血量的角色不會驚恐。</li><li><b>每場一次</b>：用過後在技能旁放「已使用」標記。</li><li><b>前線</b>：每回合開始前可以免費調換前線一次；前線倒下時，立刻選一個倒下前的隊友補上。</li><li><b>勝負</b>：頭目 HP 歸零贏；三人都倒下輸。</li></ul>
+<h2>其他規則</h2><ul><li><b>屬性</b>：攻擊方的屬性剋制對方屬性時傷害 +10；被剋制時 −10（最少 0）。剋制圈：木剋土、土剋水、水剋火、火剋金、金剋木；光與暗互剋。風歸木、雷歸金。</li><li><b>額外血量</b>：黃色的「血 +10」指示物放在角色上，疊在原本血量之上；受傷時先扣額外血量，扣完才扣真正的血量。不會自己消失，回血也補不了它，最多 +60。技能裡寫的「護盾」就是額外血量。</li><li><b>驚恐</b>：放驚恐標記在角色上，他下回合不能行動；有額外血量的角色不會驚恐。</li><li><b>每場一次</b>：用過後在技能旁放「已使用」標記。</li><li><b>前線</b>：每回合開始前可以免費調換前線一次；前線倒下時，立刻選一個倒下前的隊友補上。</li><li><b>勝負</b>：頭目 HP 歸零贏；三人都倒下輸。</li></ul>
 <h2>要記錄的</h2><p>這是測試版，請玩完用最後一頁的紀錄表寫下：打了幾回合、哪裡卡住、哪些規則很難記、哪張牌或技能太強太弱。</p></div>`;
 
   const tokens = `<h2 style="margin:0 0 3mm">指示物（剪下使用）</h2><div class="tokens">${[
     ...Array.from({ length: 36 }, () => `<div class="tk c" style="font-size:12pt">10</div>`),
     ...Array.from({ length: 10 }, () => `<div class="tk c" style="font-size:12pt;background:#fefcbf;border-style:solid">50</div>`),
     ...Array.from({ length: 10 }, () => `<div class="tk c" style="font-size:8pt;background:${ENERGY_COLOR.red};color:#fff">紅 1</div>`),
+    ...Array.from({ length: 10 }, () => `<div class="tk c" style="font-size:8pt;background:${ENERGY_COLOR.green};color:#fff">綠 1</div>`),
     ...Array.from({ length: 10 }, () => `<div class="tk c" style="font-size:8pt;background:${ENERGY_COLOR.blue};color:#fff">藍 1</div>`),
-    ...Array.from({ length: 12 }, () => `<div class="tk c" style="font-size:10pt;background:#38a169;color:#fff">+10</div>`),
+    ...Array.from({ length: 12 }, () => `<div class="tk c" style="font-size:9pt;background:#faf089;border-style:solid">血+10</div>`),
     ...Array.from({ length: 6 }, () => `<div class="tk s" style="background:#e9d8fd">驚恐</div>`),
     ...Array.from({ length: 8 }, () => `<div class="tk s" style="background:#e2e8f0">已使用</div>`),
     `<div class="tk s" style="background:#fed7d7">行動軌標記 ▶</div>`,

@@ -96,18 +96,16 @@ export const RULES_V2 = {
    */
   /**
    * Tabletop rules (the version that can be printed): everything is a small whole number and the cards are the record.
-   * Energy cards are stuck under a character, at most attachPerTurn a turn, and a character can hold energyCap(rarity)
-   * in total value. flatValues: every energy card is worth 1 instead of its printed 1-3. Elements add or take away elementBonus.
+   * Energy cards (red attack, green heal, blue magic) are stuck under a character, at most attachPerTurn a turn, and a
+   * character can hold energyCap(rarity) in total value. A skill is paid with the cards of its own colour: strikes red,
+   * heals and defence (guard) green, magic (faith) blue. flatValues: every energy card is worth 1 instead of its printed 1-3.
+   * Elements add or take away elementBonus.
    */
   table: {
     attachPerTurn: 2,
     flatValues: false,
     elementBonus: 10,
-    /**
-     * A green card heals the chosen character 20 per point of its value; one who is unhurt gets that much extra HP instead.
-     * In the tabletop mode a Shield is extra HP too: it stays until damage uses it up (no timing to remember), up to bonusCap.
-     */
-    cardGreen: 20,
+    /** In the tabletop mode a Shield is extra HP: it stays until damage uses it up (no timing to remember), up to bonusCap. */
     bonusCap: 60,
     /** The free basic attack every character can make once a turn (it takes their action), by rarity. */
     basicDamage: { N: 10, R: 10, SR: 20, SSR: 20, UR: 30 } as Record<Rarity, number>,
@@ -1295,6 +1293,32 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   venom: { id: "venom", owner: "serpentP", kind: "attack", cost: 1, damage: 30 },
   beguile: { id: "beguile", owner: "serpentP", kind: "guard", cost: 3 },
 };
+
+/**
+ * The tabletop rules sort skills into three colours: red strikes, green heals/guards, blue magic. Magic is the strongest
+ * non-strike skill of each character who has no faith skill of their own (and three strikes that are the best of theirs),
+ * so every character can use blue cards; their cheap everyday skills stay green or red.
+ */
+const TABLE_BLUE = new Set<SkillId>([
+  "aQuestion", "abideHouse", "allHerLiving", "almondRod", "almsdeeds", "arise", "armourOfGod", "arrowVolley", "baptism",
+  "bearLetter", "beguile", "belovedBrother", "blessedAbove", "blewTrumpet", "braceSpears", "breastplate", "buildWall",
+  "castIntoSea", "chosenChariots", "comeAndSee", "comeSee", "comingFromCountry", "convenientDay", "covshield",
+  "cutThemselves", "deadDog", "departed", "drewHimOut", "earHealed", "example", "expound", "feast", "fewDays", "figTree",
+  "fineLinen", "firstlings", "fledToTent", "fourfold", "fromAChild", "gaveThanks", "giveBasket", "goUpAtOnce",
+  "gorgeousRobe", "greatCatch", "greatPossessions", "greaterThanAll", "heardTheBook", "helper", "hereIsWater",
+  "hiddenSpoil", "houseForever", "ifThouGo", "imageInBed", "inOrder", "intercede", "judgeThisDay", "keep",
+  "keptBackPart", "kingsRing", "layDownNeck", "littleCake", "littleMaid", "lookedBack", "lotFell", "loveOneAnother",
+  "makeBricks", "manyBelieved", "mark", "mendNets", "nameIsJohn", "nowPraise", "nurseHim", "offeredMoney", "oneManDie",
+  "philipComeSee", "pieceOfSilver", "playTheMen", "pleasedJews", "prayersAlms", "privilyCalled", "quietFaith",
+  "railedOn", "rainbow", "ram", "ranInTold", "ranToMeet", "rashOffering", "readTheLaw", "receiveHim", "redeemer",
+  "releasedUnto", "restorer", "rideOut", "royalCommand", "scalesFell", "scarletCord", "sevenTimesJordan", "shieldUp",
+  "shieldWall", "soldField", "sonOfDavid", "song", "speakLord", "stoleHearts", "strangerLand", "suchATime",
+  "swiftToHear", "swordDown", "takeTooMuch", "taunt", "tenthOfAll", "theirFaith", "thirtySilver", "toiledAllNight",
+  "trulySonOfGod", "twoPence", "twoTalents", "walkedWithGod", "washedHands", "waterCamels", "watered", "whither",
+  "whomTrust", "withYouAlway", "wouldNotGoHome", "writingOnWall", "zealForLord",
+]);
+/** A skill's kind in the tabletop rules (decides which colour of energy card pays for it). */
+export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" => (TABLE_BLUE.has(skill) ? "faith" : SKILLS[skill].kind);
 
 export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   david: ["sling", "slingStone"],

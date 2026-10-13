@@ -96,18 +96,19 @@ export interface CharacterState {
   mp: number;
   sp: number;
   /**
-   * Tabletop mode only: the energy cards stuck under this character, by colour, each with its value. `mp` and `sp`
-   * then hold the totals of the blue and red cards.
+   * Tabletop mode only: the energy cards stuck under this character, by colour, each with its value: red pays strikes,
+   * green pays heals and defence, blue pays magic. `mp` and `sp` then hold the totals of the blue and red cards.
    */
-  cards?: { red: number[]; blue: number[] };
+  cards?: { red: number[]; green: number[]; blue: number[] };
 }
 
 /**
  * How energy works in a battle. "team": one shared pool of Faith, Attack and Guard that scripture cards fill and any
  * ally's skills spend. "personal" (the free digital mode): every character has their own MP (spells: healing, shields,
  * utility, ultimates) and SP (strikes) as large numbers; scripture cards are given to a chosen ally (see playCard).
- * "table" (the tabletop rules): scripture cards are stuck under a character (at most attachPerTurn a turn, up to an
- * energy cap by rarity) and skills cost 1 to 3 of them; elements add or take away a flat 10.
+ * "table" (the tabletop rules): scripture cards of three colours (red attack, green heal, blue magic) are stuck under a
+ * character (at most attachPerTurn a turn, up to an energy cap by rarity) and skills cost 1 to 3 of their own colour;
+ * elements add or take away a flat 10.
  */
 export type PoolMode = "team" | "personal" | "table";
 
