@@ -205,7 +205,7 @@ function MoveAmount({ value, hint }: { value: string; hint: string }) {
       <span className="px-[0.1em] text-stone-900/50">/</span>
       <span className="text-[#c0281f]">{second}</span>
       {/* Two words under the red number say what it is; they hang below without moving the row. */}
-      <span className="pointer-events-none absolute right-0 top-full -mt-[0.3em] whitespace-nowrap text-[0.42em] font-bold leading-none text-[#c0281f]">{hint}</span>
+      <span className="pointer-events-none absolute right-0 top-full -mt-[0.6em] whitespace-nowrap text-[0.34em] font-bold leading-none text-[#c0281f]">{hint}</span>
     </span>
   );
 }
