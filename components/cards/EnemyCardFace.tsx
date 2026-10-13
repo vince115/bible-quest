@@ -12,7 +12,6 @@ import { ElementIcon } from "./ElementIcon";
 import { Foil } from "./HoloCard";
 import { CARD_RARITY, lookOf } from "./rarity";
 import { RarityMark } from "./RarityMark";
-import { Shield } from "lucide-react";
 import { asset } from "@/game/assets";
 
 const PORTRAIT: Record<EnemyId, string> = {
@@ -199,7 +198,8 @@ function Header({ id, light }: { id: EnemyId; light?: boolean }) {
 
 /** A move's number; "60/80" is two stages (before / after the boss falls to half HP), the second in red. */
 function MoveAmount({ value, hint }: { value: string; hint: string }) {
-  if (value === SHIELD) return <Shield aria-hidden size="1.15em" strokeWidth={2.5} />;
+  // eslint-disable-next-line @next/next/no-img-element -- small icon
+  if (value === SHIELD) return <img src="/icons/shield.png" alt="" aria-hidden draggable={false} className="h-[1.5em] w-[1.5em] object-contain" />;
   const [first, second] = value.split("/");
   if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
   return (
