@@ -1149,6 +1149,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [scale] = useState(savedScale);
   const [showLog, setShowLog] = useState(false);
   const [showResult, setShowResult] = useState(true);
+  const [leaving, setLeaving] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   // Achievements live in localStorage; read them after mount so the prerendered page matches.
@@ -1409,7 +1410,40 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <button onClick={() => setShowLog(!showLog)} className="shrink-0 whitespace-nowrap rounded-full border border-stone-500 px-2.5 py-1.5 text-xs text-stone-200 hover:bg-white/10">
           {showLog ? t("v3.ui.hideLog") : t("v3.ui.showLog")}
         </button>
+        {b.result === "ongoing" && (
+          <button onClick={() => setLeaving(true)} className="shrink-0 whitespace-nowrap rounded-full border border-stone-500 px-2.5 py-1.5 text-xs text-stone-200 hover:bg-white/10">
+            {t("v3.leave.button")}
+          </button>
+        )}
       </aside>
+
+      {/* Leaving in the middle of a battle: the battle is not kept. */}
+      {leaving && b.result === "ongoing" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setLeaving(false)}>
+          <div role="dialog" aria-label={t("v3.leave.title")} onClick={(e) => e.stopPropagation()} className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-stone-600 bg-stone-900 p-5 text-center">
+            <h2 className="text-lg font-black text-stone-100">{t("v3.leave.title")}</h2>
+            <p className="text-sm text-stone-300">{t("v3.leave.desc")}</p>
+            <button onClick={() => setLeaving(false)} className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+              {t("v3.leave.stay")}
+            </button>
+            <button
+              onClick={() => {
+                setLeaving(false);
+                setPending(null);
+                setActing(null);
+                setShowResult(true);
+                pickLineup();
+              }}
+              className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800"
+            >
+              {t("v3.lineup.change")}
+            </button>
+            <Link href={campaign ? "/campaign" : "/"} className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800">
+              {campaign ? t("v3.campaign.list") : t("v2.ui.backHome")}
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Skill view for the selected character */}
       {open && (
