@@ -227,6 +227,7 @@ function Body({ id }: { id: EnemyId }) {
             <MoveAmount value={m.amount} />
           </div>
         ))}
+        {MOVES[id].some((m) => m.amount.includes("/")) && <div className="text-right text-[0.55em] font-bold leading-none text-[#c0281f]">{t("v3.ui.stage2")}</div>}
       </div>
       <div className="flex justify-between border-t border-stone-900/20 pt-[1.5%] text-[0.58em]">
         <span>
