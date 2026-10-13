@@ -73,6 +73,9 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   flood: { src: "/cards/flood.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  // Gerasa: Legion crowds the man at the left of Jesus; the unclean spirit sits among the tombs.
+  legion: { src: "/cards/legion.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
+  uncleanSpirits: { src: "/cards/uncleanSpirits.jpg", figure: { cx: 0.35, head: 0.02, feet: 0.98 } },
   // The herd of swine rushing down the slope: the whole scene is the frame.
   swine: { src: "/cards/swine.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
   // Daniel's rivals: the presidents go through the scrolls, the princes petition the king (the speaker stands left of centre).
