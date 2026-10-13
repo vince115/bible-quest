@@ -979,8 +979,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
 
       <div className="relative z-10 flex flex-col items-center justify-center gap-3 sm:gap-4 w-full">
-        <div className="px-4 text-center">
-          <div className="text-[10px] uppercase tracking-widest text-stone-300/70 sm:text-[11px]">{t("v3.ui.title")}</div>
+        <div className="px-4 pt-9 text-center sm:pt-0">
           <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{campaign ? t(`v3.campaign.${campaign.id}.name`) : t("v3.lineup.title")}</h1>
           <p className="mt-1 max-w-md text-sm text-stone-300">{campaign ? t("v3.campaign.pick", { n: max, m: pool.length }) : t("v3.lineup.hint")}</p>
         </div>
@@ -993,7 +992,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         value={stage}
         onChange={(e) => setStage(e.target.value as StageId)}
         aria-label={t("v3.stage.title")}
-        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 px-4 py-1.5 text-center text-sm font-bold text-amber-100 focus:outline-none sm:hidden"
+        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 px-4 py-1.5 text-center text-base font-bold text-amber-100 focus:outline-none sm:hidden"
       >
         {STAGE_ORDER.map((st) => (
           <option key={st} value={st}>
@@ -1068,13 +1067,13 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("v3.demo.search")}
             aria-label={t("v3.demo.search")}
-            className="min-w-0 flex-1 rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none"
+            className="min-w-0 flex-1 rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-base text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none sm:text-sm"
           />
           <select
             value={rarity}
             onChange={(e) => setRarity(e.target.value as Rarity | "all")}
             aria-label={t("v3.demo.filter")}
-            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 px-3 py-2 text-sm font-bold text-amber-100 focus:outline-none sm:hidden"
+            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 px-3 py-2 text-base font-bold text-amber-100 focus:outline-none sm:hidden"
           >
             {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => (
               <option key={f} value={f}>
@@ -1349,7 +1348,6 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
       {/* ---------- Board: enemies, message, our characters, hand ---------- */}
       <main className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <div className="px-3 pt-2 pr-36 text-[10px] uppercase tracking-widest text-stone-300/70 sm:px-4 sm:pr-4 sm:text-[11px]">{t("v3.ui.title")}</div>
 
         <section className="flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
           <div className="flex items-start justify-center gap-2 sm:gap-5">
