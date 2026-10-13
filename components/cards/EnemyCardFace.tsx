@@ -68,6 +68,10 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
   // The serpent is coiled up the tree: frame the head and the tree, looking left.
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  // Scenes with no figure (the sky, the flood): the whole picture is the frame.
+  windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  flood: { src: "/cards/flood.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   // Enemy versions of villains who also exist as player cards share their art (see CharacterCardFace).
   pharaohHost: { src: "/cards/pharaoh.jpg", figure: { cx: 0.5, head: 0.175, feet: 0.965 } },
   chariotCaptain: { src: "/cards/charioteer.jpg", figure: { cx: 0.44, head: 0.105, feet: 0.94 } },
