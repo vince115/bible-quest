@@ -938,9 +938,9 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   };
   const stageArt = campaign?.art ?? STAGE_ART[stage];
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
-    e.currentTarget.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+    // The background is fixed to the screen (the picker page is very long in free mode), so the spotlight follows the pointer on screen.
+    e.currentTarget.style.setProperty("--mouse-x", `${e.clientX}px`);
+    e.currentTarget.style.setProperty("--mouse-y", `${e.clientY}px`);
   };
 
   return (
@@ -951,7 +951,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       {/* ===== 背景 4 層架構 ===== */}
       {/* [底層 1] 放大關卡專屬場景照片（每關不同背景照片） */}
       {stageArt && (
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={asset(stageArt)}
@@ -962,14 +962,14 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
 
       {/* [中層 2] 黑色半透明遮罩（壓暗場景，強化氛圍與卡牌數字辨識度） */}
-      <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-black/45" />
 
       {/* [中層 3] 暗紅至暗藍色半透明遮罩（暗紅暗藍半透明約70% 中間區域50%） */}
-      <div className="pointer-events-none absolute inset-0 z-0 bq-red-blue-mask" />
+      <div className="pointer-events-none fixed inset-0 z-0 bq-red-blue-mask" />
 
       {/* 支援滑鼠滑過：中心區域半透明，讓使用者稍微看清背景照片 */}
       {stageArt && (
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bq-reveal-spotlight">
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bq-reveal-spotlight">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={asset(stageArt)}
@@ -980,10 +980,10 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
 
       {/* [頂層 4] 黑色半透明點（70%透明、空隙100%透光、空隙縮小至約3px更密集） */}
-      <div className="pointer-events-none absolute inset-0 z-0 bq-black-dots-dense" />
+      <div className="pointer-events-none fixed inset-0 z-0 bq-black-dots-dense" />
 
       {/* 支援滑鼠滑過：區域周邊色點發光效果 */}
-      <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
+      <div className="pointer-events-none fixed inset-0 z-0 bq-glowing-dots-dense" />
 
       <div className="relative z-10 flex flex-col items-center justify-center gap-3 sm:gap-4 w-full">
         <div className="px-4 pt-9 text-center sm:pt-0">
