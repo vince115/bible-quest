@@ -987,7 +987,21 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
       {/* Stage (free mode only; a campaign stage fixes it) */}
       {!campaign && (
-      <div role="radiogroup" aria-label={t("v3.stage.title")} className="flex flex-wrap justify-center gap-2 px-4">
+      <>
+      {/* On a phone the eight stages take four rows of chips: one drop-down instead. */}
+      <select
+        value={stage}
+        onChange={(e) => setStage(e.target.value as StageId)}
+        aria-label={t("v3.stage.title")}
+        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 px-4 py-1.5 text-center text-sm font-bold text-amber-100 focus:outline-none sm:hidden"
+      >
+        {STAGE_ORDER.map((st) => (
+          <option key={st} value={st}>
+            {t(`v3.stage.${st}`)}
+          </option>
+        ))}
+      </select>
+      <div role="radiogroup" aria-label={t("v3.stage.title")} className="hidden flex-wrap justify-center gap-2 px-4 sm:flex">
         {STAGE_ORDER.map((st) => (
           <button
             key={st}
@@ -1000,6 +1014,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
           </button>
         ))}
       </div>
+      </>
       )}
 
       {/* Full character cards; 2 rows of 3 in campaign mode (top 3, bottom 3). */}
