@@ -200,10 +200,12 @@ function MoveAmount({ value, hint }: { value: string; hint: string }) {
   const [first, second] = value.split("/");
   if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
   return (
-    <span className="text-[1.15em] font-black">
+    <span className="relative text-[1.15em] font-black">
       {first}
       <span className="px-[0.1em] text-stone-900/50">/</span>
-      <span title={hint} className="text-[#c0281f]">{second}</span>
+      <span className="text-[#c0281f]">{second}</span>
+      {/* Two words under the red number say what it is; they hang below without moving the row. */}
+      <span className="pointer-events-none absolute right-0 top-full -mt-[0.3em] whitespace-nowrap text-[0.42em] font-bold leading-none text-[#c0281f]">{hint}</span>
     </span>
   );
 }
