@@ -1037,11 +1037,12 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
           })}
         </div>
       ) : (
-        <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 pt-3 sm:gap-4">
+        // Free mode offers every card: laid out in a wrapping grid, as in the card demo.
+        <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
           {pool.map((id) => {
             const on = chosen.includes(id);
             return (
-              <div key={id} className="flex shrink-0 snap-center flex-col items-center gap-2">
+              <div key={id} className="flex flex-col items-center gap-2">
                 <button
                   onClick={() => toggle(id)}
                   aria-pressed={on}
