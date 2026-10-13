@@ -196,14 +196,14 @@ function Header({ id, light }: { id: EnemyId; light?: boolean }) {
 }
 
 /** A move's number; "60/80" is two stages (before / after the boss falls to half HP), the second in red. */
-function MoveAmount({ value }: { value: string }) {
+function MoveAmount({ value, hint }: { value: string; hint: string }) {
   const [first, second] = value.split("/");
   if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
   return (
     <span className="text-[1.15em] font-black">
       {first}
       <span className="px-[0.1em] text-stone-900/50">/</span>
-      <span className="text-[#c0281f]">{second}</span>
+      <span title={hint} className="text-[#c0281f]">{second}</span>
     </span>
   );
 }
@@ -224,10 +224,9 @@ function Body({ id }: { id: EnemyId }) {
             className="flex items-center gap-[3%] border-b border-stone-900/15 pb-[1%] last:border-0"
           >
             <span className="flex-1 text-[0.95em] font-black">{t(m.key)}</span>
-            <MoveAmount value={m.amount} />
+            <MoveAmount value={m.amount} hint={t("v3.ui.stage2")} />
           </div>
         ))}
-        {MOVES[id].some((m) => m.amount.includes("/")) && <div className="text-right text-[0.55em] font-bold leading-none text-[#c0281f]">{t("v3.ui.stage2")}</div>}
       </div>
       <div className="flex justify-between border-t border-stone-900/20 pt-[1.5%] text-[0.58em]">
         <span>
