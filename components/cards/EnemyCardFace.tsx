@@ -12,6 +12,7 @@ import { ElementIcon } from "./ElementIcon";
 import { Foil } from "./HoloCard";
 import { CARD_RARITY, lookOf } from "./rarity";
 import { RarityMark } from "./RarityMark";
+import { Shield } from "lucide-react";
 import { asset } from "@/game/assets";
 
 const PORTRAIT: Record<EnemyId, string> = {
@@ -101,7 +102,8 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
 };
 
 /** A guard's and a shooter's printed moves. */
-const guardMoves = () => [{ key: "v3.ui.protects", amount: "🛡️" }];
+const SHIELD = "shield"; // drawn as an icon, see MoveAmount
+const guardMoves = () => [{ key: "v3.ui.protects", amount: SHIELD }];
 const shooterMoves = (id: EnemyId) => [{ key: id === "archer" ? "v3.action.arrow" : "v3.action.strike", amount: String(SHOOTER_DAMAGE[id] ?? 0) }];
 
 /** The moves printed on each enemy's card: [name key, amount]. */
@@ -197,6 +199,7 @@ function Header({ id, light }: { id: EnemyId; light?: boolean }) {
 
 /** A move's number; "60/80" is two stages (before / after the boss falls to half HP), the second in red. */
 function MoveAmount({ value, hint }: { value: string; hint: string }) {
+  if (value === SHIELD) return <Shield aria-hidden size="1.15em" strokeWidth={2.5} />;
   const [first, second] = value.split("/");
   if (second === undefined) return <span className="text-[1.15em] font-black">{value}</span>;
   return (
