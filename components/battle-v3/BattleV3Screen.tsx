@@ -1512,7 +1512,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                           <span className="text-sm font-black">{t(`char.${cid}.name`)}</span>
                           <span className="flex items-center gap-1 text-[11px] font-bold tabular-nums text-slate-600">
                             {/* What is missing comes first, in the colour of the energy that cannot be used. */}
-                            {useless ? <span className={kind === "attack" ? "text-[#9b1e23]" : kind === "guard" ? "text-[#15733f]" : "text-[#205ec0]"}>{t("v3.pool.noSkill")}</span> : room <= 0 && <span className="text-red-700">{t("v3.pool.full")}</span>}
+                            {useless ? <span className={kind === "attack" ? "text-[#9b1e23]" : kind === "guard" ? "text-[#15733f]" : "text-[#205ec0]"}>{t(`v3.pool.noSkill.${kind}`)}</span> : room <= 0 && <span className="text-red-700">{t("v3.pool.full")}</span>}
                             {b.pools === "table" ? `🔴${ch.sp} 🟢${cardsOf(b, cid).green.reduce((n, v) => n + v, 0)} 🔵${ch.mp} · ${attachedTotal(b, cid)}/${energyCap(cid)}` : `MP ${ch.mp}/${mpCap(cid)} · SP ${ch.sp}/${R.pools.spCap}`}
                           </span>
                         </button>

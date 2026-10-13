@@ -1423,7 +1423,7 @@ export const zhV2: Record<V2Key, string> = {
   "v2.passive.jesusUR": "死裡復活：耶穌第一次倒下後，兩回合後以全滿 HP 復活",
 
   "v2.energy.faith.name": "信心",
-  "v2.energy.attack.name": "攻擊",
+  "v2.energy.attack.name": "勇氣",
   "v2.energy.guard.name": "守護",
   "v2.energy.faith.desc": "可保留到下回合 · 可代替 🗡️ 或 🕊️ · 機弦甩石需要 ✨3",
   "v2.energy.attack.desc": "用於攻擊 · 每回合歸零",
