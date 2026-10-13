@@ -175,6 +175,8 @@ function searchText({ id, enemy }: Viewed): string {
   return [...(["zh", "en"] as const).flatMap((l) => keys.map((k) => translate(l, k))), ALIASES[id as CharacterId | EnemyId] ?? ""].join(" ").toLowerCase();
 }
 const SEARCH = new Map(CARDS.map((c) => [c.id, searchText(c)]));
+/** The same search text for a character, so other screens (the free-mode picker) search the way the card demo does. */
+export const characterSearchText = (id: CharacterId): string => searchText({ id } as Viewed);
 
 const figureOf = ({ id, enemy, scripture }: Viewed) => (enemy || scripture ? undefined : figureArea(id as CharacterId));
 const elementOf = ({ id, enemy, scripture }: Viewed) =>

@@ -38,12 +38,13 @@ import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage
 import { useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
-import { CARD_RARITY, lookOf } from "@/components/cards/rarity";
+import { CARD_RARITY, lookOf, type Rarity } from "@/components/cards/rarity";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 import { asset } from "@/game/assets";
+import { characterSearchText } from "@/components/cards/CardDemo";
 import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
@@ -903,9 +904,15 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const last = useBattleV3Store((st) => st.lastLineup);
   const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
   const [stage, setStage] = useState<StageId>(campaign?.battle ?? "goliath");
+  // Free mode offers every card: search by name and filter by rarity.
+  const [query, setQuery] = useState("");
+  const [rarity, setRarity] = useState<Rarity | "all">("all");
   const unlocked = useAchievementStore((st) => st.unlocked);
   const pool = campaign?.pool ?? PARTY_ORDER;
   const max = campaign?.pick ?? MAX_LINEUP;
+  const q = query.trim().toLowerCase();
+  const matching = q ? pool.filter((id) => characterSearchText(id).includes(q)) : pool;
+  const shownPool = rarity === "all" ? matching : matching.filter((id) => CARD_RARITY[id] === rarity);
   // The last line-up, as far as this stage lends it; otherwise the first cards of the pool.
   const [lineup, setLineup] = useState<CharacterId[]>(() => {
     const kept = last.lineup.filter((id) => pool.includes(id));
@@ -1037,9 +1044,35 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
           })}
         </div>
       ) : (
-        // Free mode offers every card: laid out in a wrapping grid, as in the card demo.
+        <>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("v3.demo.search")}
+          aria-label={t("v3.demo.search")}
+          className="w-full max-w-sm rounded-full border-2 border-stone-500 bg-stone-900/80 px-4 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-300 focus:outline-none"
+        />
+        <div role="tablist" aria-label={t("v3.demo.filter")} className="flex flex-wrap justify-center gap-2 px-4">
+          {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => {
+            const count = f === "all" ? matching.length : matching.filter((id) => CARD_RARITY[id] === f).length;
+            return (
+              <button
+                key={f}
+                role="tab"
+                aria-selected={rarity === f}
+                onClick={() => setRarity(f)}
+                className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${rarity === f ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+              >
+                {f === "all" ? t("v3.demo.all") : f} <span className="opacity-60">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Laid out in a wrapping grid, as in the card demo. */}
         <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-          {pool.map((id) => {
+          {shownPool.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
+          {shownPool.map((id) => {
             const on = chosen.includes(id);
             return (
               <div key={id} className="flex flex-col items-center gap-2">
@@ -1077,6 +1110,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             );
           })}
         </div>
+        </>
       )}
 
       {/* Which energy rules: the free digital version (MP and SP) or the tabletop version (energy cards under characters). */}
