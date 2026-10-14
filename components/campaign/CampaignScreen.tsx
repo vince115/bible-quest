@@ -75,7 +75,7 @@ export function CampaignScreen() {
                 </p>
                 {status && <p className="mt-1 text-xs text-emerald-300">{status}</p>}
               </div>
-              <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
+              <span className="absolute right-[38px] top-1/2 z-10 -translate-y-1/2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 shadow-[0_2px_8px_rgb(0_0_0/0.6)] transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
           const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pl-[26px] transition ${art ? "pr-[calc(40%-20px)]" : "pr-[26px]"}`;
