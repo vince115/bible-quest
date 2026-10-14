@@ -17,3 +17,12 @@ export const foilCss = (id: string) => {
   const [a, b, c] = foilOf(id);
   return `linear-gradient(160deg,${a} 0%,${b} 55%,${c} 100%)`;
 };
+
+/**
+ * The picture printed on each kind of pack. For now every pack uses the one test picture (public/packs/test.jpg);
+ * give a pack its own with an entry like `beginnings: "/packs/beginnings.jpg"`. A pack without a picture shows its
+ * featured card instead.
+ */
+const TEST_PICTURE = "/packs/test.jpg";
+const PACK_PICTURES: Record<string, string> = Object.fromEntries(Object.keys(FOIL).map((id) => [id, TEST_PICTURE]));
+export const packPicture = (pack: { id: string; featured: string }) => PACK_PICTURES[pack.id] ?? `/cards/${pack.featured}.jpg`;

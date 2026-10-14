@@ -8,7 +8,7 @@ import { safeStorage } from "../locale";
 import type { Rng } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { dropFor, type CampaignStageId, type Cleared } from "./campaign";
-import { CLEAR_POINTS, PACK, PACKS, STARTING_POINTS, openPack } from "./gacha";
+import { CLEAR_POINTS, PACKS, STARTING_POINTS, openPack, packCost } from "./gacha";
 
 export interface Drop {
   card: CharacterId;
@@ -53,14 +53,15 @@ export const useProgressStore = create<ProgressStore>()(
       buyPack: (packId, rng = Math.random) => {
         const { collection, points } = get();
         const kind = PACKS.find((p) => p.id === packId);
-        if (!kind || points < PACK.cost) return null;
+        const cost = packCost();
+        if (!kind || points < cost) return null;
         const owned = { ...collection };
         const results = openPack(kind, rng).map((card) => {
           const isNew = (owned[card] ?? 0) === 0;
           owned[card] = (owned[card] ?? 0) + 1;
           return { card, isNew };
         });
-        set({ collection: owned, points: points - PACK.cost });
+        set({ collection: owned, points: points - cost });
         return results;
       },
     }),

@@ -57,6 +57,9 @@ export const PACK = {
   ] as Partial<Record<Rarity, number>>[],
 };
 
+/** What a pack costs now: NEXT_PUBLIC_DEBUG_FREE_PACKS=1 makes them free, for testing. */
+export const packCost = () => (process.env.NEXT_PUBLIC_DEBUG_FREE_PACKS === "1" ? 0 : PACK.cost);
+
 /** Blessing points earned by clearing a stage: more the first time. */
 export const CLEAR_POINTS = { first: 300, repeat: 100 };
 /** What a new player starts with: one pack. */

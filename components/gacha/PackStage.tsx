@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilOf } from "./packStyle";
+import { foilOf, packPicture } from "./packStyle";
 
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
@@ -103,15 +103,18 @@ const loadImage = (src: string) =>
   });
 
 /** Every pack on the ring is of the same kind: choose any one of them. */
-export function PackStage({ pack, count, onPick }: { pack: PackKind; count: number; onPick: (pack: PackKind) => void }) {
+export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackKind; count: number; canOpen?: boolean; onPick: (pack: PackKind) => void }) {
   const t = useT();
   const title = t(`v3.pack.${pack.id}.name`);
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<{ go: (d: number) => void } | null>(null);
   const [failed, setFailed] = useState(false);
+  // The latest callback and whether opening is allowed (the points cover a pack), read by the 3D scene's handlers
   const pick = useRef(onPick);
+  const allowed = useRef(canOpen);
   useEffect(() => {
     pick.current = onPick;
+    allowed.current = canOpen;
   });
 
   useEffect(() => {
@@ -122,7 +125,7 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
 
     (async () => {
       const THREE = await import("three");
-      const art = await loadImage(asset(`/cards/${pack.featured}.jpg`));
+      const art = await loadImage(asset(packPicture(pack)));
       if (disposed) return;
 
       let renderer: InstanceType<typeof THREE.WebGLRenderer>;
@@ -245,7 +248,9 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         if (!hit) return;
         const i = hit.object.userData.index as number;
         const front = frontIndex();
-        if (i === front) pick.current(pack);
+        if (i === front) {
+          if (allowed.current) pick.current(pack);
+        }
         else {
           let d = i - front;
           if (d > count / 2) d -= count;
@@ -329,7 +334,7 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") go(-1);
           else if (e.key === "ArrowRight") go(1);
-          else if (e.key === "Enter") onPick(pack);
+          else if (e.key === "Enter" && canOpen) onPick(pack);
         }}
       >
         <div ref={host} className="absolute inset-0" />
@@ -341,7 +346,7 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         </button>
       </div>
       {failed && <p className="text-xs text-stone-400">{t("v3.gacha.noWebgl")}</p>}
-      <button onClick={() => onPick(pack)} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400">
+      <button onClick={() => onPick(pack)} disabled={!canOpen} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg enabled:hover:bg-amber-400 disabled:opacity-40">
         {t("v3.gacha.pick")}
       </button>
     </div>
