@@ -371,7 +371,7 @@ export function CardDemo() {
             className={VIEWER_WIDTH}
             style={viewerStyle(scale)}
           >
-            <FlipCard flipped={flipped}>
+            <FlipCard flipped={flipped} effects={effects}>
               <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
                 <CardFace {...viewing} />
               </HoloCard>
