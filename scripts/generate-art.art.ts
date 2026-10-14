@@ -7,7 +7,7 @@
 //   ART_FORCE=1 ART_CALL=1 pnpm art   draw again even if art-drafts/<id>.png exists
 //
 // Keys live in .env.local (never committed, never shipped to the browser):
-//   OPENAI_API_KEY=...   ART_PROVIDER=openai (default)   OPENAI_IMAGE_MODEL=gpt-image-1
+//   OPENAI_API_KEY=...   ART_PROVIDER=openai (default)   OPENAI_IMAGE_MODEL=gpt-image-1.5
 //   GEMINI_API_KEY=...   ART_PROVIDER=gemini             GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 //   LEONARDO_API_KEY=... ART_PROVIDER=leonardo          LEONARDO_MODEL_ID=<the id of the model you draw with on leonardo.ai>
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -92,7 +92,7 @@ async function generate(prompt: string): Promise<Buffer> {
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1", prompt, size: "1024x1024", n: 1 }),
+      body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5", prompt, size: "1024x1024", n: 1 }),
     });
     if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
     const item = ((await res.json()) as { data: { b64_json?: string; url?: string }[] }).data[0];
