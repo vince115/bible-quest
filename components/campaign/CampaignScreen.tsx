@@ -15,6 +15,9 @@ import { OrnateFrame } from "@/components/cards/viewer";
 import type { CharacterId } from "@/game/v2/types";
 import { asset } from "@/game/assets";
 
+/** The picture's right end melts away in steps (eased, not a straight line), into the ground behind the text. */
+const STAGE_FADE = "linear-gradient(to right, #000 0%, #000 40%, rgb(0 0 0 / 0.82) 55%, rgb(0 0 0 / 0.55) 70%, rgb(0 0 0 / 0.25) 85%, transparent 100%)";
+
 export function CampaignScreen() {
   const t = useT();
   const cleared = useProgressStore((s) => s.cleared);
@@ -75,18 +78,23 @@ export function CampaignScreen() {
               <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pr-[26px] transition ${art ? "pl-[calc(34%+10px)]" : "pl-[26px]"}`;
+          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pr-[26px] transition ${art ? "pl-[calc(40%+6px)]" : "pl-[26px]"}`;
           return (
             <li key={stage.id}>
               <Link href={`/campaign/${stage.id}`} className={frame(!!stage.art)}>
-                {/* The black ground stays inside the frame's line (so it never shows past the scrolled corners) and is half see-through. */}
-                <span aria-hidden className="absolute inset-[3px] -z-10 bg-black/50 transition group-hover:bg-black/60" />
+                {/* The black ground stays inside the frame's line (so it never shows past the scrolled corners). It is clear over the
+                    picture and darkens to the right, so the scene melts into it. */}
+                <span
+                  aria-hidden
+                  className="absolute inset-[3px] -z-10 opacity-90 transition group-hover:opacity-100"
+                  style={{ background: "linear-gradient(to right, rgb(0 0 0 / 0) 0%, rgb(0 0 0 / 0.08) 18%, rgb(0 0 0 / 0.28) 32%, rgb(0 0 0 / 0.5) 46%, rgb(0 0 0 / 0.66) 62%, rgb(0 0 0 / 0.58) 100%)" }}
+                />
                 {/* The stage's picture fills the left of the row, edge to edge, and its right end fades away into the ground. */}
                 {stage.art && (
                   <div
                     aria-hidden
-                    className="absolute inset-y-[3px] left-[3px] z-0 w-[34%]"
-                    style={{ WebkitMaskImage: "linear-gradient(to right, #000 55%, transparent)", maskImage: "linear-gradient(to right, #000 55%, transparent)" }}
+                    className="absolute inset-y-[3px] left-[3px] z-0 w-[40%]"
+                    style={{ WebkitMaskImage: STAGE_FADE, maskImage: STAGE_FADE }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
                     <img src={asset(stage.art)} alt="" className="h-full w-full object-cover" />
