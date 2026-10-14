@@ -168,10 +168,19 @@ function EnemyCard({
           isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
         }`}
       >
-        <span className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "opacity-50 grayscale" : ""}`} style={{ fontSize: "4.67cqw" }}>
+        <span className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl transition-[filter,opacity,transform] duration-700 ${!alive ? "translate-y-1 opacity-50 grayscale" : ""}`} style={{ fontSize: "4.67cqw" }}>
           <EnemyCardFace id={id} />
         </span>
-        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-sm font-black text-stone-100 drop-shadow">{t("v2.enemy.fallen")}</span>}
+        {!alive && (
+          <motion.span
+            initial={{ opacity: 0, scale: 1.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, duration: 0.45, ease: "easeOut" }}
+            className="absolute inset-0 z-10 flex items-center justify-center text-sm font-black text-stone-100 drop-shadow"
+          >
+            {t("v2.enemy.fallen")}
+          </motion.span>
+        )}
         <span className="absolute -right-2 -top-4 z-20">
           <HpBadge hp={hp} max={ENEMY_HP[id]} />
         </span>
@@ -342,12 +351,21 @@ function CharacterSlot({
           <span aria-hidden className="pointer-events-none absolute -inset-1.5 z-10 rounded-lg border-2 border-sky-300/70 bg-sky-400/10 shadow-[0_0_14px] shadow-sky-300/60" />
         )}
         <span
-          className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "grayscale" : !canAct(b, id) ? "brightness-75" : ""}`}
+          className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl transition-[filter,opacity,transform] duration-700 ${!alive ? "translate-y-1 opacity-60 grayscale" : !canAct(b, id) ? "brightness-75" : ""}`}
           style={{ fontSize: "4.67cqw" }}
         >
           <CharacterCardFace id={id} />
         </span>
-        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow">✝</span>}
+        {!alive && (
+          <motion.span
+            initial={{ opacity: 0, scale: 1.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, duration: 0.45, ease: "easeOut" }}
+            className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow"
+          >
+            ✝
+          </motion.span>
+        )}
         <span className="absolute -right-2 -top-4 z-20">
           <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} bonus={b.pools === "table"} endless={NEVER_FALLS.has(id)} />
         </span>
