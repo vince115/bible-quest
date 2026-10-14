@@ -11,8 +11,16 @@ import { AudioToggle } from "@/components/AudioToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { safeStorage, useT } from "@/game/locale";
 import { useProgressStore } from "@/game/v3/progress";
+import { PageBackground } from "./PageBackground";
 
 const COLLAPSED_KEY = "bq-nav-collapsed";
+
+/**
+ * The scene picture behind a page. Only a page with a theme gets one (none does yet: the lists, the collection and the
+ * gacha are not about one place); give a page a picture with an entry like `"/gacha": "/stages/eden.jpg"`. Battle pages
+ * draw their own backdrop with their stage's scene.
+ */
+const PAGE_ART: Record<string, string> = {};
 
 interface Item {
   href: string;
@@ -88,8 +96,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-[100dvh] flex-1 flex-col">
-      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b border-stone-800 bg-stone-950/95 px-3 backdrop-blur">
+    <div
+      onPointerMove={(e) => {
+        // The backdrop is fixed to the screen, so the pointer is tracked in screen coordinates.
+        e.currentTarget.style.setProperty("--mouse-x", `${e.clientX}px`);
+        e.currentTarget.style.setProperty("--mouse-y", `${e.clientY}px`);
+      }}
+      className="relative flex min-h-[100dvh] flex-1 flex-col"
+    >
+      <PageBackground art={PAGE_ART[path]} />
+      <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b border-stone-800 bg-stone-950/80 px-3 backdrop-blur">
         <button
           onClick={() => setOpen(true)}
           aria-label={t("nav.open")}
@@ -118,8 +134,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <aside className={`sticky top-12 z-30 hidden h-[calc(100dvh-3rem)] shrink-0 overflow-y-auto border-r border-stone-800 bg-stone-950 transition-[width] lg:block ${collapsed ? "w-16" : "w-56"}`}>
+      <div className="relative z-10 flex min-h-0 flex-1">
+        <aside className={`sticky top-12 z-30 hidden h-[calc(100dvh-3rem)] shrink-0 overflow-y-auto border-r border-stone-800 bg-stone-950/70 backdrop-blur transition-[width] lg:block ${collapsed ? "w-16" : "w-56"}`}>
           {menu(!collapsed)}
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>

@@ -46,7 +46,7 @@ export function GachaScreen() {
   };
 
   return (
-    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center gap-6 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center gap-6 px-4 py-8">
       <div className="max-w-xl text-center">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("v3.gacha.title")}</h1>
         <p className="mt-2 text-sm text-stone-400">{t("v3.gacha.hint")}</p>
