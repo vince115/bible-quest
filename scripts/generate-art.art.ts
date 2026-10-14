@@ -117,7 +117,21 @@ const STORIES: Record<string, string> = {
   ark: "The medallion shows Noah's Ark riding the waves under a wide rainbow, with a dove carrying an olive branch above it and pairs of animals along the shore.",
   shepherd: "The medallion shows the Good Shepherd: a robed shepherd with a staff carrying a lamb on his shoulders among his flock, under a bright star, with green pastures and still waters.",
 };
+/** The same ornate leather cover but with the central picture set free in the field, no ring or medallion around it. */
+const OPEN_BASE =
+  "A tarot-card-back style design drawn as the cover of a fine dark leather Bible: gilt gold-foil line art on deep midnight " +
+  "navy leather with fine grain, a richly ornamented double-line gold border with flowing floral and vine corner flourishes, " +
+  "olive branches, wheat, grapevines and small eight-pointed stars filling the frame. Perfectly symmetrical and centred. " +
+  "The central picture stands openly on the leather with NO circle, NO ring, NO medallion and NO frame around it: its rays " +
+  "and ornaments simply spread out into the surrounding field. Reverent, luxurious, hand-crafted, gold softly glowing against the dark leather. " +
+  "No text, no letters, no words, no watermark. Portrait card proportions, filling the whole picture edge to edge.";
+const OPEN: Record<string, string> = {
+  book: "At the centre, a large open Bible resting on an ornate wooden stand, a great eight-pointed star of light above it and many long rays of golden light streaming up and outwards from its pages across the field, with olive branches curving on both sides of the book and small stars scattered around.",
+  book2: "At the centre, a large open Bible with radiant light rising from its pages in a fan of golden rays that reaches toward the borders, a bright star shining above, wreaths of olive leaves and wheat sprays flowing out from the book on both sides, small stars and sparkles all around.",
+};
 const promptForBack = (id: string) => {
+  const open = OPEN[id.replace(/^back-open-/, "")];
+  if (id.startsWith("back-open-") && open) return `${OPEN_BASE} ${open}`;
   const key = id.replace(/^back-/, "");
   return STORIES[key] ? `${STORY_BASE} ${STORIES[key]}` : `${BACK_BASE} ${BACKS[key] ?? ""}`;
 };

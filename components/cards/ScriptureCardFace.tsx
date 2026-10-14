@@ -134,7 +134,7 @@ export function ScriptureCardFace({ id }: { id: CardId }) {
 }
 
 /** The picture on the back of every card: the cover of a dark leather Bible with gilt ornament and the Nativity at its centre. */
-export const CARD_BACK = "/backs/nativity.jpg";
+export const CARD_BACK = "/backs/bible.jpg";
 
 /**
  * The back of a card, as seen on the deck pile: the picture of a leather Bible cover (public/backs), filling the card
