@@ -84,6 +84,40 @@ const BACKDROPS: Record<string, string> = {
     "An abstract watercolor backdrop on textured cold-pressed paper, like light falling through a cathedral window: soft translucent panes of ruby, sapphire and amber with thin hand-drawn gold lines forming a loose geometric lattice, edges bleeding gently into one another, calm and luminous. No pictures, no symbols, no letters, no figures.",
 };
 
+/**
+ * Card backs (ART_IDS=back-cross, back-dove, back-tree): the back of a card as the cover of a fine bound Bible, in the
+ * gold-on-dark ornamental style of tarot card backs. Portrait (set ART_SIZE=1024x1536).
+ */
+const BACK_BASE =
+  "The flat front view of the cover of a premium hand-bound leather Bible, designed as the back of a collectible card: " +
+  "rich full-grain leather in deep midnight navy with subtle oxblood undertones, fine grain and soft worn highlights, " +
+  "decorated with gilt gold-foil stamping and delicate blind embossing. Perfectly symmetrical, centred composition " +
+  "inside an elegant double-line gold border with ornate corner flourishes, olive branches, wheat and grapevine " +
+  "ornaments, small stars. Luxurious, reverent, hand-crafted bookbinding feel, gold glowing softly against the dark " +
+  "leather. No text, no letters, no words, no captions, no watermark. Portrait card proportions, filling the whole picture edge to edge.";
+const BACKS: Record<string, string> = {
+  cross: "At the centre, a refined gold cross with radiating rays of light and a halo of fine gilt lines, small stars around it.",
+  dove: "At the centre, a gold dove descending with outspread wings and an olive branch, surrounded by a sunburst of fine gilt rays.",
+  tree: "At the centre, a gold Tree of Life with spreading branches, leaves and fruit inside a circular gilt medallion, with rays of light behind it.",
+};
+/** Backs with a Bible story at the centre (ART_IDS=back-nativity, back-ark, back-shepherd), in the manner of tarot card backs. */
+const STORY_BASE =
+  "A tarot-card-back style design drawn as the cover of a fine dark leather Bible: gilt gold-foil line art on deep midnight " +
+  "navy leather with fine grain, a richly ornamented double-line gold border with flowing floral and vine corner flourishes, " +
+  "olive branches, wheat, grapevines and small eight-pointed stars filling the frame. Perfectly symmetrical and centred. " +
+  "In the middle, a glowing circular gilt medallion telling one Bible story in delicate engraved gold linework. " +
+  "Reverent, luxurious, hand-crafted, gold softly glowing against the dark leather. " +
+  "No text, no letters, no words, no watermark. Portrait card proportions, filling the whole picture edge to edge.";
+const STORIES: Record<string, string> = {
+  nativity: "The medallion shows the Nativity: a great star of Bethlehem radiating beams of light over a small stable with a manger, with a shepherd and sheep and the three wise men on camels in silhouette beneath.",
+  ark: "The medallion shows Noah's Ark riding the waves under a wide rainbow, with a dove carrying an olive branch above it and pairs of animals along the shore.",
+  shepherd: "The medallion shows the Good Shepherd: a robed shepherd with a staff carrying a lamb on his shoulders among his flock, under a bright star, with green pastures and still waters.",
+};
+const promptForBack = (id: string) => {
+  const key = id.replace(/^back-/, "");
+  return STORIES[key] ? `${STORY_BASE} ${STORIES[key]}` : `${BACK_BASE} ${BACKS[key] ?? ""}`;
+};
+
 /** The prompt for a pack picture. */
 const promptForBackdrop = (id: string) => `${BACKDROPS[id.replace(/^bg-/, "")] ?? ""} Wide composition, calm and soft, no text, no lettering, no watermark, no frame, no border.`;
 
@@ -161,7 +195,7 @@ it("draws draft card art", async () => {
   mkdirSync(DRAFTS, { recursive: true });
   const lines: string[] = [];
   for (const id of wanted) {
-    const prompt = id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
+    const prompt = id.startsWith("back-") ? promptForBack(id) : id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
     lines.push(`${id}\n  ${prompt}\n`);
     if (!call) continue;
     const out = `${DRAFTS}/${id}.png`;
