@@ -29,12 +29,20 @@ const call = process.env.ART_CALL === "1";
 const force = process.env.ART_FORCE === "1";
 const DRAFTS = "art-drafts";
 
-/** The look every card shares: the watercolor picture-book style the existing art is in. */
+/**
+ * The look every card shares, matched to the art we already have (moses, ruth, david…): soft watercolour-and-gouache
+ * storybook realism, a full-length figure standing in the middle in three-quarter view and looking off to one side,
+ * in the real landscape of their story with a few small figures far behind, warm golden light, rough-spun earth-tone
+ * clothing with one muted accent colour, and one object that says who they are. The card layout crops the picture
+ * around the figure (head in the upper third, feet near the bottom), so the figure stays centred and fully in frame.
+ */
 const STYLE =
-  "A biblical watercolor picture-book illustration, warm natural light, soft painterly brushwork on textured paper, " +
-  "rich but gentle colours, historically plausible clothing and setting. A single clear scene with the main figure " +
-  "standing in the centre, full figure visible with the head in the upper part of a square frame, space around the figure. " +
-  "No text, no letters, no captions, no frame, no border.";
+  "Soft watercolour and gouache storybook illustration with a realistic, painterly look and visible paper texture. " +
+  "A full-length figure stands in the middle of a square picture, in three-quarter view, gently looking off to one side, " +
+  "head in the upper third and feet near the bottom, nothing cut off. Behind them the real landscape of their story " +
+  "under a bright sky with soft clouds, a few tiny figures far in the distance. Warm golden light, gentle natural colours: " +
+  "earth-tone, rough-spun, historically plausible clothing with one muted blue or green accent, and one simple object in " +
+  "hand that tells who they are. Calm, dignified expression. No text, no letters, no captions, no frame, no border.";
 
 const en = (key: string) => translate("en", key);
 const known = (key: string) => en(key) !== key;
