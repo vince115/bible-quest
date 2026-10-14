@@ -19,10 +19,8 @@ export const foilCss = (id: string) => {
 };
 
 /**
- * The picture printed on each kind of pack. For now every pack uses the one test picture (public/packs/test.jpg);
- * give a pack its own with an entry like `beginnings: "/packs/beginnings.jpg"`. A pack without a picture shows its
- * featured card instead.
+ * The picture printed on each kind of pack, one scene for each period of the Bible (public/packs/<id>.jpg).
+ * A pack without a picture shows its featured card instead.
  */
-const TEST_PICTURE = "/packs/test.jpg";
-const PACK_PICTURES: Record<string, string> = Object.fromEntries(Object.keys(FOIL).map((id) => [id, TEST_PICTURE]));
+const PACK_PICTURES: Record<string, string> = Object.fromEntries(Object.keys(FOIL).map((id) => [id, `/packs/${id}.jpg`]));
 export const packPicture = (pack: { id: string; featured: string }) => PACK_PICTURES[pack.id] ?? `/cards/${pack.featured}.jpg`;
