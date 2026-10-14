@@ -3,7 +3,7 @@
 // /collection: every character card in story order. The ones the player owns are shown (with how many copies);
 // the rest are locked, showing only their rarity, so there is something to chase.
 import { motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
@@ -23,6 +23,7 @@ const RARITY_TABS = ["UR", "SSR", "SR", "R", "N"] as const;
 export function CollectionScreen() {
   const t = useT();
   const collection = useProgressStore((s) => s.collection);
+  const discard = useProgressStore((s) => s.discard);
   // Read from this browser after mount, so the prerendered page matches.
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -33,9 +34,11 @@ export function CollectionScreen() {
   const [ownedOnly, setOwnedOnly] = useState(false);
   const [viewing, setViewing] = useState<CharacterId | null>(null);
   const [flipped, setFlipped] = useState(false); // the viewed card turned to its back
+  const [discarding, setDiscarding] = useState(false); // asking whether to throw the viewed card away
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a different card always opens face up
     setFlipped(false);
+    setDiscarding(false);
   }, [viewing]);
 
   const count = (id: CharacterId) => collection[id] ?? 0;
@@ -203,10 +206,39 @@ export function CollectionScreen() {
             <button onClick={() => adjust(() => SCALE_DEFAULT)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
               {t("v3.demo.reset")}
             </button>
+            <button onClick={() => setDiscarding(true)} className="flex items-center gap-1 rounded-full border border-red-400/70 px-3 py-1 text-xs text-red-200 hover:bg-red-900/40">
+              <Trash2 size={14} aria-hidden /> {t("v3.collection.discard")}
+            </button>
             <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
               ✕ {t("v3.ui.close")}
             </button>
           </div>
+          {discarding && (
+            <div onClick={(e) => { e.stopPropagation(); setDiscarding(false); }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
+              <div role="alertdialog" onClick={(e) => e.stopPropagation()} className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-stone-600 bg-stone-900 p-5 text-center">
+                <h2 className="text-lg font-black text-stone-100">{t("v3.collection.discardTitle", { name: t(`char.${viewing}.name`) })}</h2>
+                <p className="text-sm text-stone-300">{count(viewing) > 1 ? t("v3.collection.discardMany", { n: count(viewing) }) : t("v3.collection.discardLast")}</p>
+                <button
+                  onClick={() => {
+                    const id = viewing;
+                    const last = count(id) <= 1;
+                    // On the last copy the viewer moves on to the next owned card (or closes when there is none).
+                    const at2 = viewable.indexOf(id);
+                    const after = viewable.filter((c) => c !== id)[Math.min(at2, viewable.length - 2)] ?? null;
+                    discard(id);
+                    setDiscarding(false);
+                    if (last) setViewing(after);
+                  }}
+                  className="rounded-xl bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-600"
+                >
+                  {t("v3.collection.discardConfirm")}
+                </button>
+                <button onClick={() => setDiscarding(false)} className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800">
+                  {t("v3.collection.discardCancel")}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </main>

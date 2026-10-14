@@ -27,6 +27,8 @@ interface ProgressStore {
   points: number;
   /** Records a clear, rolls the stage's drop, adds it to the collection and returns it. */
   clear: (stage: CampaignStageId, rng?: Rng) => CharacterId;
+  /** Throws one copy of a card away (the last copy removes the card from the collection); false if there is none to throw. */
+  discard: (card: CharacterId) => boolean;
   /** Spends the price of a pack and returns its cards in turn-over order, each marked new or a copy; null if the points do not cover it. */
   buyPack: (packId: string, rng?: Rng) => { card: CharacterId; isNew: boolean }[] | null;
 }
@@ -49,6 +51,16 @@ export const useProgressStore = create<ProgressStore>()(
           points: points + (first ? CLEAR_POINTS.first : CLEAR_POINTS.repeat),
         });
         return card;
+      },
+      discard: (card) => {
+        const { collection } = get();
+        const have = collection[card] ?? 0;
+        if (have <= 0) return false;
+        const next = { ...collection };
+        if (have === 1) delete next[card];
+        else next[card] = have - 1;
+        set({ collection: next });
+        return true;
       },
       buyPack: (packId, rng = Math.random) => {
         const { collection, points } = get();

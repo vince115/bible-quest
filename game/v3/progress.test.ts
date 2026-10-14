@@ -61,4 +61,15 @@ describe("points and draws", () => {
     expect(useProgressStore.getState().points).toBe(PACK.cost - 1);
     expect(useProgressStore.getState().collection).toEqual({});
   });
+
+  it("throws a card away one copy at a time, and the last copy takes it out of the collection", () => {
+    fresh();
+    useProgressStore.setState({ collection: { david: 2, adam: 1 } });
+    expect(useProgressStore.getState().discard("david")).toBe(true);
+    expect(useProgressStore.getState().collection).toEqual({ david: 1, adam: 1 });
+    expect(useProgressStore.getState().discard("david")).toBe(true);
+    expect(useProgressStore.getState().collection).toEqual({ adam: 1 });
+    expect(useProgressStore.getState().discard("david")).toBe(false); // none left
+    expect(useProgressStore.getState().collection).toEqual({ adam: 1 });
+  });
 });
