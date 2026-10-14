@@ -56,7 +56,7 @@ export function OrnateFrame({ size = 22 }: { size?: number }) {
         borderWidth: size,
         borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch`,
         // A little relief: a pale edge catching the light on the top left, a dark one in shadow on the bottom right.
-        filter: "drop-shadow(-1px -1px 0 rgb(255 244 214 / 0.45)) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.75))",
+        filter: "brightness(1.15) saturate(1.2) drop-shadow(-1px -1px 0 rgb(255 248 220 / 0.6)) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.75))",
       }}
     />
   );

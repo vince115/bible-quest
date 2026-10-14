@@ -10,7 +10,7 @@ import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
 import { HoloCard } from "./HoloCard";
-import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardFace } from "./ScriptureCardFace";
+import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
 import { CARD_RARITY, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
@@ -293,6 +293,16 @@ export function CardDemo() {
               </HoloCard>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* The back every card is dealt with (the deck pile, and a card in a pack before it is turned over) */}
+      <section className="w-full max-w-7xl px-2">
+        <h2 className="text-center text-lg font-bold">{t("v3.demo.back")}</h2>
+        <div className="flex justify-center py-4">
+          <HoloCard element="light" effects={effects} rarity="N" className="w-[220px] text-[10.3px]">
+            <ScriptureCardBack />
+          </HoloCard>
         </div>
       </section>
 
