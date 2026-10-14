@@ -10,6 +10,7 @@ import type { CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { useProgressStore } from "@/game/v3/progress";
 import { characterSearchText } from "@/components/cards/CardDemo";
+import { FlipCard } from "@/components/cards/FlipCard";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
@@ -31,6 +32,11 @@ export function CollectionScreen() {
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const [ownedOnly, setOwnedOnly] = useState(false);
   const [viewing, setViewing] = useState<CharacterId | null>(null);
+  const [flipped, setFlipped] = useState(false); // the viewed card turned to its back
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a different card always opens face up
+    setFlipped(false);
+  }, [viewing]);
 
   const count = (id: CharacterId) => collection[id] ?? 0;
   const kinds = ALL_CARDS.filter((id) => count(id) > 0).length;
@@ -161,9 +167,11 @@ export function CollectionScreen() {
               className={VIEWER_WIDTH}
               style={viewerStyle(scale)}
             >
-              <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]} figure={figureArea(viewing)}>
-                <CharacterCardFace id={viewing} />
-              </HoloCard>
+              <FlipCard flipped={flipped}>
+                <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]} figure={figureArea(viewing)}>
+                  <CharacterCardFace id={viewing} />
+                </HoloCard>
+              </FlipCard>
             </motion.div>
             {showStory && <StoryPanel id={viewing} />}
           </div>
@@ -171,6 +179,13 @@ export function CollectionScreen() {
             <span className="tabular-nums text-stone-400">
               {viewable.indexOf(viewing) + 1} / {viewable.length}
             </span>
+            <button
+              onClick={() => setFlipped((f) => !f)}
+              aria-pressed={flipped}
+              className={`rounded-full border px-3 py-1 text-xs ${flipped ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+            >
+              ⟲ {t("v3.demo.flip")}
+            </button>
             <button
               onClick={toggleStory}
               aria-pressed={showStory}

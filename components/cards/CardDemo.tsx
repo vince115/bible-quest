@@ -9,6 +9,7 @@ import type { CardId, CharacterId, EnemyId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
+import { FlipCard } from "./FlipCard";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
@@ -186,6 +187,11 @@ export function CardDemo() {
   const t = useT();
   const [effects, setEffects] = useState(true);
   const [viewing, setViewing] = useState<Viewed | null>(null);
+  const [flipped, setFlipped] = useState(false); // the viewed card turned to its back
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a different card always opens face up
+    setFlipped(false);
+  }, [viewing?.id]);
   const [filter, setFilter] = useState<Rarity | "all">("all");
   const [query, setQuery] = useState("");
   // Restored after mount (the server always renders "all"), so hydration stays in step.
@@ -365,14 +371,23 @@ export function CardDemo() {
             className={VIEWER_WIDTH}
             style={viewerStyle(scale)}
           >
-            <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
-              <CardFace {...viewing} />
-            </HoloCard>
+            <FlipCard flipped={flipped}>
+              <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
+                <CardFace {...viewing} />
+              </HoloCard>
+            </FlipCard>
           </motion.div>
           {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
+            <button
+              onClick={() => setFlipped((f) => !f)}
+              aria-pressed={flipped}
+              className={`rounded-full border px-3 py-1 text-xs ${flipped ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+            >
+              ⟲ {t("v3.demo.flip")}
+            </button>
             {!viewing.scripture && (
               <button
                 onClick={toggleStory}
