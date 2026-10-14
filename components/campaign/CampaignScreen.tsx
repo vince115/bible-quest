@@ -76,7 +76,7 @@ export function CampaignScreen() {
                 {status && <p className="mt-1 text-xs text-emerald-300">{status}</p>}
               </div>
               {/* The call to play, in white where the picture fades into the ground. */}
-              <span className="absolute bottom-[16%] right-[calc(40%+14px)] z-10 rounded-full bg-black px-4 py-1 pl-[calc(1rem+0.3em)] text-sm font-bold tracking-[0.3em] text-white opacity-80 ring-1 ring-white/25 [-webkit-text-stroke:3px_black] [paint-order:stroke_fill]">{t("v3.campaign.play")}</span>
+              <span className="absolute bottom-[16%] right-[calc(40%+14px)] z-10 rounded-full bg-black/50 px-4 py-1 pl-[calc(1rem+0.3em)] text-sm font-bold tracking-[0.3em] text-white/80 [-webkit-text-stroke:3px_rgb(0_0_0/0.8)] [paint-order:stroke_fill]">{t("v3.campaign.play")}</span>
             </>
           );
           const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pl-[26px] transition ${art ? "pr-[calc(40%-20px)]" : "pr-[26px]"}`;
