@@ -7,7 +7,6 @@ import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
 import { useT } from "@/game/locale";
 import { CAMPAIGN, TESTAMENTS, campaignBoss } from "@/game/v3/campaign";
 import { ownedCards, useProgressStore } from "@/game/v3/progress";
-import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY } from "@/components/cards/rarity";
@@ -89,26 +88,12 @@ export function CampaignScreen() {
       </section>
       ))}
 
-      {/* The collection: every card dropped so far, with how many copies */}
+      {/* The collection has its own page */}
       <section className="w-full max-w-2xl">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">{t("v3.campaign.collection")}</h2>
-          <span className="text-xs text-stone-400">{t("v3.campaign.collectionCount", { n: copies, m: owned.length })}</span>
-        </div>
-        {owned.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-500">{t("v3.campaign.empty")}</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] justify-items-center gap-3">
-            {owned.map(({ id, count }) => (
-              <div key={id} className="relative">
-                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} effects={false} touchTilt={false} figure={figureArea(id)} className="w-[120px] text-[5.6px]">
-                  <CharacterCardFace id={id} />
-                </HoloCard>
-                {count > 1 && <span className="absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">×{count}</span>}
-              </div>
-            ))}
-          </div>
-        )}
+        <Link href="/collection" className="flex items-center justify-between rounded-2xl border-2 border-stone-600 bg-stone-900 p-4 transition hover:bg-stone-800/90">
+          <span className="text-lg font-bold">{t("v3.campaign.collection")}</span>
+          <span className="text-sm text-stone-300">{ready ? t("v3.campaign.collectionCount", { n: copies, m: owned.length }) : ""} →</span>
+        </Link>
       </section>
 
       <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
