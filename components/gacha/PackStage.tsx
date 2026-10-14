@@ -142,7 +142,7 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
       // The camera orbits the stage at a fixed distance; the mouse's height over the stage sets how high it is
       // (low and level at the bottom of the stage, almost overhead at the top).
       const DIST = 10.3;
-      const LOW = 8, HIGH = 48, REST = 24; // degrees above the floor
+      const LOW = 0, HIGH = 45, REST = 24; // degrees above the floor
       let pitch = (REST - LOW) / (HIGH - LOW); // 0..1, where the camera is now
       let pitchTarget = pitch;
       const aim = () => {
