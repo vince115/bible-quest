@@ -49,6 +49,8 @@ import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIc
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
 import { playSfx, playSfxSequence } from "@/game/sfx";
+import { battleDeltas } from "@/game/v3/battleFx";
+import { BattleFxContext, FxNumbers, usePopups, useHitShake } from "./BattleFx";
 import { sfxEvents } from "@/game/v3/sfxEvents";
 
 type T = ReturnType<typeof useT>;
@@ -149,9 +151,13 @@ function EnemyCard({
     isBoss && g.charging && { text: t(`v3.ui.charging.${id}`) === `v3.ui.charging.${id}` ? t("v2.ui.charging") : t(`v3.ui.charging.${id}`), tone: "bg-orange-600" },
     isBoss && STAGE_GUARD[b.stage] && enemyAlive(b, STAGE_GUARD[b.stage]!) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
+  const cardRef = useRef<HTMLButtonElement>(null);
+  useHitShake(id, cardRef);
   return (
     <div className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+      <FxNumbers id={id} />
       <button
+        ref={cardRef}
         onClick={(e) => {
           e.stopPropagation();
           if (isTarget) onTarget();
@@ -316,9 +322,13 @@ function CharacterSlot({
   const b = board.battle;
   const c = b.party[id];
   const alive = isAlive(b, id);
+  const cardRef = useRef<HTMLButtonElement>(null);
+  useHitShake(id, cardRef);
   return (
     <div className={`relative flex shrink-0 flex-col items-center gap-2 ${CHAR_WIDTH[size]} ${className}`}>
+      <FxNumbers id={id} />
       <button
+        ref={cardRef}
         onClick={(e) => {
           e.stopPropagation();
           onClick();
@@ -1240,11 +1250,15 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [showResult, setShowResult] = useState(true);
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
+  const { popups, add: addPopups } = usePopups();
   useEffect(() => {
     const prev = lastBattle.current;
     lastBattle.current = b ?? null;
-    if (b && prev !== b) playSfxSequence(sfxEvents(prev, b));
-  }, [b]);
+    if (b && prev !== b) {
+      playSfxSequence(sfxEvents(prev, b));
+      addPopups(battleDeltas(prev, b)); // and the numbers that float over the cards
+    }
+  }, [b, addPopups]);
   const [leaving, setLeaving] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -1334,6 +1348,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
   return (
     <PoolModeContext.Provider value={b.pools}>
+    <BattleFxContext.Provider value={popups}>
     <div
       onPointerMove={onPointerMove}
       onClick={() => {
@@ -1843,6 +1858,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </button>
       )}
     </div>
+    </BattleFxContext.Provider>
     </PoolModeContext.Provider>
   );
 }
