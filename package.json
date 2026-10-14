@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "paper": "vitest run --config vitest.paper.config.mts"
+    "paper": "vitest run --config vitest.paper.config.mts",
+    "art": "vitest run --config vitest.art.config.mts"
   },
   "dependencies": {
     "framer-motion": "^14.0.0",
