@@ -17,7 +17,11 @@ export type SfxName =
   | "down" // one of ours falls
   | "enemyDown"
   | "victory"
-  | "defeat";
+  | "defeat"
+  | "tear" // a pack torn open
+  | "flip" // a card turned over
+  | "land" // a card landing on the table
+  | "rare"; // a rare card (SR or better) turned over
 
 let ctx: AudioContext | null = null;
 let noise: AudioBuffer | null = null;
@@ -135,6 +139,23 @@ const RECIPES: Record<SfxName, Recipe> = {
       tone(c, o, { freq: f, at: i * 0.14, dur: 0.45, gain: 0.2 });
       tone(c, o, { type: "triangle", freq: f / 2, at: i * 0.14, dur: 0.45, gain: 0.12 });
     });
+  },
+  tear: (c, o) => {
+    burst(c, o, { filter: "bandpass", freq: 2200, to: 900, dur: 0.32, gain: 0.45 });
+    burst(c, o, { filter: "highpass", freq: 4500, at: 0.04, dur: 0.22, gain: 0.25 });
+    tone(c, o, { type: "triangle", freq: 140, to: 90, at: 0.28, dur: 0.18, gain: 0.25 });
+  },
+  flip: (c, o) => {
+    burst(c, o, { filter: "bandpass", freq: 1800, to: 3200, dur: 0.09, gain: 0.28 });
+    tone(c, o, { type: "triangle", freq: 320, to: 220, dur: 0.1, gain: 0.12 });
+  },
+  land: (c, o) => {
+    burst(c, o, { filter: "lowpass", freq: 700, to: 250, dur: 0.1, gain: 0.35 });
+    tone(c, o, { freq: 120, to: 70, dur: 0.1, gain: 0.3 });
+  },
+  rare: (c, o) => {
+    [783.99, 987.77, 1318.51, 1567.98].forEach((f, i) => tone(c, o, { freq: f, at: i * 0.07, dur: 0.5, gain: 0.16 }));
+    burst(c, o, { filter: "highpass", freq: 6000, at: 0.05, dur: 0.3, gain: 0.12 });
   },
   defeat: (c, o) => {
     [440, 349.23, 293.66, 220].forEach((f, i) => tone(c, o, { type: "triangle", freq: f, at: i * 0.22, dur: 0.55, gain: 0.25 }));

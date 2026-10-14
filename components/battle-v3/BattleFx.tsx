@@ -11,8 +11,12 @@ export interface Popup extends Delta {
   uid: number;
 }
 
-/** The numbers on screen right now. */
-export const BattleFxContext = createContext<Popup[]>([]);
+/** What the cards show right now: the floating numbers, and how many times the enemy side has struck so far. */
+export interface BattleFx {
+  popups: Popup[];
+  strikes: number;
+}
+export const BattleFxContext = createContext<BattleFx>({ popups: [], strikes: 0 });
 
 /** How long a number stays on screen. */
 const LIFETIME_MS = 1000;
@@ -40,7 +44,7 @@ const SIGN: Record<Popup["kind"], string> = { damage: "−", block: "−", heal:
 
 /** The numbers floating over one card. */
 export function FxNumbers({ id }: { id: CharacterId | EnemyId }) {
-  const mine = useContext(BattleFxContext).filter((p) => p.id === id);
+  const mine = useContext(BattleFxContext).popups.filter((p) => p.id === id);
   return (
     <>
       {mine.map((p, i) => (
@@ -62,7 +66,7 @@ export function FxNumbers({ id }: { id: CharacterId | EnemyId }) {
 
 /** Shakes the element each time its card is hit (HP lost, or the shield took the blow). */
 export function useHitShake(id: CharacterId | EnemyId, ref: RefObject<HTMLElement | null>) {
-  const hits = useContext(BattleFxContext).filter((p) => p.id === id && (p.kind === "damage" || p.kind === "block"));
+  const hits = useContext(BattleFxContext).popups.filter((p) => p.id === id && (p.kind === "damage" || p.kind === "block"));
   const last = hits.length ? hits[hits.length - 1].uid : 0;
   useEffect(() => {
     if (!last) return;
@@ -71,4 +75,19 @@ export function useHitShake(id: CharacterId | EnemyId, ref: RefObject<HTMLElemen
       { duration: 360, easing: "ease-out" },
     );
   }, [last, ref]);
+}
+
+/** An enemy card lunges toward our side each time the enemy side strikes (an ally is hurt in the enemy's turn). */
+export function useStrikeLunge(alive: boolean, ref: RefObject<HTMLElement | null>) {
+  const { strikes } = useContext(BattleFxContext);
+  const seen = useRef(strikes);
+  useEffect(() => {
+    if (strikes === seen.current) return;
+    seen.current = strikes;
+    if (!alive) return;
+    ref.current?.animate(
+      [{ transform: "translateY(0) scale(1)" }, { transform: "translateY(-10px) scale(0.97)", offset: 0.25 }, { transform: "translateY(22px) scale(1.06)", offset: 0.5 }, { transform: "translateY(0) scale(1)" }],
+      { duration: 520, easing: "ease-in-out" },
+    );
+  }, [strikes, alive, ref]);
 }

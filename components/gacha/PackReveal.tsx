@@ -2,7 +2,8 @@
 
 // Turning the five cards of an opened pack over, one at a time, then all five together.
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { playSfx } from "@/game/sfx";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -37,8 +38,19 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
   const [all, setAll] = useState(false);
 
   const current = results[at];
+  const rare = (i: number) => ["SR", "SSR", "UR"].includes(CARD_RARITY[results[i].card]);
+  // The cards land on the table one after another: a soft thud for each, as it arrives.
+  useEffect(() => {
+    if (!all) return;
+    const timers = results.map((_, i) => window.setTimeout(() => playSfx(rare(i) ? "rare" : "land"), 220 * i + 380));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- results never change while the pack is shown
+  }, [all]);
   const tap = () => {
-    if (!flipped) setFlipped(true);
+    if (!flipped) {
+      setFlipped(true);
+      playSfx(rare(at) ? "rare" : "flip");
+    }
     else if (at < results.length - 1) {
       setAt(at + 1);
       setFlipped(false);

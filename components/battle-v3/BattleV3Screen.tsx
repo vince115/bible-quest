@@ -50,7 +50,7 @@ import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
 import { playSfx, playSfxSequence } from "@/game/sfx";
 import { battleDeltas } from "@/game/v3/battleFx";
-import { BattleFxContext, FxNumbers, usePopups, useHitShake } from "./BattleFx";
+import { BattleFxContext, FxNumbers, usePopups, useHitShake, useStrikeLunge } from "./BattleFx";
 import { sfxEvents } from "@/game/v3/sfxEvents";
 
 type T = ReturnType<typeof useT>;
@@ -152,9 +152,11 @@ function EnemyCard({
     isBoss && STAGE_GUARD[b.stage] && enemyAlive(b, STAGE_GUARD[b.stage]!) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
   const cardRef = useRef<HTMLButtonElement>(null);
+  const lungeRef = useRef<HTMLDivElement>(null);
   useHitShake(id, cardRef);
+  useStrikeLunge(alive, lungeRef);
   return (
-    <div className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+    <div ref={lungeRef} className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
       <FxNumbers id={id} />
       <button
         ref={cardRef}
@@ -1269,12 +1271,16 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
   const { popups, add: addPopups } = usePopups();
+  const [strikes, setStrikes] = useState(0); // how many times the enemy side has struck
   useEffect(() => {
     const prev = lastBattle.current;
     lastBattle.current = b ?? null;
     if (b && prev !== b) {
       playSfxSequence(sfxEvents(prev, b));
-      addPopups(battleDeltas(prev, b)); // and the numbers that float over the cards
+      const deltas = battleDeltas(prev, b);
+      addPopups(deltas); // and the numbers that float over the cards
+      // An ally losing HP (our own moves do not hurt us) means the enemy side struck.
+      if (prev && deltas.some((d) => d.kind === "damage" && b.lineup.includes(d.id as CharacterId))) setStrikes((n) => n + 1);
     }
   }, [b, addPopups]);
   const [leaving, setLeaving] = useState(false);
@@ -1366,7 +1372,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
   return (
     <PoolModeContext.Provider value={b.pools}>
-    <BattleFxContext.Provider value={popups}>
+    <BattleFxContext.Provider value={{ popups, strikes }}>
     <div
       onPointerMove={onPointerMove}
       onClick={() => {

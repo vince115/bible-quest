@@ -4,6 +4,7 @@
 import { Scissors } from "lucide-react";
 import { useRef, useState } from "react";
 import { useT } from "@/game/locale";
+import { playSfx } from "@/game/sfx";
 import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
 
@@ -24,6 +25,7 @@ export function PackTear({ pack, onTorn }: { pack: PackKind; onTorn: () => void 
     if (done) return;
     setDone(true);
     setProgress(1);
+    playSfx("tear");
     window.setTimeout(onTorn, 650);
   };
   const toward = (clientX: number) => {
