@@ -51,6 +51,29 @@ const known = (key: string) => en(key) !== key;
 /** The first couple of sentences of a longer text. */
 const gist = (text: string) => text.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
 
+/** The medium and mood of every picture, without the one-figure composition of a card (packs show a whole scene). */
+const MEDIUM =
+  "Traditional hand-painted watercolor on textured cold-pressed paper, translucent washes, soft pigment blooms and delicate " +
+  "colored-pencil details, in the realistic storybook look of a biblical picture book. Square composition, warm golden light, " +
+  "gentle natural colours, a calm, dignified, child-friendly atmosphere. " +
+  "No violence, no blood, no horror effects, no modern objects, no text, no lettering, no watermark, no frame, no border.";
+
+/** The scene printed on each kind of pack (ids as in game/v3/gacha.ts); ask for one with ART_IDS=pack-beginnings. */
+const PACK_SCENES: Record<string, string> = {
+  beginnings: "The Garden of Eden at first light: a river through lush trees heavy with fruit, a wide tree at the centre, gentle animals, soft mist, the sky just turning gold.",
+  exodus: "The people of Israel walking through the Red Sea on dry ground between two tall walls of blue water, with a pillar of cloud glowing above them, a long line of travellers carrying bundles and leading flocks.",
+  kingdom: "A young shepherd boy with a sling standing on a hillside above the Valley of Elah at dawn, sheep grazing nearby, the tents of two armies faint in the distance.",
+  prophets: "Mount Carmel at evening: a stone altar with an offering, a lone prophet in a plain robe lifting his hands toward the sky, a small cloud rising far over the sea.",
+  exile: "A wise old man in simple robes kneeling in prayer at an open window in a Babylonian house at dusk, the city's towers and palm trees glowing outside.",
+  nativity: "A quiet night in Bethlehem: a simple stable lit by a warm glow, a mother and father bending over a manger, shepherds and sheep arriving, a bright star above the hills.",
+  ministry: "The shore of the Sea of Galilee at sunrise: fishing boats, nets drying on the sand, a crowd gathering on the hillside to listen, fishermen turning toward a teacher.",
+  passion: "Three wooden crosses on a hill at the quiet hour of evening, a soft light breaking through heavy clouds over Jerusalem in the distance, a few women watching from afar. Gentle and reverent, no suffering shown.",
+  church: "Early believers sharing bread in a courtyard in Jerusalem, a small flame of light resting above them, travellers with scrolls setting out along a road toward the sea.",
+};
+
+/** The prompt for a pack picture. */
+const promptForPack = (id: string) => `${MEDIUM} Scene: ${PACK_SCENES[id.replace(/^pack-/, "")] ?? ""}`;
+
 /** The prompt for a card: the shared style, then who it is and the scene to paint. */
 function promptFor(id: string): string {
   const isEnemy = id in ENEMY_ELEMENT && !(id in CHARACTER_ELEMENT);
@@ -123,7 +146,7 @@ it("draws draft card art", async () => {
   mkdirSync(DRAFTS, { recursive: true });
   const lines: string[] = [];
   for (const id of wanted) {
-    const prompt = promptFor(id);
+    const prompt = id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
     lines.push(`${id}\n  ${prompt}\n`);
     if (!call) continue;
     const out = `${DRAFTS}/${id}.png`;
