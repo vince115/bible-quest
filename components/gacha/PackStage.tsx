@@ -1,6 +1,6 @@
 "use client";
 
-// The pack stage, in three.js: the packs of the kind on offer stand in a ring on a round stage, seen from a little above
+// The pack stage, in three.js: the packs of the kind on offer stand in a ring, seen from a little above
 // so the ones at the back show over the ones in front. Turn it (arrows, drag, or tap a pack); the pack in front is the one to open.
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -161,15 +161,6 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
       warm.position.set(0, 2.6, 5.6);
       scene.add(warm);
 
-      // The stage: a round floor with a rim of light
-      const floor = new THREE.Mesh(new THREE.CircleGeometry(4.35, 64), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.55, metalness: 0.25 }));
-      floor.rotation.x = -Math.PI / 2;
-      scene.add(floor);
-      const rim = new THREE.Mesh(new THREE.RingGeometry(4.2, 4.35, 64), new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 }));
-      rim.rotation.x = -Math.PI / 2;
-      rim.position.y = 0.005;
-      scene.add(rim);
-
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
       const backTex = new THREE.CanvasTexture(paintBack(pack.id));
@@ -311,10 +302,6 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
         geometry.dispose();
-        floor.geometry.dispose();
-        (floor.material as InstanceType<typeof THREE.Material>).dispose();
-        rim.geometry.dispose();
-        (rim.material as InstanceType<typeof THREE.Material>).dispose();
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
