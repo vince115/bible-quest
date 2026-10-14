@@ -201,8 +201,8 @@ const en = {
   "ui.campaign": "Campaign",
   "ui.free": "Free mode (test)",
   "ui.switchLanguage": "Switch language",
-  "ui.soundOn": "Music on",
-  "ui.soundOff": "Music muted",
+  "ui.soundOn": "Sound on",
+  "ui.soundOff": "Sound off",
 };
 
 type MessageKey = keyof typeof en;
@@ -401,8 +401,8 @@ const zh: Record<MessageKey, string> = {
   "ui.campaign": "主線闖關",
   "ui.free": "自由模式（測試）",
   "ui.switchLanguage": "切換語言",
-  "ui.soundOn": "音樂開啟",
-  "ui.soundOff": "音樂靜音",
+  "ui.soundOn": "聲音開啟",
+  "ui.soundOff": "聲音關閉",
 };
 
 const DICTS: Record<Locale, Record<string, string>> = {

@@ -35,7 +35,7 @@ import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3
 import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
-import { useProgressStore } from "@/game/v3/progress";
+import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, lookOf, type Rarity } from "@/components/cards/rarity";
@@ -48,6 +48,10 @@ import { characterSearchText } from "@/components/cards/CardDemo";
 import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
+import { playSfx, playSfxSequence } from "@/game/sfx";
+import { battleDeltas } from "@/game/v3/battleFx";
+import { BattleFxContext, FxNumbers, usePopups, useHitShake, useStrikeLunge } from "./BattleFx";
+import { sfxEvents } from "@/game/v3/sfxEvents";
 
 type T = ReturnType<typeof useT>;
 /** A skill waiting for its target; `basic` is the tabletop rules' free basic attack (made by that character) instead of a skill. */
@@ -63,13 +67,13 @@ const ENERGY_RING: Record<EnergyKind, string> = {
 /**
  * Desktop: responsive card sizing fitting 3 rows (enemies, 4 skill cards, 3 character cards) without board scrolling.
  */
-const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-20rem)*0.26))]";
+const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-23rem)*0.26))]";
 /** Phones: 3 character cards across screen width in bottom row. */
-const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-20rem)*0.26))]";
+const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.26))]";
 const CARD_WIDTH = { large: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}`, small: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}` };
 const CHAR_WIDTH = CARD_WIDTH;
 /** Upper row: 4 skill/energy card slots across screen width. */
-const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-20rem)*0.19))]";
+const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
 const CARD_RATIO = "aspect-[63/88]";
 
 
@@ -147,9 +151,15 @@ function EnemyCard({
     isBoss && g.charging && { text: t(`v3.ui.charging.${id}`) === `v3.ui.charging.${id}` ? t("v2.ui.charging") : t(`v3.ui.charging.${id}`), tone: "bg-orange-600" },
     isBoss && STAGE_GUARD[b.stage] && enemyAlive(b, STAGE_GUARD[b.stage]!) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const lungeRef = useRef<HTMLDivElement>(null);
+  useHitShake(id, cardRef);
+  useStrikeLunge(alive, lungeRef);
   return (
-    <div className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+    <div ref={lungeRef} className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+      <FxNumbers id={id} />
       <button
+        ref={cardRef}
         onClick={(e) => {
           e.stopPropagation();
           if (isTarget) onTarget();
@@ -160,10 +170,19 @@ function EnemyCard({
           isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
         }`}
       >
-        <span className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "opacity-50 grayscale" : ""}`} style={{ fontSize: "4.67cqw" }}>
+        <span className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl transition-[filter,opacity,transform] duration-700 ${!alive ? "translate-y-1 opacity-50 grayscale" : ""}`} style={{ fontSize: "4.67cqw" }}>
           <EnemyCardFace id={id} />
         </span>
-        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-sm font-black text-stone-100 drop-shadow">{t("v2.enemy.fallen")}</span>}
+        {!alive && (
+          <motion.span
+            initial={{ opacity: 0, scale: 1.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, duration: 0.45, ease: "easeOut" }}
+            className="absolute inset-0 z-10 flex items-center justify-center text-sm font-black text-stone-100 drop-shadow"
+          >
+            {t("v2.enemy.fallen")}
+          </motion.span>
+        )}
         <span className="absolute -right-2 -top-4 z-20">
           <HpBadge hp={hp} max={ENEMY_HP[id]} />
         </span>
@@ -314,9 +333,13 @@ function CharacterSlot({
   const b = board.battle;
   const c = b.party[id];
   const alive = isAlive(b, id);
+  const cardRef = useRef<HTMLButtonElement>(null);
+  useHitShake(id, cardRef);
   return (
     <div className={`relative flex shrink-0 flex-col items-center gap-2 ${CHAR_WIDTH[size]} ${className}`}>
+      <FxNumbers id={id} />
       <button
+        ref={cardRef}
         onClick={(e) => {
           e.stopPropagation();
           onClick();
@@ -330,12 +353,21 @@ function CharacterSlot({
           <span aria-hidden className="pointer-events-none absolute -inset-1.5 z-10 rounded-lg border-2 border-sky-300/70 bg-sky-400/10 shadow-[0_0_14px] shadow-sky-300/60" />
         )}
         <span
-          className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl ${!alive ? "grayscale" : !canAct(b, id) ? "brightness-75" : ""}`}
+          className={`absolute inset-0 overflow-hidden rounded-xs shadow-2xl transition-[filter,opacity,transform] duration-700 ${!alive ? "translate-y-1 opacity-60 grayscale" : !canAct(b, id) ? "brightness-75" : ""}`}
           style={{ fontSize: "4.67cqw" }}
         >
           <CharacterCardFace id={id} />
         </span>
-        {!alive && <span className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow">✝</span>}
+        {!alive && (
+          <motion.span
+            initial={{ opacity: 0, scale: 1.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25, duration: 0.45, ease: "easeOut" }}
+            className="absolute inset-0 z-10 flex items-center justify-center text-4xl text-stone-100 drop-shadow"
+          >
+            ✝
+          </motion.span>
+        )}
         <span className="absolute -right-2 -top-4 z-20">
           <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} bonus={b.pools === "table"} endless={NEVER_FALLS.has(id)} />
         </span>
@@ -679,6 +711,7 @@ function SkillFocus({
   const [casting, setCasting] = useState<SkillId | null>(null);
   const cast = (skill: SkillId) => {
     setCasting(skill);
+    playSfx("cast");
     setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
   const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
@@ -915,7 +948,13 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const unlocked = useAchievementStore((st) => st.unlocked);
-  const pool = campaign?.pool ?? PARTY_ORDER;
+  // Free mode offers the cards the player owns; the collection is read from this browser after mount.
+  const collection = useProgressStore((st) => st.collection);
+  const [ownedReady, setOwnedReady] = useState(!!campaign);
+  useEffect(() => {
+    if (!campaign) void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setOwnedReady(true));
+  }, [campaign]);
+  const pool = campaign?.pool ?? freeModePool(collection, PARTY_ORDER);
   const max = campaign?.pick ?? MAX_LINEUP;
   const q = query.trim().toLowerCase();
   const matching = q ? pool.filter((id) => characterSearchText(id).includes(q)) : pool;
@@ -926,7 +965,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
     return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
   });
   const [front, setFront] = useState<CharacterId>(last.front);
-  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
+  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id) && pool.includes(id));
   const lead = chosen.includes(front) ? front : chosen[0];
   // At most three characters go to battle, and one card per person: picking another card of the same person swaps it in.
   const full = chosen.length >= max;
@@ -946,7 +985,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   return (
     <div
       onPointerMove={onPointerMove}
-      className="relative flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-3 bg-stone-950 py-4 sm:gap-4 sm:py-6 overflow-hidden"
+      className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center justify-center gap-3 bg-stone-950 py-4 sm:gap-4 sm:py-6 overflow-hidden"
     >
       {/* ===== 背景 4 層架構 ===== */}
       {/* [底層 1] 放大關卡專屬場景照片（每關不同背景照片） */}
@@ -1025,7 +1064,14 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
 
       {/* Full character cards; 2 rows of 3 in campaign mode (top 3, bottom 3). */}
-      {campaign || pool.length <= 6 ? (
+      {!campaign && !ownedReady ? null : !campaign && pool.length === 0 ? (
+        <div className="flex max-w-sm flex-col items-center gap-3 px-6 py-8 text-center">
+          <p className="text-sm text-stone-200">{t("v3.free.empty")}</p>
+          <Link href="/campaign" className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+            {t("v3.campaign.list")}
+          </Link>
+        </div>
+      ) : campaign || pool.length <= 6 ? (
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 justify-items-center max-w-4xl mx-auto px-2 sm:px-4 py-2">
           {pool.map((id) => {
             const on = chosen.includes(id);
@@ -1193,7 +1239,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       </div>
       )}
 
-      <Link href={campaign ? "/campaign" : "/"} className="text-xs text-stone-400 underline">
+      <Link href={campaign ? "/campaign" : "/"} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-300 hover:bg-white/10">
         {campaign ? `← ${t("v3.campaign.list")}` : t("v2.ui.backHome")}
       </Link>
       </div>
@@ -1222,6 +1268,21 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [scale] = useState(savedScale);
   const [showLog, setShowLog] = useState(false);
   const [showResult, setShowResult] = useState(true);
+  // Sound effects: whatever changed in the battle since the last look decides what is heard.
+  const lastBattle = useRef<BattleState | null>(null);
+  const { popups, add: addPopups } = usePopups();
+  const [strikes, setStrikes] = useState(0); // how many times the enemy side has struck
+  useEffect(() => {
+    const prev = lastBattle.current;
+    lastBattle.current = b ?? null;
+    if (b && prev !== b) {
+      playSfxSequence(sfxEvents(prev, b));
+      const deltas = battleDeltas(prev, b);
+      addPopups(deltas); // and the numbers that float over the cards
+      // An ally losing HP (our own moves do not hurt us) means the enemy side struck.
+      if (prev && deltas.some((d) => d.kind === "damage" && b.lineup.includes(d.id as CharacterId))) setStrikes((n) => n + 1);
+    }
+  }, [b, addPopups]);
   const [leaving, setLeaving] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -1284,7 +1345,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   };
   const onCharacter = (id: CharacterId) => {
     if (pending?.targets.includes(id)) return onTarget(id);
-    if (pending) return;
+    if (pending) return setPending(null); // tapping a card that is not a target gives up choosing
     if (promote && canSwap(board, id)) return swap(id);
     setActing(open === id ? null : id);
   };
@@ -1311,12 +1372,14 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
   return (
     <PoolModeContext.Provider value={b.pools}>
+    <BattleFxContext.Provider value={{ popups, strikes }}>
     <div
       onPointerMove={onPointerMove}
       onClick={() => {
         setActing(null);
+        setPending(null); // a tap on the empty table gives up choosing a target
       }}
-      className="relative flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
+      className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
     >
       {/* ===== 背景 4 層架構 ===== */}
       {/* [底層 1] 放大關卡專屬場景照片（每關不同背景照片） */}
@@ -1383,9 +1446,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   e.stopPropagation();
                   setPending(null);
                 }}
-                className="ml-2 text-xs text-stone-300 underline"
+                className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
               >
-                {t("v2.ui.cancel")}
+                ✕ {t("v2.ui.cancel")}
               </button>
             </span>
           ) : lastHit ? (
@@ -1819,6 +1882,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </button>
       )}
     </div>
+    </BattleFxContext.Provider>
     </PoolModeContext.Provider>
   );
 }

@@ -31,13 +31,33 @@ export const VIEWER_WIDTH =
 export const viewerStyle = (scale: number) =>
   ({ "--real": REAL_SIZE, "--cal": scale, width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }) as React.CSSProperties;
 
-/** The gold frame around a side panel: a 9-slice of public/ui-frame-gold.png, whose dark ground is transparent. */
-export function GoldFrame() {
+/** The gold frame around a side panel: a 9-slice of public/ui-frame-gold.png, whose dark ground is transparent. `size` is the width of the frame in pixels. */
+export function GoldFrame({ size = 34 }: { size?: number }) {
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0"
-      style={{ borderStyle: "solid", borderWidth: 34, borderImage: "url(/ui-frame-gold.png) 48 / 34px stretch" }}
+      style={{ borderStyle: "solid", borderWidth: size, borderImage: `url(/ui-frame-gold.png) 48 / ${size}px stretch` }}
+    />
+  );
+}
+
+/**
+ * A thin ornate frame with scrolled corners: a 9-slice of public/ui-frame-ornate.png (a supplied black line frame turned
+ * into gold lines on a transparent ground, trimmed so the frame touches the edges). `size` is its width in pixels.
+ */
+export function OrnateFrame({ size = 22 }: { size?: number }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 opacity-80"
+      style={{
+        borderStyle: "solid",
+        borderWidth: size,
+        borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch`,
+        // A little relief: a pale edge catching the light on the top left, a dark one in shadow on the bottom right.
+        filter: "brightness(1.1) drop-shadow(-1px -1px 0 rgb(255 248 220 / 0.6)) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.75))",
+      }}
     />
   );
 }

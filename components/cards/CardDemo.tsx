@@ -9,8 +9,9 @@ import type { CardId, CharacterId, EnemyId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
+import { FlipCard } from "./FlipCard";
 import { HoloCard } from "./HoloCard";
-import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardFace } from "./ScriptureCardFace";
+import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
 import { CARD_RARITY, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
@@ -186,6 +187,11 @@ export function CardDemo() {
   const t = useT();
   const [effects, setEffects] = useState(true);
   const [viewing, setViewing] = useState<Viewed | null>(null);
+  const [flipped, setFlipped] = useState(false); // the viewed card turned to its back
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a different card always opens face up
+    setFlipped(false);
+  }, [viewing?.id]);
   const [filter, setFilter] = useState<Rarity | "all">("all");
   const [query, setQuery] = useState("");
   // Restored after mount (the server always renders "all"), so hydration stays in step.
@@ -239,7 +245,7 @@ export function CardDemo() {
   });
 
   return (
-    <main className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-5 bg-[radial-gradient(circle_at_50%_30%,#3b2f1a_0%,#1c1917_55%,#0c0a09_100%)] px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center justify-center gap-5 px-4 py-8">
       <div className="text-center">
         <h1 className="text-xl font-bold">{t("v3.demo.title")}</h1>
         <p className="mt-1 text-sm text-stone-400">{t("v3.demo.hint")}</p>
@@ -293,6 +299,16 @@ export function CardDemo() {
               </HoloCard>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* The back every card is dealt with (the deck pile, and a card in a pack before it is turned over) */}
+      <section className="w-full max-w-7xl px-2">
+        <h2 className="text-center text-lg font-bold">{t("v3.demo.back")}</h2>
+        <div className="flex justify-center py-4">
+          <HoloCard element="light" effects={effects} rarity="N" className="w-[220px] text-[10.3px]">
+            <ScriptureCardBack />
+          </HoloCard>
         </div>
       </section>
 
@@ -351,13 +367,18 @@ export function CardDemo() {
             initial={{ scale: 0.55, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            onClick={(e) => e.stopPropagation()}
-            className={VIEWER_WIDTH}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlipped((f) => !f); // a tap on the card turns it over
+            }}
+            className={`${VIEWER_WIDTH} cursor-pointer`}
             style={viewerStyle(scale)}
           >
-            <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
-              <CardFace {...viewing} />
-            </HoloCard>
+            <FlipCard flipped={flipped} effects={effects}>
+              <HoloCard element={elementOf(viewing)} effects={effects} rarity={rarityOf(viewing)} figure={figureOf(viewing)}>
+                <CardFace {...viewing} />
+              </HoloCard>
+            </FlipCard>
           </motion.div>
           {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>

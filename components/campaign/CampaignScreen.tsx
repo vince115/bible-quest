@@ -7,13 +7,16 @@ import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
 import { useT } from "@/game/locale";
 import { CAMPAIGN, TESTAMENTS, campaignBoss } from "@/game/v3/campaign";
 import { ownedCards, useProgressStore } from "@/game/v3/progress";
-import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
+import { OrnateFrame } from "@/components/cards/viewer";
 import type { CharacterId } from "@/game/v2/types";
 import { asset } from "@/game/assets";
+
+/** The picture's left end melts away in steps (eased, not a straight line), into the ground behind the text. */
+const STAGE_FADE = "linear-gradient(to left, #000 0%, #000 40%, rgb(0 0 0 / 0.82) 55%, rgb(0 0 0 / 0.55) 70%, rgb(0 0 0 / 0.25) 85%, transparent 100%)";
 
 export function CampaignScreen() {
   const t = useT();
@@ -28,7 +31,7 @@ export function CampaignScreen() {
   const copies = owned.reduce((n, c) => n + c.count, 0);
 
   return (
-    <main className="flex min-h-[100dvh] flex-1 flex-col items-center gap-6 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center gap-6 px-4 py-8">
       <div className="max-w-xl text-center">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("v3.campaign.title")}</h1>
         <p className="mt-2 text-sm text-stone-400">{t("v3.campaign.hint")}</p>
@@ -48,21 +51,20 @@ export function CampaignScreen() {
           const status = times > 0 ? t("v3.campaign.cleared", { n: times }) : null;
           const body = (
             <>
-              {/* Stage art (1:1 square), or the boss card, or a placeholder while the boss is still being built */}
-              <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
-                {stage.art ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public
-                  <img src={asset(stage.art)} alt="" className="aspect-square h-full w-full object-cover" />
-                ) : boss ? (
-                  <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
-                    <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
-                      <EnemyCardFace id={boss} />
-                    </HoloCard>
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-2xl text-amber-500/70">✦</div>
-                )}
-              </div>
+              {/* Without stage art: the boss card, or a placeholder while the boss is still being built (the art itself fills the row's left side, see below) */}
+              {!stage.art && (
+                <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
+                  {boss ? (
+                    <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
+                      <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
+                        <EnemyCardFace id={boss} />
+                      </HoloCard>
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-2xl text-amber-500/70">✦</div>
+                  )}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] font-bold uppercase tracking-widest text-amber-300/80">
                   {i + 1} · {t(`v3.campaign.${stage.id}.ref`)}
@@ -73,13 +75,33 @@ export function CampaignScreen() {
                 </p>
                 {status && <p className="mt-1 text-xs text-emerald-300">{status}</p>}
               </div>
-              <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
+              {/* The call to play, in white where the picture fades into the ground. */}
+              <span className="absolute bottom-[16%] right-[calc(40%+14px)] z-10 rounded-full bg-black/50 px-4 py-1 pl-[calc(1rem+0.3em)] ring-1 ring-[#f4c850]/80 text-sm font-bold tracking-[0.3em] text-white/80 [-webkit-text-stroke:3px_rgb(0_0_0/0.8)] [paint-order:stroke_fill]">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = "group flex items-center gap-4 rounded-2xl border-2 p-3 border-amber-400/70 bg-stone-900 transition hover:bg-stone-800/90 shadow-md";
+          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pl-[26px] transition ${art ? "pr-[calc(40%-20px)]" : "pr-[26px]"}`;
           return (
             <li key={stage.id}>
-              <Link href={`/campaign/${stage.id}`} className={frame}>
+              <Link href={`/campaign/${stage.id}`} className={frame(!!stage.art)}>
+                {/* The black ground stays inside the frame's line (so it never shows past the scrolled corners). It is darkest behind the
+                    text on the left and clears towards the picture on the right, so the scene melts into it. */}
+                <span
+                  aria-hidden
+                  className="absolute inset-[1px] -z-10 rounded-[26px] opacity-90 transition group-hover:opacity-100"
+                  style={{ background: "linear-gradient(to right, rgb(0 0 0 / 0.58) 0%, rgb(0 0 0 / 0.66) 38%, rgb(0 0 0 / 0.5) 54%, rgb(0 0 0 / 0.28) 68%, rgb(0 0 0 / 0.08) 82%, rgb(0 0 0 / 0) 100%)" }}
+                />
+                {/* The stage's picture fills the right of the row, edge to edge, and its left end fades away into the ground. */}
+                {stage.art && (
+                  <div
+                    aria-hidden
+                    className="absolute inset-y-[1px] right-[1px] z-0 w-[40%] overflow-hidden rounded-r-[26px]"
+                    style={{ WebkitMaskImage: STAGE_FADE, maskImage: STAGE_FADE }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
+                    <img src={asset(stage.art)} alt="" className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <OrnateFrame size={22} />
                 {body}
               </Link>
             </li>
@@ -89,36 +111,13 @@ export function CampaignScreen() {
       </section>
       ))}
 
-      {/* The collection: every card dropped so far, with how many copies */}
+      {/* The collection has its own page */}
       <section className="w-full max-w-2xl">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">{t("v3.campaign.collection")}</h2>
-          <span className="text-xs text-stone-400">{t("v3.campaign.collectionCount", { n: copies, m: owned.length })}</span>
-        </div>
-        {owned.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-500">{t("v3.campaign.empty")}</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] justify-items-center gap-3">
-            {owned.map(({ id, count }) => (
-              <div key={id} className="relative">
-                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} effects={false} touchTilt={false} figure={figureArea(id)} className="w-[120px] text-[5.6px]">
-                  <CharacterCardFace id={id} />
-                </HoloCard>
-                {count > 1 && <span className="absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">×{count}</span>}
-              </div>
-            ))}
-          </div>
-        )}
+        <Link href="/collection" className="flex items-center justify-between rounded-2xl border-2 border-stone-600 bg-stone-900 p-4 transition hover:bg-stone-800/90">
+          <span className="text-lg font-bold">{t("v3.campaign.collection")}</span>
+          <span className="text-sm text-stone-300">{ready ? t("v3.campaign.collectionCount", { n: copies, m: owned.length }) : ""} →</span>
+        </Link>
       </section>
-
-      <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
-        <Link href="/battle-v3" className="underline">
-          {t("v3.campaign.free")}
-        </Link>
-        <Link href="/" className="underline">
-          {t("v2.ui.backHome")}
-        </Link>
-      </div>
     </main>
   );
 }
