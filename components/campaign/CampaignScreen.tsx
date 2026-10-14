@@ -11,6 +11,7 @@ import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
+import { GoldFrame } from "@/components/cards/viewer";
 import type { CharacterId } from "@/game/v2/types";
 import { asset } from "@/game/assets";
 
@@ -75,10 +76,11 @@ export function CampaignScreen() {
               <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = "group flex items-center gap-4 rounded-2xl border-2 p-3 border-amber-400/70 bg-stone-900 transition hover:bg-stone-800/90 shadow-md";
+          const frame = "group relative flex items-center gap-4 bg-stone-900/90 p-[26px] shadow-md transition hover:bg-stone-800/90";
           return (
             <li key={stage.id}>
               <Link href={`/campaign/${stage.id}`} className={frame}>
+                <GoldFrame size={24} />
                 {body}
               </Link>
             </li>

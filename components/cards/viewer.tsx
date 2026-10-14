@@ -31,13 +31,13 @@ export const VIEWER_WIDTH =
 export const viewerStyle = (scale: number) =>
   ({ "--real": REAL_SIZE, "--cal": scale, width: "var(--w)", fontSize: "calc(var(--w) * 0.0467)" }) as React.CSSProperties;
 
-/** The gold frame around a side panel: a 9-slice of public/ui-frame-gold.png, whose dark ground is transparent. */
-export function GoldFrame() {
+/** The gold frame around a side panel: a 9-slice of public/ui-frame-gold.png, whose dark ground is transparent. `size` is the width of the frame in pixels. */
+export function GoldFrame({ size = 34 }: { size?: number }) {
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0"
-      style={{ borderStyle: "solid", borderWidth: 34, borderImage: "url(/ui-frame-gold.png) 48 / 34px stretch" }}
+      style={{ borderStyle: "solid", borderWidth: size, borderImage: `url(/ui-frame-gold.png) 48 / ${size}px stretch` }}
     />
   );
 }
