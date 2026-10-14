@@ -175,6 +175,25 @@ async function generateWithLeonardo(prompt: string): Promise<Buffer> {
   throw new Error("Leonardo: timed out waiting for the picture");
 }
 
+/**
+ * Changes a picture you already have (OpenAI only): ART_EDIT=path/to/picture.png with ART_IDS=<new name> and the change
+ * to make in ART_EDIT_PROMPT. The result is written to art-drafts/<id>.png like any other draft.
+ */
+async function editWithOpenAI(imagePath: string, prompt: string): Promise<Buffer> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY is not set (put it in .env.local)");
+  const form = new FormData();
+  form.append("model", process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5");
+  form.append("prompt", prompt);
+  form.append("size", process.env.ART_SIZE ?? "1024x1536");
+  form.append("image", new Blob([readFileSync(imagePath)], { type: "image/png" }), "image.png");
+  const res = await fetch("https://api.openai.com/v1/images/edits", { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form });
+  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
+  const item = ((await res.json()) as { data: { b64_json?: string }[] }).data[0];
+  if (!item.b64_json) throw new Error("OpenAI returned no image");
+  return Buffer.from(item.b64_json, "base64");
+}
+
 async function generate(prompt: string): Promise<Buffer> {
   if (provider === "openai") {
     const key = process.env.OPENAI_API_KEY;
@@ -221,7 +240,7 @@ it("draws draft card art", async () => {
       lines.push(`  (skipped: ${out} exists)\n`);
       continue;
     }
-    writeFileSync(out, await generate(prompt));
+    writeFileSync(out, process.env.ART_EDIT ? await editWithOpenAI(process.env.ART_EDIT, process.env.ART_EDIT_PROMPT ?? prompt) : await generate(prompt));
     lines.push(`  -> ${out}\n`);
   }
   // Vitest swallows console output of passing tests: write the summary where it can be read.
