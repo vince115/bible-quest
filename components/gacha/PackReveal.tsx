@@ -1,6 +1,7 @@
 "use client";
 
 // Turning the five cards of an opened pack over, one at a time, then all five together.
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
@@ -49,12 +50,19 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       <div className="flex w-full flex-col items-center gap-5">
         <section aria-label={t("v3.gacha.result")} className="grid w-full max-w-4xl grid-cols-[repeat(auto-fill,minmax(130px,1fr))] justify-items-center gap-x-3 gap-y-5">
           {results.map(({ card, isNew }, i) => (
-            <div key={`${card}-${i}`} className={`relative rounded-md ${GLOW[CARD_RARITY[card]]}`}>
+            // The cards come in one after another: each flies up from below the screen's middle, turning as it lands.
+            <motion.div
+              key={`${card}-${i}`}
+              initial={{ opacity: 0, y: 260, scale: 0.4, rotate: i % 2 ? 14 : -14 }}
+              animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+              transition={{ delay: i * 0.22, type: "spring", stiffness: 170, damping: 17 }}
+              className={`relative rounded-md ${GLOW[CARD_RARITY[card]]}`}
+            >
               <HoloCard element={CHARACTER_ELEMENT[card]} rarity={CARD_RARITY[card]} effects touchTilt={false} figure={figureArea(card)} className="w-[130px] text-[6.1px]">
                 <CharacterCardFace id={card} />
               </HoloCard>
               <Badge isNew={isNew} label={isNew ? t("v3.gacha.new") : t("v3.gacha.copy")} />
-            </div>
+            </motion.div>
           ))}
         </section>
         <button onClick={onAgain} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400">
