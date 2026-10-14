@@ -55,3 +55,10 @@ export const useProgressStore = create<ProgressStore>()(
 /** Cards owned, in the given order, with their counts. */
 export const ownedCards = (collection: ProgressStore["collection"], order: readonly CharacterId[]) =>
   order.filter((id) => (collection[id] ?? 0) > 0).map((id) => ({ id, count: collection[id]! }));
+
+/**
+ * The cards free mode offers: the ones the player owns (campaign drops, later gacha). NEXT_PUBLIC_DEBUG_ALL_CARDS=1
+ * offers every card instead, for testing before there is a collection to speak of.
+ */
+export const freeModePool = (collection: ProgressStore["collection"], order: readonly CharacterId[]): CharacterId[] =>
+  process.env.NEXT_PUBLIC_DEBUG_ALL_CARDS === "1" ? [...order] : ownedCards(collection, order).map((c) => c.id);

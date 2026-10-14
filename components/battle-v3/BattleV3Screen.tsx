@@ -35,7 +35,7 @@ import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3
 import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
 import { useBattleV3Store } from "@/game/v3/store";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
-import { useProgressStore } from "@/game/v3/progress";
+import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, lookOf, type Rarity } from "@/components/cards/rarity";
@@ -915,7 +915,13 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const unlocked = useAchievementStore((st) => st.unlocked);
-  const pool = campaign?.pool ?? PARTY_ORDER;
+  // Free mode offers the cards the player owns; the collection is read from this browser after mount.
+  const collection = useProgressStore((st) => st.collection);
+  const [ownedReady, setOwnedReady] = useState(!!campaign);
+  useEffect(() => {
+    if (!campaign) void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setOwnedReady(true));
+  }, [campaign]);
+  const pool = campaign?.pool ?? freeModePool(collection, PARTY_ORDER);
   const max = campaign?.pick ?? MAX_LINEUP;
   const q = query.trim().toLowerCase();
   const matching = q ? pool.filter((id) => characterSearchText(id).includes(q)) : pool;
@@ -926,7 +932,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
     return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
   });
   const [front, setFront] = useState<CharacterId>(last.front);
-  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
+  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id) && pool.includes(id));
   const lead = chosen.includes(front) ? front : chosen[0];
   // At most three characters go to battle, and one card per person: picking another card of the same person swaps it in.
   const full = chosen.length >= max;
@@ -1025,7 +1031,14 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
 
       {/* Full character cards; 2 rows of 3 in campaign mode (top 3, bottom 3). */}
-      {campaign || pool.length <= 6 ? (
+      {!campaign && !ownedReady ? null : !campaign && pool.length === 0 ? (
+        <div className="flex max-w-sm flex-col items-center gap-3 px-6 py-8 text-center">
+          <p className="text-sm text-stone-200">{t("v3.free.empty")}</p>
+          <Link href="/campaign" className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+            {t("v3.campaign.list")}
+          </Link>
+        </div>
+      ) : campaign || pool.length <= 6 ? (
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 justify-items-center max-w-4xl mx-auto px-2 sm:px-4 py-2">
           {pool.map((id) => {
             const on = chosen.includes(id);
