@@ -1206,7 +1206,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       </div>
       )}
 
-      <Link href={campaign ? "/campaign" : "/"} className="text-xs text-stone-400 underline">
+      <Link href={campaign ? "/campaign" : "/"} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-300 hover:bg-white/10">
         {campaign ? `← ${t("v3.campaign.list")}` : t("v2.ui.backHome")}
       </Link>
       </div>
@@ -1396,7 +1396,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   e.stopPropagation();
                   setPending(null);
                 }}
-                className="ml-2 text-xs text-stone-300 underline"
+                className="ml-2 rounded-full border border-stone-400 px-2.5 py-0.5 text-xs text-stone-200 hover:bg-white/10"
               >
                 {t("v2.ui.cancel")}
               </button>

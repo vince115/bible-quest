@@ -2,20 +2,19 @@
 
 // /collection: every character card in story order. The ones the player owns are shown (with how many copies);
 // the rest are locked, showing only their rarity, so there is something to chase.
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
-import { useT } from "@/game/locale";
+import { safeStorage, useT } from "@/game/locale";
 import { useProgressStore } from "@/game/v3/progress";
 import { characterSearchText } from "@/components/cards/CardDemo";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
-import { SCALE_DEFAULT, StoryPanel, VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
+import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, StoryPanel, VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
 
 const ALL_CARDS = TIMELINE.filter((id): id is CharacterId => id in CHARACTER_ELEMENT);
 const RARITY_TABS = ["UR", "SSR", "SR", "R", "N"] as const;
@@ -59,11 +58,17 @@ export function CollectionScreen() {
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
   });
-  // The saved size of the card demo's viewer, read once on the client (the viewer never renders on the server).
-  const [scale] = useState(() => savedScale() || SCALE_DEFAULT);
+  // The card size is the card demo's saved one (shared with it), adjustable here as there.
+  const [scale, setScale] = useState(() => savedScale() || SCALE_DEFAULT);
+  const adjust = (next: (current: number) => number) =>
+    setScale((current) => {
+      const clamped = Math.round(Math.min(4, Math.max(0.5, next(current))) * 100) / 100;
+      safeStorage.setItem(SCALE_KEY, String(clamped));
+      return clamped;
+    });
 
   return (
-    <main className="flex min-h-[100dvh] flex-1 flex-col items-center gap-5 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center gap-5 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
       <div className="w-full max-w-xl text-center">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("v3.collection.title")}</h1>
         <p className="mt-2 text-sm text-stone-400">{ready ? t("v3.collection.progress", { n: kinds, m: ALL_CARDS.length, c: copies }) : " "}</p>
@@ -127,18 +132,6 @@ export function CollectionScreen() {
         })}
       </div>
 
-      <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
-        <Link href="/gacha" className="underline">
-          {t("v3.gacha.title")}
-        </Link>
-        <Link href="/campaign" className="underline">
-          {t("v3.campaign.title")}
-        </Link>
-        <Link href="/" className="underline">
-          {t("v2.ui.backHome")}
-        </Link>
-      </div>
-
       {viewing && count(viewing) > 0 && (
         <div role="dialog" aria-modal="true" onClick={() => setViewing(null)} className="fixed inset-0 z-[60] flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4">
           {viewable.length > 1 && (
@@ -167,10 +160,24 @@ export function CollectionScreen() {
             </motion.div>
             <StoryPanel id={viewing} />
           </div>
-          <div onClick={(e) => e.stopPropagation()} className="mb-auto flex items-center justify-center gap-3 text-sm text-stone-200">
+          <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             <span className="tabular-nums text-stone-400">
               {viewable.indexOf(viewing) + 1} / {viewable.length}
             </span>
+            <span className="text-stone-400">{t("v3.demo.calibrate")}</span>
+            <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+              −
+            </button>
+            <span className="w-12 text-center tabular-nums">{Math.round(scale * 100)}%</span>
+            <button onClick={() => adjust((v) => v + SCALE_STEP)} aria-label="+" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+              +
+            </button>
+            <button onClick={() => adjust(() => 1)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+              1:1
+            </button>
+            <button onClick={() => adjust(() => SCALE_DEFAULT)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+              {t("v3.demo.reset")}
+            </button>
             <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
               ✕ {t("v3.ui.close")}
             </button>

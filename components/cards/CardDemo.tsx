@@ -239,7 +239,7 @@ export function CardDemo() {
   });
 
   return (
-    <main className="flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-5 bg-[radial-gradient(circle_at_50%_30%,#3b2f1a_0%,#1c1917_55%,#0c0a09_100%)] px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center justify-center gap-5 bg-[radial-gradient(circle_at_50%_30%,#3b2f1a_0%,#1c1917_55%,#0c0a09_100%)] px-4 py-8">
       <div className="text-center">
         <h1 className="text-xl font-bold">{t("v3.demo.title")}</h1>
         <p className="mt-1 text-sm text-stone-400">{t("v3.demo.hint")}</p>

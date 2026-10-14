@@ -46,7 +46,7 @@ export function GachaScreen() {
   };
 
   return (
-    <main className="flex min-h-[100dvh] flex-1 flex-col items-center gap-6 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
+    <main className="flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center gap-6 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
       <div className="max-w-xl text-center">
         <h1 className="text-2xl font-bold sm:text-3xl">{t("v3.gacha.title")}</h1>
         <p className="mt-2 text-sm text-stone-400">{t("v3.gacha.hint")}</p>
@@ -70,7 +70,7 @@ export function GachaScreen() {
           {ready && !enough ? (
             <p className="text-sm text-amber-200">
               {t("v3.gacha.short")}{" "}
-              <Link href="/campaign" className="underline">
+              <Link href="/campaign" className="ml-1 rounded-full border border-amber-300/70 px-3 py-0.5 font-semibold hover:bg-white/10">
                 {t("v3.campaign.title")}
               </Link>
             </p>
@@ -93,7 +93,7 @@ export function GachaScreen() {
       {phase.name === "tear" && (
         <>
           <PackTear pack={phase.pack} onTorn={() => torn(phase.pack)} />
-          <button onClick={() => setPhase({ name: "choose" })} className="text-sm text-stone-400 underline">
+          <button onClick={() => setPhase({ name: "choose" })} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-300 hover:bg-white/10">
             {t("v3.gacha.back")}
           </button>
         </>
@@ -118,18 +118,6 @@ export function GachaScreen() {
           <p className="mt-1">{t("v3.gacha.guarantee")}</p>
         </div>
       )}
-
-      <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
-        <Link href="/collection" className="underline">
-          {t("v3.collection.link")}
-        </Link>
-        <Link href="/campaign" className="underline">
-          {t("v3.campaign.title")}
-        </Link>
-        <Link href="/" className="underline">
-          {t("v2.ui.backHome")}
-        </Link>
-      </div>
     </main>
   );
 }
