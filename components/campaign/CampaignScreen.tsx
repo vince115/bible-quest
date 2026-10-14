@@ -48,21 +48,20 @@ export function CampaignScreen() {
           const status = times > 0 ? t("v3.campaign.cleared", { n: times }) : null;
           const body = (
             <>
-              {/* Stage art (1:1 square), or the boss card, or a placeholder while the boss is still being built */}
-              <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
-                {stage.art ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public
-                  <img src={asset(stage.art)} alt="" className="aspect-square h-full w-full object-cover" />
-                ) : boss ? (
-                  <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
-                    <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
-                      <EnemyCardFace id={boss} />
-                    </HoloCard>
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-2xl text-amber-500/70">✦</div>
-                )}
-              </div>
+              {/* Without stage art: the boss card, or a placeholder while the boss is still being built (the art itself fills the row's left side, see below) */}
+              {!stage.art && (
+                <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
+                  {boss ? (
+                    <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
+                      <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
+                        <EnemyCardFace id={boss} />
+                      </HoloCard>
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-2xl text-amber-500/70">✦</div>
+                  )}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] font-bold uppercase tracking-widest text-amber-300/80">
                   {i + 1} · {t(`v3.campaign.${stage.id}.ref`)}
@@ -76,12 +75,23 @@ export function CampaignScreen() {
               <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = "group relative isolate flex items-center gap-4 p-[26px] transition";
+          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pr-[26px] transition ${art ? "pl-[calc(34%+10px)]" : "pl-[26px]"}`;
           return (
             <li key={stage.id}>
-              <Link href={`/campaign/${stage.id}`} className={frame}>
+              <Link href={`/campaign/${stage.id}`} className={frame(!!stage.art)}>
                 {/* The black ground stays inside the frame's line (so it never shows past the scrolled corners) and is half see-through. */}
                 <span aria-hidden className="absolute inset-[3px] -z-10 bg-black/50 transition group-hover:bg-black/60" />
+                {/* The stage's picture fills the left of the row, edge to edge, and its right end fades away into the ground. */}
+                {stage.art && (
+                  <div
+                    aria-hidden
+                    className="absolute inset-y-[3px] left-[3px] z-0 w-[34%]"
+                    style={{ WebkitMaskImage: "linear-gradient(to right, #000 55%, transparent)", maskImage: "linear-gradient(to right, #000 55%, transparent)" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
+                    <img src={asset(stage.art)} alt="" className="h-full w-full object-cover" />
+                  </div>
+                )}
                 <OrnateFrame size={22} />
                 {body}
               </Link>

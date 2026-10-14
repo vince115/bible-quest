@@ -50,8 +50,14 @@ export function OrnateFrame({ size = 22 }: { size?: number }) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0"
-      style={{ borderStyle: "solid", borderWidth: size, borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch` }}
+      className="pointer-events-none absolute inset-0 opacity-80"
+      style={{
+        borderStyle: "solid",
+        borderWidth: size,
+        borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch`,
+        // A little relief: a pale edge catching the light on the top left, a dark one in shadow on the bottom right.
+        filter: "drop-shadow(-1px -1px 0 rgb(255 244 214 / 0.45)) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.75))",
+      }}
     />
   );
 }
