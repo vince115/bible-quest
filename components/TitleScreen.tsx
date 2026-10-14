@@ -20,6 +20,9 @@ export function TitleScreen() {
         >
           {t("ui.campaign")}
         </Link>
+        <Link href="/gacha" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
+          {t("v3.gacha.title")}
+        </Link>
         <Link href="/collection" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
           {t("v3.collection.link")}
         </Link>

@@ -8,6 +8,7 @@ import { safeStorage } from "../locale";
 import type { Rng } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { dropFor, type CampaignStageId, type Cleared } from "./campaign";
+import { CLEAR_POINTS, PULL_COST, STARTING_POINTS, TEN_PULL, drawMany } from "./gacha";
 
 export interface Drop {
   card: CharacterId;
@@ -22,9 +23,16 @@ interface ProgressStore {
   collection: Partial<Record<CharacterId, number>>;
   /** Every drop so far, oldest first. */
   history: Drop[];
+  /** Blessing points to spend on draws; earned by clearing stages. */
+  points: number;
   /** Records a clear, rolls the stage's drop, adds it to the collection and returns it. */
   clear: (stage: CampaignStageId, rng?: Rng) => CharacterId;
+  /** Spends points on `count` draws (1 or 10) and returns the cards, each marked new or a copy; null if the points do not cover it. */
+  pull: (count: 1 | 10, rng?: Rng) => { card: CharacterId; isNew: boolean }[] | null;
 }
+
+/** What `count` draws cost. */
+export const pullCost = (count: 1 | 10) => (count === TEN_PULL.count ? TEN_PULL.cost : PULL_COST);
 
 export const useProgressStore = create<ProgressStore>()(
   persist(
@@ -32,15 +40,31 @@ export const useProgressStore = create<ProgressStore>()(
       cleared: {},
       collection: {},
       history: [],
+      points: STARTING_POINTS,
       clear: (stage, rng = Math.random) => {
         const card = dropFor(stage, rng);
-        const { cleared, collection, history } = get();
+        const { cleared, collection, history, points } = get();
+        const first = (cleared[stage] ?? 0) === 0;
         set({
           cleared: { ...cleared, [stage]: (cleared[stage] ?? 0) + 1 },
           collection: { ...collection, [card]: (collection[card] ?? 0) + 1 },
           history: [...history, { card, stage, at: Date.now() }],
+          points: points + (first ? CLEAR_POINTS.first : CLEAR_POINTS.repeat),
         });
         return card;
+      },
+      pull: (count, rng = Math.random) => {
+        const cost = pullCost(count);
+        const { collection, points } = get();
+        if (points < cost) return null;
+        const owned = { ...collection };
+        const results = drawMany(count, rng).map((card) => {
+          const isNew = (owned[card] ?? 0) === 0;
+          owned[card] = (owned[card] ?? 0) + 1;
+          return { card, isNew };
+        });
+        set({ collection: owned, points: points - cost });
+        return results;
       },
     }),
     {

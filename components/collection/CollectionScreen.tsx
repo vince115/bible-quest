@@ -103,6 +103,9 @@ export function CollectionScreen() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
+        <Link href="/gacha" className="underline">
+          {t("v3.gacha.title")}
+        </Link>
         <Link href="/campaign" className="underline">
           {t("v3.campaign.title")}
         </Link>
