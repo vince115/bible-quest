@@ -11,7 +11,7 @@ import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
-import { GoldFrame } from "@/components/cards/viewer";
+import { OrnateFrame } from "@/components/cards/viewer";
 import type { CharacterId } from "@/game/v2/types";
 import { asset } from "@/game/assets";
 
@@ -76,11 +76,13 @@ export function CampaignScreen() {
               <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = "group relative flex items-center gap-4 bg-stone-900/90 p-[26px] shadow-md transition hover:bg-stone-800/90";
+          const frame = "group relative isolate flex items-center gap-4 p-[26px] transition";
           return (
             <li key={stage.id}>
               <Link href={`/campaign/${stage.id}`} className={frame}>
-                <GoldFrame size={24} />
+                {/* The black ground stays inside the frame's line (so it never shows past the scrolled corners) and is half see-through. */}
+                <span aria-hidden className="absolute inset-[3px] -z-10 bg-black/50 transition group-hover:bg-black/60" />
+                <OrnateFrame size={22} />
                 {body}
               </Link>
             </li>

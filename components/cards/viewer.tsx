@@ -42,6 +42,20 @@ export function GoldFrame({ size = 34 }: { size?: number }) {
   );
 }
 
+/**
+ * A thin ornate frame with scrolled corners: a 9-slice of public/ui-frame-ornate.png (a supplied black line frame turned
+ * into gold lines on a transparent ground, trimmed so the frame touches the edges). `size` is its width in pixels.
+ */
+export function OrnateFrame({ size = 22 }: { size?: number }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{ borderStyle: "solid", borderWidth: size, borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch` }}
+    />
+  );
+}
+
 /** The character's story beside the card (nothing when the card has no story yet). */
 export function StoryPanel({ id, enemy }: { id: CharacterId | EnemyId; enemy?: boolean }) {
   const t = useT();
