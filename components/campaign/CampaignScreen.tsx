@@ -87,14 +87,14 @@ export function CampaignScreen() {
                     text on the left and clears towards the picture on the right, so the scene melts into it. */}
                 <span
                   aria-hidden
-                  className="absolute inset-[3px] -z-10 opacity-90 transition group-hover:opacity-100"
+                  className="absolute inset-[3px] -z-10 rounded-[26px] opacity-90 transition group-hover:opacity-100"
                   style={{ background: "linear-gradient(to right, rgb(0 0 0 / 0.58) 0%, rgb(0 0 0 / 0.66) 38%, rgb(0 0 0 / 0.5) 54%, rgb(0 0 0 / 0.28) 68%, rgb(0 0 0 / 0.08) 82%, rgb(0 0 0 / 0) 100%)" }}
                 />
                 {/* The stage's picture fills the right of the row, edge to edge, and its left end fades away into the ground. */}
                 {stage.art && (
                   <div
                     aria-hidden
-                    className="absolute inset-y-[3px] right-[3px] z-0 w-[40%]"
+                    className="absolute inset-y-[3px] right-[3px] z-0 w-[40%] overflow-hidden rounded-r-[26px]"
                     style={{ WebkitMaskImage: STAGE_FADE, maskImage: STAGE_FADE }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
