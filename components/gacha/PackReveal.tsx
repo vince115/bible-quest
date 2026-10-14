@@ -8,6 +8,8 @@ import { useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
+import { CARD_BACK } from "@/components/cards/ScriptureCardFace";
+import { asset } from "@/game/assets";
 
 export interface Pulled {
   card: CharacterId;
@@ -76,9 +78,9 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       >
         <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? "rotateY(180deg)" : "none" }}>
           {/* The back: the card face down */}
-          <div className="absolute inset-0 overflow-hidden rounded-md border-2 border-amber-200/70 bg-[radial-gradient(ellipse_at_50%_40%,#6b3a26_0%,#4a2416_55%,#2c140c_100%)] shadow-xl [backface-visibility:hidden]">
-            <div aria-hidden className="absolute inset-[6%] rounded border border-amber-300/50" />
-            <div aria-hidden className="absolute inset-0 flex items-center justify-center text-[5em] font-light text-amber-300/80">✝</div>
+          <div className="absolute inset-0 overflow-hidden rounded-md shadow-xl [backface-visibility:hidden]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- card art is a plain file */}
+            <img src={asset(CARD_BACK)} alt="" draggable={false} className="h-full w-full select-none object-cover" />
           </div>
           {/* The front */}
           <div className={`absolute inset-0 rounded-md [backface-visibility:hidden] [transform:rotateY(180deg)] ${flipped ? GLOW[CARD_RARITY[current.card]] : ""}`}>

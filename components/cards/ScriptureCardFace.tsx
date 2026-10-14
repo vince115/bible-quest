@@ -133,52 +133,18 @@ export function ScriptureCardFace({ id }: { id: CardId }) {
   );
 }
 
+/** The picture on the back of every card: the cover of a dark leather Bible with gilt ornament and the Nativity at its centre. */
+export const CARD_BACK = "/backs/nativity.jpg";
+
 /**
- * The back of a scripture card, as seen on the deck pile: the same white border, gilt frame and leather as the face,
- * in a deep oxblood-brown like an old Bible cover, with a gilt cross and title stamped in the middle.
+ * The back of a card, as seen on the deck pile: the picture of a leather Bible cover (public/backs), filling the card
+ * with its corners rounded like the faces.
  */
 export function ScriptureCardBack() {
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-[2.5%] bg-white [container-type:inline-size]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/cards/scripture-gilt-frame.png"
-        alt=""
-        draggable={false}
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 h-full w-full select-none drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)]"
-      />
-      <div
-        className="absolute overflow-hidden rounded-[3.5cqw]"
-        style={{
-          inset: "6.3cqw",
-          background: "radial-gradient(ellipse at 50% 42%, #6b3a26 0%, #4a2416 55%, #2c140c 100%)",
-          boxShadow: "inset 0 0 1.35cqw 0.2cqw rgb(0 0 0 / 0.5), inset 0 0.25cqw 0.6cqw rgb(0 0 0 / 0.35)",
-        }}
-      >
-        <div aria-hidden className="absolute inset-0 opacity-60 mix-blend-overlay" style={{ backgroundImage: "url(/cards/scripture-leather.webp)", backgroundSize: "55cqw" }} />
-        {/* Blind-tooled double rule */}
-        <div className="absolute rounded-[2.5cqw] border-[0.5cqw] border-[#d9b25f]/70" style={{ inset: "4cqw" }} />
-        <div className="absolute rounded-[1.8cqw] border-[0.3cqw] border-[#d9b25f]/45" style={{ inset: "6.2cqw" }} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-[5cqw]">
-          {/* Gilt cross */}
-          <svg viewBox="0 0 40 60" className="w-[26cqw] drop-shadow-[0_0.6cqw_0.8cqw_rgb(0_0_0/0.6)]" aria-hidden>
-            <defs>
-              <linearGradient id="bq-gilt" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#fff1b8" />
-                <stop offset="0.45" stopColor="#e2b450" />
-                <stop offset="1" stopColor="#9a6a1c" />
-              </linearGradient>
-            </defs>
-            <path d="M16 2h8v16h14v8H24v32h-8V26H2v-8h14z" fill="url(#bq-gilt)" stroke="#6e4a12" strokeWidth="0.8" />
-          </svg>
-          <div className="text-center font-serif leading-tight text-[#f3d68a] [text-shadow:0_0.4cqw_0.8cqw_rgb(0_0_0/0.8)]">
-            <div className="text-[8cqw] font-bold tracking-[0.18em]">HOLY</div>
-            <div className="text-[8cqw] font-bold tracking-[0.18em]">BIBLE</div>
-            <div className="mt-[1.5cqw] text-[4cqw] tracking-[0.3em] text-[#d9b25f]/85">BIBLE QUEST</div>
-          </div>
-        </div>
-      </div>
+    <div className="absolute inset-0 overflow-hidden rounded-[2.5%] bg-[#12162a]">
+      {/* eslint-disable-next-line @next/next/no-img-element -- card art is a plain file */}
+      <img src={asset(CARD_BACK)} alt="" draggable={false} className="h-full w-full select-none object-cover" />
     </div>
   );
 }
