@@ -8,7 +8,7 @@ import { safeStorage } from "../locale";
 import type { Rng } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { dropFor, type CampaignStageId, type Cleared } from "./campaign";
-import { CLEAR_POINTS, PULL_COST, STARTING_POINTS, TEN_PULL, drawMany } from "./gacha";
+import { CLEAR_POINTS, PACK, PACKS, STARTING_POINTS, openPack } from "./gacha";
 
 export interface Drop {
   card: CharacterId;
@@ -27,12 +27,9 @@ interface ProgressStore {
   points: number;
   /** Records a clear, rolls the stage's drop, adds it to the collection and returns it. */
   clear: (stage: CampaignStageId, rng?: Rng) => CharacterId;
-  /** Spends points on `count` draws (1 or 10) and returns the cards, each marked new or a copy; null if the points do not cover it. */
-  pull: (count: 1 | 10, rng?: Rng) => { card: CharacterId; isNew: boolean }[] | null;
+  /** Spends the price of a pack and returns its cards in turn-over order, each marked new or a copy; null if the points do not cover it. */
+  buyPack: (packId: string, rng?: Rng) => { card: CharacterId; isNew: boolean }[] | null;
 }
-
-/** What `count` draws cost. */
-export const pullCost = (count: 1 | 10) => (count === TEN_PULL.count ? TEN_PULL.cost : PULL_COST);
 
 export const useProgressStore = create<ProgressStore>()(
   persist(
@@ -53,17 +50,17 @@ export const useProgressStore = create<ProgressStore>()(
         });
         return card;
       },
-      pull: (count, rng = Math.random) => {
-        const cost = pullCost(count);
+      buyPack: (packId, rng = Math.random) => {
         const { collection, points } = get();
-        if (points < cost) return null;
+        const kind = PACKS.find((p) => p.id === packId);
+        if (!kind || points < PACK.cost) return null;
         const owned = { ...collection };
-        const results = drawMany(count, rng).map((card) => {
+        const results = openPack(kind, rng).map((card) => {
           const isNew = (owned[card] ?? 0) === 0;
           owned[card] = (owned[card] ?? 0) + 1;
           return { card, isNew };
         });
-        set({ collection: owned, points: points - cost });
+        set({ collection: owned, points: points - PACK.cost });
         return results;
       },
     }),

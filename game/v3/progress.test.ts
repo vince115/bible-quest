@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CLEAR_POINTS, PULL_COST, STARTING_POINTS, TEN_PULL } from "./gacha";
-import { freeModePool, ownedCards, pullCost, useProgressStore } from "./progress";
+import { CLEAR_POINTS, PACK, STARTING_POINTS } from "./gacha";
+import { freeModePool, ownedCards, useProgressStore } from "./progress";
 
 const ORDER = ["david", "samuel", "jonathan", "adam"] as const;
 
@@ -34,31 +34,31 @@ describe("points and draws", () => {
     expect(useProgressStore.getState().points).toBe(CLEAR_POINTS.first + CLEAR_POINTS.repeat);
   });
 
-  it("spends the cost, adds the cards to the collection and marks new ones", () => {
-    fresh(PULL_COST * 3);
-    const first = useProgressStore.getState().pull(1, steady)!;
-    expect(first).toHaveLength(1);
-    expect(first[0].isNew).toBe(true);
-    const again = useProgressStore.getState().pull(1, steady)!;
-    expect(again[0].card).toBe(first[0].card); // a steady roll draws the same card
-    expect(again[0].isNew).toBe(false);
+  it("buying a pack spends its price, adds five cards to the collection and marks new ones", () => {
+    fresh(PACK.cost * 2);
+    const first = useProgressStore.getState().buyPack("ministry", steady)!;
+    expect(first).toHaveLength(5);
+    expect(first.every((r) => r.isNew || first.filter((x) => x.card === r.card).length > 1)).toBe(true);
+    expect(useProgressStore.getState().points).toBe(PACK.cost);
+    const again = useProgressStore.getState().buyPack("ministry", steady)!;
+    // A steady roll draws the same five cards again, so none is new the second time.
+    expect(again.map((r) => r.card)).toEqual(first.map((r) => r.card));
+    expect(again.some((r) => r.isNew)).toBe(false);
     const s = useProgressStore.getState();
-    expect(s.points).toBe(PULL_COST);
-    expect(s.collection[first[0].card]).toBe(2);
+    expect(s.points).toBe(0);
+    expect(Object.values(s.collection).reduce((n, v) => n + (v ?? 0), 0)).toBe(10);
   });
 
-  it("does nothing when the points do not cover the draw", () => {
-    fresh(pullCost(10) - 1);
-    expect(useProgressStore.getState().pull(10)).toBeNull();
-    expect(useProgressStore.getState().points).toBe(pullCost(10) - 1);
+  it("does nothing for an unknown pack", () => {
+    fresh(PACK.cost);
+    expect(useProgressStore.getState().buyPack("nope")).toBeNull();
+    expect(useProgressStore.getState().points).toBe(PACK.cost);
+  });
+
+  it("does nothing when the points do not cover a pack", () => {
+    fresh(PACK.cost - 1);
+    expect(useProgressStore.getState().buyPack("ministry")).toBeNull();
+    expect(useProgressStore.getState().points).toBe(PACK.cost - 1);
     expect(useProgressStore.getState().collection).toEqual({});
-  });
-
-  it("a ten-draw costs the discounted price and gives ten cards", () => {
-    fresh(TEN_PULL.cost);
-    const cards = useProgressStore.getState().pull(10)!;
-    expect(cards).toHaveLength(10);
-    expect(useProgressStore.getState().points).toBe(0);
-    expect(Object.values(useProgressStore.getState().collection).reduce((n, v) => n + (v ?? 0), 0)).toBe(10);
   });
 });
