@@ -367,8 +367,11 @@ export function CardDemo() {
             initial={{ scale: 0.55, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            onClick={(e) => e.stopPropagation()}
-            className={VIEWER_WIDTH}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlipped((f) => !f); // a tap on the card turns it over
+            }}
+            className={`${VIEWER_WIDTH} cursor-pointer`}
             style={viewerStyle(scale)}
           >
             <FlipCard flipped={flipped} effects={effects}>
@@ -381,13 +384,6 @@ export function CardDemo() {
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
-            <button
-              onClick={() => setFlipped((f) => !f)}
-              aria-pressed={flipped}
-              className={`rounded-full border px-3 py-1 text-xs ${flipped ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
-            >
-              ⟲ {t("v3.demo.flip")}
-            </button>
             {!viewing.scripture && (
               <button
                 onClick={toggleStory}
