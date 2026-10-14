@@ -78,7 +78,7 @@ export function CampaignScreen() {
               <span className="shrink-0 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-stone-950 transition group-hover:bg-amber-400">{t("v3.campaign.play")}</span>
             </>
           );
-          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pr-[26px] transition ${art ? "pl-[calc(40%+6px)]" : "pl-[26px]"}`;
+          const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pr-[26px] transition ${art ? "pl-[calc(40%-44px)]" : "pl-[26px]"}`;
           return (
             <li key={stage.id}>
               <Link href={`/campaign/${stage.id}`} className={frame(!!stage.art)}>
