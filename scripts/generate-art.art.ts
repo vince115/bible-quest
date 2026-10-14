@@ -37,12 +37,14 @@ const DRAFTS = "art-drafts";
  * around the figure (head in the upper third, feet near the bottom), so the figure stays centred and fully in frame.
  */
 const STYLE =
-  "Soft watercolour and gouache storybook illustration with a realistic, painterly look and visible paper texture. " +
+  "Traditional hand-painted watercolor on textured cold-pressed paper, translucent washes, soft pigment blooms and delicate " +
+  "colored-pencil details, in the realistic storybook look of a biblical picture book. " +
   "A full-length figure stands in the middle of a square picture, in three-quarter view, gently looking off to one side, " +
   "head in the upper third and feet near the bottom, nothing cut off. Behind them the real landscape of their story " +
   "under a bright sky with soft clouds, a few tiny figures far in the distance. Warm golden light, gentle natural colours: " +
   "earth-tone, rough-spun, historically plausible clothing with one muted blue or green accent, and one simple object in " +
-  "hand that tells who they are. Calm, dignified expression. No text, no letters, no captions, no frame, no border.";
+  "hand that tells who they are. A calm, dignified, child-friendly atmosphere. " +
+  "No violence, no blood, no horror effects, no modern objects, no text, no lettering, no watermark, no frame, no border.";
 
 const en = (key: string) => translate("en", key);
 const known = (key: string) => en(key) !== key;
