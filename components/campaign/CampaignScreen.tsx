@@ -75,6 +75,8 @@ export function CampaignScreen() {
                 </p>
                 {status && <p className="mt-1 text-xs text-emerald-300">{status}</p>}
               </div>
+              {/* The call to play, in white where the picture fades into the ground. */}
+              <span className="absolute bottom-[16%] right-[22%] z-10 text-sm font-bold tracking-[0.3em] text-white [text-shadow:0_1px_4px_rgb(0_0_0/0.85)]">{t("v3.campaign.play")}</span>
             </>
           );
           const frame = (art: boolean) => `group relative isolate flex min-h-[140px] items-center gap-4 py-[26px] pl-[26px] transition ${art ? "pr-[calc(40%-20px)]" : "pr-[26px]"}`;
