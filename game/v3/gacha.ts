@@ -31,7 +31,7 @@ export const PACKS: PackKind[] = [
 ];
 
 /** How many packs stand on the ring: all of the one kind that is on offer. */
-export const PACKS_ON_RING = 8;
+export const PACKS_ON_RING = 12;
 
 /** Days since the epoch by the player's own calendar (a day turns over at their local midnight). */
 const localDay = (now: Date) => Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useT } from "@/game/locale";
 import { PACK, PACKS, PACKS_ON_RING, currentPack, nextRotation, type PackKind } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
-import { PackCarousel } from "./PackCarousel";
+import { PackStage } from "./PackStage";
 import { PackReveal, type Pulled } from "./PackReveal";
 import { PackTear } from "./PackTear";
 
@@ -70,7 +70,7 @@ export function GachaScreen() {
                 {!forced && <div className="mt-1 text-xs text-stone-500">{t("v3.gacha.changesIn", { h: hours, m: minutes })}</div>}
               </div>
               <p className="max-w-sm text-center text-xs text-stone-400">{t("v3.gacha.pickHint")}</p>
-              <PackCarousel pack={offer} count={PACKS_ON_RING} onPick={(pack) => setPhase({ name: "tear", pack })} />
+              <PackStage pack={offer} count={PACKS_ON_RING} onPick={(pack) => setPhase({ name: "tear", pack })} />
               {debugAll && (
                 <div className="flex flex-wrap justify-center gap-1.5">
                   {PACKS.map((p) => (

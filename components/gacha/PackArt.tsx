@@ -4,19 +4,7 @@
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-
-/** Foil colours of each kind of pack. */
-const FOIL: Record<string, string> = {
-  beginnings: "linear-gradient(160deg,#6ee7a8 0%,#15803d 55%,#064e3b 100%)",
-  exodus: "linear-gradient(160deg,#fcd34d 0%,#b45309 55%,#78350f 100%)",
-  kingdom: "linear-gradient(160deg,#fda4af 0%,#be123c 55%,#881337 100%)",
-  prophets: "linear-gradient(160deg,#fdba74 0%,#c2410c 55%,#7c2d12 100%)",
-  exile: "linear-gradient(160deg,#a5b4fc 0%,#4338ca 55%,#1e1b4b 100%)",
-  nativity: "linear-gradient(160deg,#f0abfc 0%,#a21caf 55%,#4a044e 100%)",
-  ministry: "linear-gradient(160deg,#7dd3fc 0%,#0369a1 55%,#082f49 100%)",
-  passion: "linear-gradient(160deg,#d6d3d1 0%,#57534e 55%,#1c1917 100%)",
-  church: "linear-gradient(160deg,#fde68a 0%,#ca8a04 55%,#713f12 100%)",
-};
+import { foilCss } from "./packStyle";
 
 /** Pack proportions, width : height. */
 export const PACK_RATIO = "aspect-[9/14]";
@@ -24,7 +12,7 @@ export const PACK_RATIO = "aspect-[9/14]";
 export function PackArt({ pack, className = "" }: { pack: PackKind; className?: string }) {
   const t = useT();
   return (
-    <div className={`relative w-full ${PACK_RATIO} overflow-hidden rounded-md shadow-[0_8px_24px_rgb(0_0_0/0.6)] ring-1 ring-black/50 ${className}`} style={{ background: FOIL[pack.id] ?? FOIL.passion }}>
+    <div className={`relative w-full ${PACK_RATIO} overflow-hidden rounded-md shadow-[0_8px_24px_rgb(0_0_0/0.6)] ring-1 ring-black/50 ${className}`} style={{ background: foilCss(pack.id) }}>
       {/* Crimped top and bottom seals */}
       <div aria-hidden className="absolute inset-x-0 top-0 h-[7%] bg-black/20" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgb(255 255 255 / 0.28) 0 1.5px, transparent 1.5px 5px)" }} />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-[5%] bg-black/20" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgb(255 255 255 / 0.28) 0 1.5px, transparent 1.5px 5px)" }} />
