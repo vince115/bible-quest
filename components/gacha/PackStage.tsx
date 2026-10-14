@@ -139,8 +139,18 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
-      camera.position.set(0, 4.2, 9.4); // a little above, looking down onto the ring
-      camera.lookAt(0, 0.3, 0.2);
+      // The camera orbits the stage at a fixed distance; the mouse's height over the stage sets how high it is
+      // (low and level at the bottom of the stage, almost overhead at the top).
+      const DIST = 10.3;
+      const LOW = 8, HIGH = 48, REST = 24; // degrees above the floor
+      let pitch = (REST - LOW) / (HIGH - LOW); // 0..1, where the camera is now
+      let pitchTarget = pitch;
+      const aim = () => {
+        const e = ((LOW + pitch * (HIGH - LOW)) * Math.PI) / 180;
+        camera.position.set(0, DIST * Math.sin(e), DIST * Math.cos(e));
+        camera.lookAt(0, 0.3, 0.2);
+      };
+      aim();
 
       // Light: soft all over, a key light from above and a warm one on the pack in front
       scene.add(new THREE.AmbientLight(0xffffff, 1.0));
@@ -218,6 +228,10 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         canvas.setPointerCapture(e.pointerId);
       };
       const onMove = (e: PointerEvent) => {
+        if (e.pointerType === "mouse") {
+          const r = canvas.getBoundingClientRect();
+          pitchTarget = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height));
+        }
         if (!down) return;
         const dx = e.clientX - down.x;
         if (Math.abs(dx) > 6) moved = true;
@@ -252,6 +266,10 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
       canvas.addEventListener("pointermove", onMove);
       canvas.addEventListener("pointerup", onUp);
       canvas.addEventListener("pointercancel", onUp);
+      const onLeave = (e: PointerEvent) => {
+        if (e.pointerType === "mouse") pitchTarget = (REST - LOW) / (HIGH - LOW); // back to the resting view
+      };
+      canvas.addEventListener("pointerleave", onLeave);
 
       // Draw
       let raf = 0;
@@ -264,6 +282,10 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         last = now;
         const time = (now - t0) / 1000;
         if (!down || !moved) current += (target - current) * Math.min(1, dt * 9);
+        if (Math.abs(pitchTarget - pitch) > 0.0005) {
+          pitch += (pitchTarget - pitch) * Math.min(1, dt * 6);
+          aim();
+        }
         ring.rotation.y = -current * step;
         meshes.forEach(({ mesh, mats, baseY }, i) => {
           let off = (((i - current) % count) + count) % count;
@@ -287,6 +309,7 @@ export function PackStage({ pack, count, onPick }: { pack: PackKind; count: numb
         canvas.removeEventListener("pointermove", onMove);
         canvas.removeEventListener("pointerup", onUp);
         canvas.removeEventListener("pointercancel", onUp);
+        canvas.removeEventListener("pointerleave", onLeave);
         geometry.dispose();
         floor.geometry.dispose();
         (floor.material as InstanceType<typeof THREE.Material>).dispose();
