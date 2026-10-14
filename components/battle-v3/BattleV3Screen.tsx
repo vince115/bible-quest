@@ -48,6 +48,8 @@ import { characterSearchText } from "@/components/cards/CardDemo";
 import { ENERGY_DISC, EnergyDisc, EnergyIcon } from "@/components/cards/EnergyIcon";
 import { PoolModeContext } from "@/components/cards/PoolModeContext";
 import { playBattleBgm, stopBattleBgm } from "@/game/audio";
+import { playSfx, playSfxSequence } from "@/game/sfx";
+import { sfxEvents } from "@/game/v3/sfxEvents";
 
 type T = ReturnType<typeof useT>;
 /** A skill waiting for its target; `basic` is the tabletop rules' free basic attack (made by that character) instead of a skill. */
@@ -679,6 +681,7 @@ function SkillFocus({
   const [casting, setCasting] = useState<SkillId | null>(null);
   const cast = (skill: SkillId) => {
     setCasting(skill);
+    playSfx("cast");
     setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
   const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
@@ -1235,6 +1238,13 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [scale] = useState(savedScale);
   const [showLog, setShowLog] = useState(false);
   const [showResult, setShowResult] = useState(true);
+  // Sound effects: whatever changed in the battle since the last look decides what is heard.
+  const lastBattle = useRef<BattleState | null>(null);
+  useEffect(() => {
+    const prev = lastBattle.current;
+    lastBattle.current = b ?? null;
+    if (b && prev !== b) playSfxSequence(sfxEvents(prev, b));
+  }, [b]);
   const [leaving, setLeaving] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
