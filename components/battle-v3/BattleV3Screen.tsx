@@ -1307,7 +1307,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   };
   const onCharacter = (id: CharacterId) => {
     if (pending?.targets.includes(id)) return onTarget(id);
-    if (pending) return;
+    if (pending) return setPending(null); // tapping a card that is not a target gives up choosing
     if (promote && canSwap(board, id)) return swap(id);
     setActing(open === id ? null : id);
   };
@@ -1338,6 +1338,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       onPointerMove={onPointerMove}
       onClick={() => {
         setActing(null);
+        setPending(null); // a tap on the empty table gives up choosing a target
       }}
       className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
     >
@@ -1406,9 +1407,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   e.stopPropagation();
                   setPending(null);
                 }}
-                className="ml-2 rounded-full border border-stone-400 px-2.5 py-0.5 text-xs text-stone-200 hover:bg-white/10"
+                className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
               >
-                {t("v2.ui.cancel")}
+                ✕ {t("v2.ui.cancel")}
               </button>
             </span>
           ) : lastHit ? (
