@@ -10,8 +10,10 @@ import { PackArt } from "./PackArt";
 const PACK_W = 150; // px
 const GAP = 1.25; // how much room each pack gets on the ring, in pack widths
 
-export function PackCarousel({ packs, onPick }: { packs: PackKind[]; onPick: (pack: PackKind) => void }) {
+/** Every pack on the ring is of the same kind: choose any one of them. */
+export function PackCarousel({ pack: kind, count, onPick }: { pack: PackKind; count: number; onPick: (pack: PackKind) => void }) {
   const t = useT();
+  const packs = Array.from({ length: count }, () => kind);
   const n = packs.length;
   const step = 360 / n;
   const radius = Math.round((PACK_W * GAP) / 2 / Math.tan(Math.PI / n));
@@ -69,7 +71,7 @@ export function PackCarousel({ packs, onPick }: { packs: PackKind[]; onPick: (pa
             const away = Math.abs(off);
             return (
               <button
-                key={pack.id}
+                key={i}
                 type="button"
                 aria-label={t(`v3.pack.${pack.id}.name`)}
                 onClick={() => {
@@ -96,9 +98,6 @@ export function PackCarousel({ packs, onPick }: { packs: PackKind[]; onPick: (pa
         <button type="button" onClick={() => go(1)} aria-label={t("v3.gacha.nextPack")} className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
           <ChevronRight size={24} aria-hidden />
         </button>
-      </div>
-      <div className="text-center">
-        <div className="text-lg font-black text-amber-200">{t(`v3.pack.${packs[front].id}.name`)}</div>
       </div>
       <button onClick={() => onPick(packs[front])} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400">
         {t("v3.gacha.pick")}

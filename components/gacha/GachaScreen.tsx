@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useT } from "@/game/locale";
-import { PACK, PACKS, type PackKind } from "@/game/v3/gacha";
+import { PACK, PACKS, PACKS_ON_RING, currentPack, nextRotation, type PackKind } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
 import { PackCarousel } from "./PackCarousel";
 import { PackReveal, type Pulled } from "./PackReveal";
@@ -23,6 +23,20 @@ export function GachaScreen() {
     void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setReady(true));
   }, []);
   const [phase, setPhase] = useState<Phase>({ name: "choose" });
+  // One kind of pack is on offer at a time; the day (on the player's clock) decides which. Read after mount, so the prerendered page matches.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read once on the client after mount
+    setNow(new Date());
+    const tick = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(tick);
+  }, []);
+  const debugAll = process.env.NEXT_PUBLIC_DEBUG_ALL_PACKS === "1";
+  const [forced, setForced] = useState<PackKind | null>(null);
+  const offer = forced ?? (now ? currentPack(now) : null);
+  const left = now ? Math.max(0, nextRotation(now).getTime() - now.getTime()) : 0;
+  const hours = Math.floor(left / 3600000);
+  const minutes = Math.floor((left % 3600000) / 60000);
   const enough = ready && points >= PACK.cost;
 
   // The pack is paid for when it is torn open, so choosing and backing out costs nothing.
@@ -48,10 +62,26 @@ export function GachaScreen() {
 
       {phase.name === "choose" &&
         (enough ? (
-          <>
-            <p className="max-w-sm text-center text-xs text-stone-400">{t("v3.gacha.pickHint")}</p>
-            <PackCarousel packs={PACKS} onPick={(pack) => setPhase({ name: "tear", pack })} />
-          </>
+          offer && (
+            <>
+              <div className="text-center">
+                <div className="text-xs text-stone-400">{t("v3.gacha.onOffer")}</div>
+                <div className="text-2xl font-black text-amber-200">{t(`v3.pack.${offer.id}.name`)}</div>
+                {!forced && <div className="mt-1 text-xs text-stone-500">{t("v3.gacha.changesIn", { h: hours, m: minutes })}</div>}
+              </div>
+              <p className="max-w-sm text-center text-xs text-stone-400">{t("v3.gacha.pickHint")}</p>
+              <PackCarousel pack={offer} count={PACKS_ON_RING} onPick={(pack) => setPhase({ name: "tear", pack })} />
+              {debugAll && (
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {PACKS.map((p) => (
+                    <button key={p.id} onClick={() => setForced(p)} className={`rounded-full border px-2.5 py-0.5 text-xs ${offer.id === p.id ? "border-amber-300 text-amber-200" : "border-stone-600 text-stone-400"}`}>
+                      {t(`v3.pack.${p.id}.name`)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )
         ) : (
           <p className="text-sm text-stone-400">
             {ready ? t("v3.gacha.short") : ""}{" "}
