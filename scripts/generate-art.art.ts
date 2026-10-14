@@ -109,6 +109,10 @@ const STORY_BASE =
   "Reverent, luxurious, hand-crafted, gold softly glowing against the dark leather. " +
   "No text, no letters, no words, no watermark. Portrait card proportions, filling the whole picture edge to edge.";
 const STORIES: Record<string, string> = {
+  // Not one story: symbols of the whole Bible, so the back suits every card.
+  book: "The medallion shows an open Bible resting on a stand, a bright star above it and rays of light streaming up from its pages, with a small olive branch on each side.",
+  light: "The medallion shows a great eight-pointed star of light at the centre, with a gold dove above it, a cross below it, and a ring of small stars and olive leaves around it, all in delicate engraved linework.",
+  scroll: "The medallion shows a scroll unrolling into a path of light under a crescent of stars, with a cross, a dove and a wheat sheaf as small emblems around its rim.",
   nativity: "The medallion shows the Nativity: a great star of Bethlehem radiating beams of light over a small stable with a manger, with a shepherd and sheep and the three wise men on camels in silhouette beneath.",
   ark: "The medallion shows Noah's Ark riding the waves under a wide rainbow, with a dove carrying an olive branch above it and pairs of animals along the shore.",
   shepherd: "The medallion shows the Good Shepherd: a robed shepherd with a staff carrying a lamb on his shoulders among his flock, under a bright star, with green pastures and still waters.",
