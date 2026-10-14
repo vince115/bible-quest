@@ -71,7 +71,22 @@ const PACK_SCENES: Record<string, string> = {
   church: "Early believers sharing bread in a courtyard in Jerusalem, a small flame of light resting above them, travellers with scrolls setting out along a road toward the sea.",
 };
 
+/**
+ * Page backdrops (ART_IDS=bg-light, bg-night, bg-glass): not a scene, nothing recognisable, only light and texture for the
+ * pointer's glow to uncover on pages that have no theme. Wide pictures (set ART_SIZE=1536x1024).
+ */
+const BACKDROPS: Record<string, string> = {
+  light:
+    "An abstract hand-painted watercolor backdrop on textured cold-pressed paper: soft golden light rays fanning out from the upper left across a warm, hazy wash of amber, ochre and pale rose, with gentle cloud-like pigment blooms and a few faint specks of gold. No landscape, no objects, no figures, no horizon.",
+  night:
+    "An abstract hand-painted watercolor backdrop on textured cold-pressed paper: deep indigo and violet washes melting into one another, with delicate drifting pigment blooms, a faint glow of warm gold in the lower right, and tiny scattered flecks of gold leaf like distant stars. No landscape, no objects, no figures, no horizon.",
+  glass:
+    "An abstract watercolor backdrop on textured cold-pressed paper, like light falling through a cathedral window: soft translucent panes of ruby, sapphire and amber with thin hand-drawn gold lines forming a loose geometric lattice, edges bleeding gently into one another, calm and luminous. No pictures, no symbols, no letters, no figures.",
+};
+
 /** The prompt for a pack picture. */
+const promptForBackdrop = (id: string) => `${BACKDROPS[id.replace(/^bg-/, "")] ?? ""} Wide composition, calm and soft, no text, no lettering, no watermark, no frame, no border.`;
+
 const promptForPack = (id: string) => `${MEDIUM} Scene: ${PACK_SCENES[id.replace(/^pack-/, "")] ?? ""}`;
 
 /** The prompt for a card: the shared style, then who it is and the scene to paint. */
@@ -115,7 +130,7 @@ async function generate(prompt: string): Promise<Buffer> {
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5", prompt, size: "1024x1024", n: 1 }),
+      body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1.5", prompt, size: process.env.ART_SIZE ?? "1024x1024", n: 1 }),
     });
     if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
     const item = ((await res.json()) as { data: { b64_json?: string; url?: string }[] }).data[0];
@@ -146,7 +161,7 @@ it("draws draft card art", async () => {
   mkdirSync(DRAFTS, { recursive: true });
   const lines: string[] = [];
   for (const id of wanted) {
-    const prompt = id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
+    const prompt = id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
     lines.push(`${id}\n  ${prompt}\n`);
     if (!call) continue;
     const out = `${DRAFTS}/${id}.png`;

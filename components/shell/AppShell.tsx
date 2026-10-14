@@ -16,11 +16,17 @@ import { PageBackground } from "./PageBackground";
 const COLLAPSED_KEY = "bq-nav-collapsed";
 
 /**
- * The scene picture behind a page. Only a page with a theme gets one (none does yet: the lists, the collection and the
- * gacha are not about one place); give a page a picture with an entry like `"/gacha": "/stages/eden.jpg"`. Battle pages
- * draw their own backdrop with their stage's scene.
+ * The scene picture behind a page with a theme (none has one yet: the lists, the collection and the gacha are not about
+ * one place); give a page one with an entry like `"/gacha": "/stages/eden.jpg"`. Battle pages draw their own backdrop
+ * with their stage's scene.
  */
 const PAGE_ART: Record<string, string> = {};
+
+/**
+ * The picture the pointer's glow uncovers on a page without a theme: not a scene, only light and texture. Three were
+ * drawn (night, light, glass in /public/backgrounds); swap the name to change it.
+ */
+const DEFAULT_ART = "/backgrounds/night.jpg";
 
 interface Item {
   href: string;
@@ -104,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }}
       className="relative flex min-h-[100dvh] flex-1 flex-col"
     >
-      <PageBackground art={PAGE_ART[path]} />
+      <PageBackground art={PAGE_ART[path] ?? DEFAULT_ART} />
       <header className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-3 border-b border-stone-800 bg-stone-950/80 px-3 backdrop-blur">
         <button
           onClick={() => setOpen(true)}
