@@ -3,6 +3,7 @@
 // /collection: every character card in story order. The ones the player owns are shown (with how many copies);
 // the rest are locked, showing only their rarity, so there is something to chase.
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
@@ -14,6 +15,7 @@ import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardF
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
+import { SCALE_DEFAULT, StoryPanel, VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
 
 const ALL_CARDS = TIMELINE.filter((id): id is CharacterId => id in CHARACTER_ELEMENT);
 const RARITY_TABS = ["UR", "SSR", "SR", "R", "N"] as const;
@@ -29,6 +31,7 @@ export function CollectionScreen() {
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const [ownedOnly, setOwnedOnly] = useState(false);
+  const [viewing, setViewing] = useState<CharacterId | null>(null);
 
   const count = (id: CharacterId) => collection[id] ?? 0;
   const kinds = ALL_CARDS.filter((id) => count(id) > 0).length;
@@ -38,6 +41,26 @@ export function CollectionScreen() {
   const matching = ALL_CARDS.filter((id) => (!q || characterSearchText(id).includes(q)) && (!ownedOnly || count(id) > 0));
   const shown = rarity === "all" ? matching : matching.filter((id) => CARD_RARITY[id] === rarity);
   const ownedIn = (list: CharacterId[]) => list.filter((id) => count(id) > 0).length;
+
+  // The viewer steps through the owned cards on screen (the current search and rarity), wrapping at either end.
+  const viewable = shown.filter((id) => count(id) > 0);
+  const step = (d: number) =>
+    setViewing((cur) => {
+      const i = cur ? viewable.indexOf(cur) : -1;
+      return i < 0 || viewable.length < 2 ? cur : viewable[(i + d + viewable.length) % viewable.length];
+    });
+  useEffect(() => {
+    if (!viewing) return;
+    const keys = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewing(null);
+      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(1);
+    };
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  });
+  // The saved size of the card demo's viewer, read once on the client (the viewer never renders on the server).
+  const [scale] = useState(() => savedScale() || SCALE_DEFAULT);
 
   return (
     <main className="flex min-h-[100dvh] flex-1 flex-col items-center gap-5 bg-gradient-to-b from-stone-900 via-stone-950 to-black px-4 py-8">
@@ -88,10 +111,12 @@ export function CollectionScreen() {
           const n = ready ? count(id) : 0;
           return n > 0 ? (
             <div key={id} className="relative">
-              <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} effects={false} touchTilt={false} figure={figureArea(id)} className="w-[120px] text-[5.6px]">
-                <CharacterCardFace id={id} />
-              </HoloCard>
-              {n > 1 && <span className="absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">×{n}</span>}
+              <button type="button" onClick={() => setViewing(id)} aria-label={t("v3.demo.view")} className="block cursor-zoom-in text-left">
+                <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} effects={false} touchTilt={false} figure={figureArea(id)} className="w-[120px] text-[5.6px]">
+                  <CharacterCardFace id={id} />
+                </HoloCard>
+              </button>
+              {n > 1 && <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">×{n}</span>}
             </div>
           ) : (
             <div key={id} aria-label={t("v3.collection.locked")} className="flex aspect-[63/88] w-[120px] flex-col items-center justify-center gap-1.5 rounded-md border border-stone-700 bg-stone-900/80 text-stone-500">
@@ -113,6 +138,45 @@ export function CollectionScreen() {
           {t("v2.ui.backHome")}
         </Link>
       </div>
+
+      {viewing && count(viewing) > 0 && (
+        <div role="dialog" aria-modal="true" onClick={() => setViewing(null)} className="fixed inset-0 z-[60] flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4">
+          {viewable.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label={t("v3.demo.prev")} className="fixed left-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:left-6">
+                ‹
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label={t("v3.demo.next")} className="fixed right-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:right-6">
+                ›
+              </button>
+            </>
+          )}
+          <div className="mt-auto flex max-w-full flex-col items-center gap-4 lg:flex-row lg:items-stretch">
+            <motion.div
+              key={viewing}
+              initial={{ scale: 0.55, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+              className={VIEWER_WIDTH}
+              style={viewerStyle(scale)}
+            >
+              <HoloCard element={CHARACTER_ELEMENT[viewing]} rarity={CARD_RARITY[viewing]} figure={figureArea(viewing)}>
+                <CharacterCardFace id={viewing} />
+              </HoloCard>
+            </motion.div>
+            <StoryPanel id={viewing} />
+          </div>
+          <div onClick={(e) => e.stopPropagation()} className="mb-auto flex items-center justify-center gap-3 text-sm text-stone-200">
+            <span className="tabular-nums text-stone-400">
+              {viewable.indexOf(viewing) + 1} / {viewable.length}
+            </span>
+            <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
+              ✕ {t("v3.ui.close")}
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
