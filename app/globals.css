@@ -10,6 +10,105 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Tactile dot-grid texture for game stages & tactical boards */
+.bq-grid-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+/* [Layer 3] Dark-red to dark-blue semi-transparent mask (70% top/bottom, 50% middle) */
+.bq-red-blue-mask {
+  background: linear-gradient(
+    180deg,
+    rgba(136, 19, 55, 0.7) 0%,
+    rgba(88, 28, 135, 0.5) 50%,
+    rgba(23, 37, 84, 0.7) 100%
+  );
+}
+
+/* [Layer 4] Dense fine black dots: 1px radius, ~3px gap, 70% opacity.
+/* [Layer 4] Dense fine black dots: 1px radius, ~3px gap, 70% opacity.
+   Ultra-Smooth Natural Sunlight S-Curve Falloff:
+   Center 100% (25px) -> 92% (55px) -> 80% (95px) -> 60% (145px) -> 40% (205px) -> 20% (275px) -> 8% (350px) -> 0% (420px).
+   Feathered with continuous non-linear easing to eliminate any harsh boundaries. */
+.bq-black-dots-dense {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5' viewBox='0 0 5 5'%3E%3Ccircle cx='2.5' cy='2.5' r='1' fill='rgba(0,0,0,0.7)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  -webkit-mask-image: radial-gradient(
+    circle 420px at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    transparent 0%,
+    transparent 25px,
+    rgba(0, 0, 0, 0.08) 55px,
+    rgba(0, 0, 0, 0.22) 95px,
+    rgba(0, 0, 0, 0.40) 145px,
+    rgba(0, 0, 0, 0.58) 205px,
+    rgba(0, 0, 0, 0.76) 275px,
+    rgba(0, 0, 0, 0.92) 350px,
+    #000 420px
+  );
+  mask-image: radial-gradient(
+    circle 420px at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    transparent 0%,
+    transparent 25px,
+    rgba(0, 0, 0, 0.08) 55px,
+    rgba(0, 0, 0, 0.22) 95px,
+    rgba(0, 0, 0, 0.40) 145px,
+    rgba(0, 0, 0, 0.58) 205px,
+    rgba(0, 0, 0, 0.76) 275px,
+    rgba(0, 0, 0, 0.92) 350px,
+    #000 420px
+  );
+}
+
+/* Mouse-driven glowing dots: whisper-soft pale gold bloom naturally dissipating outward */
+.bq-glowing-dots-dense {
+  background: radial-gradient(
+    circle 420px at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    transparent 0%,
+    transparent 25px,
+    rgba(254, 240, 138, 0.16) 65px,
+    rgba(254, 240, 138, 0.12) 115px,
+    rgba(253, 224, 71, 0.08) 175px,
+    rgba(250, 204, 21, 0.04) 245px,
+    rgba(245, 158, 11, 0.015) 325px,
+    transparent 420px
+  );
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2730%27%20height%3D%2730%27%20viewBox%3D%270%200%2030%2030%27%3E%3Ccircle%20cx%3D%272.56%27%20cy%3D%272.52%27%20r%3D%270.97%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.71%29%27/%3E%3Ccircle%20cx%3D%277.33%27%20cy%3D%272.66%27%20r%3D%270.98%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%3Ccircle%20cx%3D%2712.71%27%20cy%3D%272.4%27%20r%3D%271.35%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.44%29%27/%3E%3Ccircle%20cx%3D%2717.58%27%20cy%3D%272.71%27%20r%3D%270.82%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.87%29%27/%3E%3Ccircle%20cx%3D%2722.45%27%20cy%3D%272.28%27%20r%3D%271.17%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.54%29%27/%3E%3Ccircle%20cx%3D%2727.45%27%20cy%3D%272.65%27%20r%3D%271.23%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.76%29%27/%3E%3Ccircle%20cx%3D%272.67%27%20cy%3D%277.55%27%20r%3D%271.03%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.97%29%27/%3E%3Ccircle%20cx%3D%277.65%27%20cy%3D%277.41%27%20r%3D%271.16%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.94%29%27/%3E%3Ccircle%20cx%3D%2712.48%27%20cy%3D%277.38%27%20r%3D%270.87%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.35%29%27/%3E%3Ccircle%20cx%3D%2717.51%27%20cy%3D%277.56%27%20r%3D%271.1%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.33%29%27/%3E%3Ccircle%20cx%3D%2722.45%27%20cy%3D%277.58%27%20r%3D%271.12%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.77%29%27/%3E%3Ccircle%20cx%3D%2727.57%27%20cy%3D%277.35%27%20r%3D%270.92%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.62%29%27/%3E%3Ccircle%20cx%3D%272.71%27%20cy%3D%2712.65%27%20r%3D%270.94%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.86%29%27/%3E%3Ccircle%20cx%3D%277.56%27%20cy%3D%2712.47%27%20r%3D%271.22%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.68%29%27/%3E%3Ccircle%20cx%3D%2712.64%27%20cy%3D%2712.53%27%20r%3D%271.14%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.89%29%27/%3E%3Ccircle%20cx%3D%2717.36%27%20cy%3D%2712.74%27%20r%3D%271.07%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.67%29%27/%3E%3Ccircle%20cx%3D%2722.64%27%20cy%3D%2712.28%27%20r%3D%271.05%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.82%29%27/%3E%3Ccircle%20cx%3D%2727.48%27%20cy%3D%2712.7%27%20r%3D%271.23%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.64%29%27/%3E%3Ccircle%20cx%3D%272.63%27%20cy%3D%2717.61%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.69%29%27/%3E%3Ccircle%20cx%3D%277.53%27%20cy%3D%2717.38%27%20r%3D%270.79%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.39%29%27/%3E%3Ccircle%20cx%3D%2712.28%27%20cy%3D%2717.34%27%20r%3D%271.24%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.43%29%27/%3E%3Ccircle%20cx%3D%2717.73%27%20cy%3D%2717.67%27%20r%3D%271.28%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.69%29%27/%3E%3Ccircle%20cx%3D%2722.46%27%20cy%3D%2717.55%27%20r%3D%271.28%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.95%29%27/%3E%3Ccircle%20cx%3D%2727.46%27%20cy%3D%2717.62%27%20r%3D%270.84%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.74%29%27/%3E%3Ccircle%20cx%3D%272.42%27%20cy%3D%2722.28%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.77%29%27/%3E%3Ccircle%20cx%3D%277.55%27%20cy%3D%2722.61%27%20r%3D%270.86%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.64%29%27/%3E%3Ccircle%20cx%3D%2712.56%27%20cy%3D%2722.53%27%20r%3D%270.85%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.8%29%27/%3E%3Ccircle%20cx%3D%2717.67%27%20cy%3D%2722.45%27%20r%3D%270.87%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.83%29%27/%3E%3Ccircle%20cx%3D%2722.56%27%20cy%3D%2722.46%27%20r%3D%270.85%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.63%29%27/%3E%3Ccircle%20cx%3D%2727.6%27%20cy%3D%2722.41%27%20r%3D%270.77%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.72%29%27/%3E%3Ccircle%20cx%3D%272.57%27%20cy%3D%2727.4%27%20r%3D%271.32%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.68%29%27/%3E%3Ccircle%20cx%3D%277.64%27%20cy%3D%2727.69%27%20r%3D%270.89%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.51%29%27/%3E%3Ccircle%20cx%3D%2712.47%27%20cy%3D%2727.44%27%20r%3D%271.13%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.4%29%27/%3E%3Ccircle%20cx%3D%2717.66%27%20cy%3D%2727.63%27%20r%3D%270.89%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.87%29%27/%3E%3Ccircle%20cx%3D%2722.29%27%20cy%3D%2727.6%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.89%29%27/%3E%3Ccircle%20cx%3D%2727.39%27%20cy%3D%2727.51%27%20r%3D%271.11%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.57%29%27/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2730%27%20height%3D%2730%27%20viewBox%3D%270%200%2030%2030%27%3E%3Ccircle%20cx%3D%272.56%27%20cy%3D%272.52%27%20r%3D%270.97%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.71%29%27/%3E%3Ccircle%20cx%3D%277.33%27%20cy%3D%272.66%27%20r%3D%270.98%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.85%29%27/%3E%3Ccircle%20cx%3D%2712.71%27%20cy%3D%272.4%27%20r%3D%271.35%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.44%29%27/%3E%3Ccircle%20cx%3D%2717.58%27%20cy%3D%272.71%27%20r%3D%270.82%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.87%29%27/%3E%3Ccircle%20cx%3D%2722.45%27%20cy%3D%272.28%27%20r%3D%271.17%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.54%29%27/%3E%3Ccircle%20cx%3D%2727.45%27%20cy%3D%272.65%27%20r%3D%271.23%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.76%29%27/%3E%3Ccircle%20cx%3D%272.67%27%20cy%3D%277.55%27%20r%3D%271.03%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.97%29%27/%3E%3Ccircle%20cx%3D%277.65%27%20cy%3D%277.41%27%20r%3D%271.16%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.94%29%27/%3E%3Ccircle%20cx%3D%2712.48%27%20cy%3D%277.38%27%20r%3D%270.87%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.35%29%27/%3E%3Ccircle%20cx%3D%2717.51%27%20cy%3D%277.56%27%20r%3D%271.1%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.33%29%27/%3E%3Ccircle%20cx%3D%2722.45%27%20cy%3D%277.58%27%20r%3D%271.12%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.77%29%27/%3E%3Ccircle%20cx%3D%2727.57%27%20cy%3D%277.35%27%20r%3D%270.92%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.62%29%27/%3E%3Ccircle%20cx%3D%272.71%27%20cy%3D%2712.65%27%20r%3D%270.94%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.86%29%27/%3E%3Ccircle%20cx%3D%277.56%27%20cy%3D%2712.47%27%20r%3D%271.22%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.68%29%27/%3E%3Ccircle%20cx%3D%2712.64%27%20cy%3D%2712.53%27%20r%3D%271.14%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.89%29%27/%3E%3Ccircle%20cx%3D%2717.36%27%20cy%3D%2712.74%27%20r%3D%271.07%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.67%29%27/%3E%3Ccircle%20cx%3D%2722.64%27%20cy%3D%2712.28%27%20r%3D%271.05%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.82%29%27/%3E%3Ccircle%20cx%3D%2727.48%27%20cy%3D%2712.7%27%20r%3D%271.23%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.64%29%27/%3E%3Ccircle%20cx%3D%272.63%27%20cy%3D%2717.61%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.69%29%27/%3E%3Ccircle%20cx%3D%277.53%27%20cy%3D%2717.38%27%20r%3D%270.79%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.39%29%27/%3E%3Ccircle%20cx%3D%2712.28%27%20cy%3D%2717.34%27%20r%3D%271.24%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.43%29%27/%3E%3Ccircle%20cx%3D%2717.73%27%20cy%3D%2717.67%27%20r%3D%271.28%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.69%29%27/%3E%3Ccircle%20cx%3D%2722.46%27%20cy%3D%2717.55%27%20r%3D%271.28%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.95%29%27/%3E%3Ccircle%20cx%3D%2727.46%27%20cy%3D%2717.62%27%20r%3D%270.84%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.74%29%27/%3E%3Ccircle%20cx%3D%272.42%27%20cy%3D%2722.28%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.77%29%27/%3E%3Ccircle%20cx%3D%277.55%27%20cy%3D%2722.61%27%20r%3D%270.86%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.64%29%27/%3E%3Ccircle%20cx%3D%2712.56%27%20cy%3D%2722.53%27%20r%3D%270.85%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.8%29%27/%3E%3Ccircle%20cx%3D%2717.67%27%20cy%3D%2722.45%27%20r%3D%270.87%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.83%29%27/%3E%3Ccircle%20cx%3D%2722.56%27%20cy%3D%2722.46%27%20r%3D%270.85%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.63%29%27/%3E%3Ccircle%20cx%3D%2727.6%27%20cy%3D%2722.41%27%20r%3D%270.77%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.72%29%27/%3E%3Ccircle%20cx%3D%272.57%27%20cy%3D%2727.4%27%20r%3D%271.32%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.68%29%27/%3E%3Ccircle%20cx%3D%277.64%27%20cy%3D%2727.69%27%20r%3D%270.89%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.51%29%27/%3E%3Ccircle%20cx%3D%2712.47%27%20cy%3D%2727.44%27%20r%3D%271.13%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.4%29%27/%3E%3Ccircle%20cx%3D%2717.66%27%20cy%3D%2727.63%27%20r%3D%270.89%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.87%29%27/%3E%3Ccircle%20cx%3D%2722.29%27%20cy%3D%2727.6%27%20r%3D%270.96%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.89%29%27/%3E%3Ccircle%20cx%3D%2727.39%27%20cy%3D%2727.51%27%20r%3D%271.11%27%20fill%3D%27rgba%28255%2C255%2C255%2C0.57%29%27/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: 30px 30px;
+  mask-size: 30px 30px;
+}
+
+/* Clear reveal spotlight: Ultra-soft sunlight beam curve seamlessly dissolving into ambient tones */
+.bq-reveal-spotlight {
+  -webkit-mask-image: radial-gradient(
+    circle 420px at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    #000 0%,
+    #000 25px,
+    rgba(0, 0, 0, 0.92) 55px,
+    rgba(0, 0, 0, 0.78) 95px,
+    rgba(0, 0, 0, 0.60) 145px,
+    rgba(0, 0, 0, 0.42) 205px,
+    rgba(0, 0, 0, 0.24) 275px,
+    rgba(0, 0, 0, 0.08) 350px,
+    transparent 420px
+  );
+  mask-image: radial-gradient(
+    circle 420px at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    #000 0%,
+    #000 25px,
+    rgba(0, 0, 0, 0.92) 55px,
+    rgba(0, 0, 0, 0.78) 95px,
+    rgba(0, 0, 0, 0.60) 145px,
+    rgba(0, 0, 0, 0.42) 205px,
+    rgba(0, 0, 0, 0.24) 275px,
+    rgba(0, 0, 0, 0.08) 350px,
+    transparent 420px
+  );
+}
+
 /* Card rarity effects: a gold sheen running along SSR+ frames, and the colour cycle of UR prism frames. */
 @keyframes bq-sheen {
   from {

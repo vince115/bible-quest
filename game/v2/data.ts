@@ -1,3 +1,4 @@
+import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import type { CardDef, CardId, CharacterId, Element, EnemyId, GoliathActionId, SkillDef, SkillId, StageId } from "./types";
 
 // Prototype v2 (energy-card version) numbers. Change only with the designer's approval.
@@ -28,6 +29,37 @@ export const RULES_V2 = {
   fangShed: 80,
   coil: 40,
   temptFaith: 1,
+  /** The Flood: Rain and Deluge hit every ally (Deluge only after the waters Rise); from turn prevailTurn the waters prevail (+prevailBonus). */
+  rain: 30,
+  surge: 60,
+  deluge: 60,
+  prevailTurn: 4,
+  prevailBonus: 20,
+  /** Pharaoh's chariots: Pursuit hits two allies; at half HP the wheels come off (a lost action, and Charge weakens). */
+  charge: 60,
+  chargeWheelsOff: 40,
+  pursue: 30,
+  pursueTargets: 2,
+  arrows: 20,
+  /** The walls of Jericho: the defenders throw stones and shoot; Repair mends the wall until it cracks at half HP. */
+  stones: 40,
+  repair: 40,
+  boulder: 70,
+  /** The prophets of Baal: Cry does nothing (no voice); in a frenzy (half HP) it drains Faith and Cut hits harder. Cut also wounds them. */
+  leap: 30,
+  cut: 60,
+  cutFrenzy: 80,
+  cutSelf: 20,
+  cryFaith: 1,
+  /** The lions: Roar shakes allies; Pounce hits the front line; Maul hunts the weakest ally. */
+  roarTargets: 2,
+  pounce: 70,
+  maul: 50,
+  /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
+  many: 20,
+  manyTargets: 2,
+  chains: 50,
+  tormentTargets: 1,
 
   /** Story bonuses: a character fighting in their own Bible story. */
   /** Sling Stone away from Goliath: ordinary damage, no Stun. */
@@ -39,8 +71,57 @@ export const RULES_V2 = {
   edenMotherBonus: 20,
   edenSeedBonus: 20,
 
+  /** Story bonuses for the other stages' heroes: their signature skill is the stage's climax, like David's Sling Stone. */
+  /** Noah at the ark: Build the Ark +30 Shield (the ark saves). */
+  arkStoryShield: 30,
+  /** Moses at the Red Sea: Part the Red Sea is a fixed 150 (the waters cover the chariots). */
+  redSeaStoryDamage: 150,
+  /** Joshua at Jericho: Jericho Falls is a fixed 120 (the wall falls down flat). */
+  jerichoStoryDamage: 120,
+  /** Elijah on Carmel: Fire on Carmel is a fixed 150 (the fire of the LORD falls). */
+  carmelStoryDamage: 150,
+  /** Daniel in the den: Stone Cut Without Hands +30. */
+  lionsStoryBonus: 30,
+  /** Jesus at Gerasa: Walking on Water also rebukes Legion for this much ("Come out of the man"). */
+  gerasaStoryDamage: 100,
+
   /** Enemy cards played on the player's side. */
   shieldUpAmount: 50,
+
+  /**
+   * Personal pools (prototype): every character has MP (spells) and SP (strikes). MP is on the same scale as HP:
+   * a character's MP cap is mpHpRatio × their HP, and one "point" of a skill's cost, a card's amount or a regeneration
+   * is worth mpUnit MP (a cost-2 spell takes 60 MP). SP works the same way with spUnit (a cost-2 strike takes 20 SP).
+   * Scripture cards: red gives SP, blue gives MP, green shields the chosen ally for cardShield per point.
+   */
+  /**
+   * Tabletop rules (the version that can be printed): everything is a small whole number and the cards are the record.
+   * Energy cards (red attack, green heal, blue magic) are stuck under a character, at most attachPerTurn a turn, and a
+   * character can hold energyCap(rarity) in total value. A skill is paid with the cards of its own colour: strikes red,
+   * heals and defence (guard) green, magic (faith) blue. flatValues: every energy card is worth 1 instead of its printed 1-3.
+   * Elements add or take away elementBonus.
+   */
+  table: {
+    attachPerTurn: 2,
+    flatValues: false,
+    elementBonus: 10,
+    /** In the tabletop mode a Shield is extra HP: it stays until damage uses it up (no timing to remember), up to bonusCap. */
+    bonusCap: 60,
+    /** The free basic attack every character can make once a turn (it takes their action), by rarity. */
+    basicDamage: { N: 10, R: 10, SR: 20, SSR: 20, UR: 30 } as Record<Rarity, number>,
+    cap: { N: 3, R: 4, SR: 5, SSR: 6, UR: 8 } as Record<Rarity, number>,
+  },
+  pools: {
+    mpUnit: 30,
+    mpHpRatio: 1,
+    startMpFraction: 0.5,
+    mpRegen: 1,
+    spUnit: 10,
+    spCap: 60,
+    startSp: 20,
+    spRegen: 10,
+    cardShield: 20,
+  },
 
   /** Adam's Keep the Garden: Shield on himself. */
   keepShield: 50,
@@ -573,6 +654,7 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   adam: "earth",
   cain: "earth",
   abel: "light",
+  seth: "light",
   noah: "water",
   abraham: "metal",
   isaac: "wood",
@@ -754,7 +836,15 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   goliathP: "metal",
   serpentP: "dark",
 };
-export const ENEMY_ELEMENT: Record<EnemyId, Element> = { bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark" };
+export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
+  bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark",
+  flood: "water", fountains: "water", windows: "water",
+  chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
+  walls: "earth", jerichoKing: "earth", wallGuard: "earth",
+  baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
+  lion: "wood", presidents: "earth", princes: "earth",
+  legion: "dark", uncleanSpirits: "dark", swine: "earth",
+};
 
 /** Cards that show the same person: a line-up holds only one of them. */
 export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses", jesusUR: "jesus", jesusCross: "jesus", johnPatmos: "johnApostle" };
@@ -766,24 +856,70 @@ export const APOSTLES: ReadonlySet<CharacterId> = new Set(["peter", "andrew", "j
 export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
+/** Stages played with each character's own MP and SP (every campaign stage); a battle created without a stage mode still uses the shared team energy. */
+/**
+ * The magic version (personal MP and SP) is parked on the `feat/magic-version` branch: the main line is built on the
+ * tabletop rules. The engine still supports it; this keeps it out of the screens until it is picked up again.
+ */
+export const MAGIC_VERSION_ENABLED = false;
+
+export const PERSONAL_POOL_STAGES: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
+
+/** The most MP a character can hold: on the same scale as their HP (in steps of 10), so sturdier characters carry more. */
+export const mpCap = (id: CharacterId): number => Math.round((MAX_HP[id] * RULES_V2.pools.mpHpRatio) / 10) * 10;
+
+/** Damage of a character's free basic attack in the tabletop rules, printed on their card. */
+export const basicDamage = (id: CharacterId): number => RULES_V2.table.basicDamage[CARD_RARITY[id]];
+
+/** The tabletop rules' energy limit: the total value of the cards that can be stuck under a character, by rarity. */
+export const energyCap = (id: CharacterId): number => RULES_V2.table.cap[CARD_RARITY[id]];
+
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "zarephath", "shunammite", "naaman", "maid", "bathsheba", "mephibosheth", "sheba", "leah", "esau", "hagar", "lot", "jochebed", "pharaohDaughter", "jethro", "zipporah", "loisEunice", "balaam", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "ahab", "absalom", "sapphira", "pilate", "caiaphas", "herod", "barabbas", "herodias", "romanSoldier", "romanSpearman", "romanArcher", "romanCavalry", "romanCenturion", "sennacherib", "belshazzar", "korah", "achan", "sisera", "herodGreat", "legionFreed", "prodigal", "ethiopian", "johnPatmos", "ehud", "jephthah", "joab", "uriah", "cyrus", "zerubbabel", "vashti", "michal", "gehazi", "jehu", "canaanite", "richRuler", "cleopas", "malchus", "jailer", "rhoda", "simonMagus", "herodAgrippa", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "seth", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "zarephath", "shunammite", "naaman", "maid", "bathsheba", "mephibosheth", "sheba", "leah", "esau", "hagar", "lot", "jochebed", "pharaohDaughter", "jethro", "zipporah", "loisEunice", "balaam", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "ahab", "absalom", "sapphira", "pilate", "caiaphas", "herod", "barabbas", "herodias", "romanSoldier", "romanSpearman", "romanArcher", "romanCavalry", "romanCenturion", "sennacherib", "belshazzar", "korah", "achan", "sisera", "herodGreat", "legionFreed", "prodigal", "ethiopian", "johnPatmos", "ehud", "jephthah", "joab", "uriah", "cyrus", "zerubbabel", "vashti", "michal", "gehazi", "jehu", "canaanite", "richRuler", "cleopas", "malchus", "jailer", "rhoda", "simonMagus", "herodAgrippa", "goliathP", "serpentP", "bearerP", "archerP"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
-export const ENEMY_ORDER: EnemyId[] = ["bearer", "goliath", "archer", "serpent"];
+export const ENEMY_ORDER: EnemyId[] = [
+  "bearer", "goliath", "archer", "serpent",
+  "fountains", "flood", "windows",
+  "pharaohHost", "chariots", "chariotCaptain",
+  "jerichoKing", "walls", "wallGuard",
+  "ahabKing", "baalProphets", "jezebelQueen",
+  "presidents", "lion", "princes",
+  "uncleanSpirits", "legion", "swine",
+];
 
 /** Each character's own Bible story: fighting in that stage turns on their story bonus. */
-export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", adam: "eden", eve: "eden" };
+export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", adam: "eden", eve: "eden", noah: "ark", moses: "redSea", joshua: "jericho", elijah: "carmel", daniel: "lions", jesusUR: "gerasa" };
 
 /** Who fights in each stage, and the boss. */
-export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = { goliath: ["bearer", "goliath", "archer"], eden: ["serpent"] };
-export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent" };
+/**
+ * Who fights in each stage: the boss, and (except in Eden) a guard who protects the boss while standing and a shooter
+ * who hits the front line every turn, like Goliath's shield bearer and archer.
+ */
+export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion" };
+export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "presidents", gerasa: "uncleanSpirits" };
+export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "princes", gerasa: "swine" };
+export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
+  (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [STAGE_GUARD[st], STAGE_BOSS[st], STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
+) as Record<StageId, EnemyId[]>;
+/** What each shooter's hit on the front line does. */
+export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, princes: 20, swine: 20 };
+/** The stages in the campaign's (Bible) order. */
+export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
-export const ENEMY_HP: Record<EnemyId, number> = { bearer: 60, goliath: 280, archer: 40, serpent: 320 };
+export const ENEMY_HP: Record<EnemyId, number> = {
+  bearer: 60, goliath: 280, archer: 40, serpent: 320,
+  flood: 80, fountains: 50, windows: 40,
+  chariots: 150, pharaohHost: 50, chariotCaptain: 40,
+  walls: 200, jerichoKing: 50, wallGuard: 40,
+  baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
+  lion: 160, presidents: 50, princes: 40,
+  legion: 200, uncleanSpirits: 50, swine: 40,
+};
 
-export const MAX_HP: Record<CharacterId, number> = { david: 120, samuel: 100, jonathan: 140, adam: 130, eve: 120, cain: 120, abel: 120, noah: 140, abraham: 130, isaac: 100, jacob: 130, joseph: 120, moses: 130, aaron: 130, miriam: 100, mosesSinai: 130, joshua: 140, rahab: 100, deborah: 110, gideon: 120, samson: 150, ruth: 120, naomi: 90, boaz: 130, hannah: 100, saul: 150, abigail: 100, solomon: 130, elijah: 120, elisha: 120, jonah: 110, isaiah: 110, esther: 110, daniel: 130, nehemiah: 130, zechariah: 100, mary: 110, josephNaz: 130, johnBaptist: 120, jesus: 100, jesusUR: 150, peter: 140, andrew: 110, johnApostle: 110, matthew: 110, jamesZeb: 120, thomas: 110, maryMagdalene: 110, martha: 120, zacchaeus: 90, maryBethany: 100, lazarus: 120, stephen: 110, philip: 110, paul: 130, barnabas: 120, silas: 110, timothy: 100, lydia: 110, priscilla: 110, eli: 90, aquila: 110, dorcas: 100, cornelius: 140, apollos: 110, phoebe: 100, luke: 110, johnMark: 100, titus: 120, philemon: 110, onesimus: 90, nicodemus: 110, samaritan: 100, simeon: 100, anna: 90, loavesBoy: 80, judas: 100, philipApostle: 110, nathanael: 110, jamesAlph: 120, thaddaeus: 110, simonZealot: 120, matthias: 110, elizabeth: 100, mordecai: 130, sarah: 110, rebekah: 110, rachel: 100, barak: 130, jael: 100, josephArimathea: 110, ananias: 100, threeFriends: 150, job: 150, enoch: 110, melchizedek: 120, caleb: 140, jeremiah: 110, ezekiel: 120, ezra: 110, nathan: 110, hezekiah: 120, josiah: 120, magi: 150, shepherds: 140, bartimaeus: 100, centurion: 130, jairus: 110, simonCyrene: 140, thief: 80, jamesJust: 120, mockingThief: 90, jesusCross: 120, widow: 80, fisherman: 100, fourFriends: 160, goodSamaritan: 120, zarephath: 90, shunammite: 100, naaman: 140, maid: 70, bathsheba: 110, mephibosheth: 90, sheba: 110, leah: 110, esau: 140, hagar: 140, lot: 130, jochebed: 100, pharaohDaughter: 100, jethro: 120, zipporah: 100, loisEunice: 130, balaam: 130, pharaoh: 140, charioteer: 110, jezebel: 110, baalProphet: 100, haman: 120, delilah: 100, nebuchadnezzar: 140, ahab: 130, absalom: 120, sapphira: 110, pilate: 130, caiaphas: 120, herod: 120, barabbas: 110, herodias: 110, romanSoldier: 120, romanSpearman: 110, romanArcher: 90, romanCavalry: 130, romanCenturion: 140, sennacherib: 150, belshazzar: 120, korah: 130, achan: 110, sisera: 140, herodGreat: 130, legionFreed: 120, prodigal: 100, ethiopian: 110, johnPatmos: 120, ehud: 120, jephthah: 130, joab: 140, uriah: 140, cyrus: 130, zerubbabel: 130, vashti: 110, michal: 100, gehazi: 100, jehu: 140, canaanite: 100, richRuler: 110, cleopas: 110, malchus: 100, jailer: 120, rhoda: 80, simonMagus: 110, herodAgrippa: 130, archerP: 70, bearerP: 110, goliathP: 150, serpentP: 100 };
+export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -801,6 +937,8 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   mark: { id: "mark", owner: "cain", kind: "guard", cost: 2 },
   firstlings: { id: "firstlings", owner: "abel", kind: "guard", cost: 1 },
   faithOffering: { id: "faithOffering", owner: "abel", kind: "attack", cost: 1, damage: 20 },
+  anotherSeed: { id: "anotherSeed", owner: "seth", kind: "guard", cost: 1 },
+  callOnLord: { id: "callOnLord", owner: "seth", kind: "faith", cost: 2, damage: 50 },
   ark: { id: "ark", owner: "noah", kind: "guard", cost: 2 },
   rainbow: { id: "rainbow", owner: "noah", kind: "guard", cost: 3 },
   stars: { id: "stars", owner: "abraham", kind: "guard", cost: 1 },
@@ -867,6 +1005,8 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   baptism: { id: "baptism", owner: "johnBaptist", kind: "guard", cost: 2 },
   peaceBeUnto: { id: "peaceBeUnto", owner: "jesus", kind: "guard", cost: 1 },
   withYouAlway: { id: "withYouAlway", owner: "jesus", kind: "guard", cost: 2 },
+  comeOut: { id: "comeOut", owner: "jesusUR", kind: "attack", cost: 2, damage: 70 },
+  greatFlood: { id: "greatFlood", owner: "noah", kind: "attack", cost: 2, damage: 50 },
   walkOnWater: { id: "walkOnWater", owner: "jesusUR", kind: "faith", cost: 2 },
   loaves: { id: "loaves", owner: "jesusUR", kind: "faith", cost: 3 },
   greatCatch: { id: "greatCatch", owner: "peter", kind: "guard", cost: 1 },
@@ -1160,6 +1300,32 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   beguile: { id: "beguile", owner: "serpentP", kind: "guard", cost: 3 },
 };
 
+/**
+ * The tabletop rules sort skills into three colours: red strikes, green heals/guards, blue magic. Magic is the strongest
+ * non-strike skill of each character who has no faith skill of their own (and three strikes that are the best of theirs),
+ * so every character can use blue cards; their cheap everyday skills stay green or red.
+ */
+const TABLE_BLUE = new Set<SkillId>([
+  "aQuestion", "abideHouse", "allHerLiving", "almondRod", "almsdeeds", "arise", "armourOfGod", "arrowVolley", "baptism",
+  "bearLetter", "beguile", "belovedBrother", "blessedAbove", "blewTrumpet", "braceSpears", "breastplate", "buildWall",
+  "castIntoSea", "chosenChariots", "comeAndSee", "comeSee", "comingFromCountry", "convenientDay", "covshield",
+  "cutThemselves", "deadDog", "departed", "drewHimOut", "earHealed", "example", "expound", "feast", "fewDays", "figTree",
+  "fineLinen", "firstlings", "fledToTent", "fourfold", "fromAChild", "gaveThanks", "giveBasket", "goUpAtOnce",
+  "gorgeousRobe", "greatCatch", "greatPossessions", "greaterThanAll", "heardTheBook", "helper", "hereIsWater",
+  "hiddenSpoil", "houseForever", "ifThouGo", "imageInBed", "inOrder", "intercede", "judgeThisDay", "keep",
+  "keptBackPart", "kingsRing", "layDownNeck", "littleCake", "littleMaid", "lookedBack", "lotFell", "loveOneAnother",
+  "makeBricks", "manyBelieved", "mark", "mendNets", "nameIsJohn", "nowPraise", "nurseHim", "offeredMoney", "oneManDie",
+  "philipComeSee", "pieceOfSilver", "playTheMen", "pleasedJews", "prayersAlms", "privilyCalled", "quietFaith",
+  "railedOn", "rainbow", "ram", "ranInTold", "ranToMeet", "rashOffering", "readTheLaw", "receiveHim", "redeemer",
+  "releasedUnto", "restorer", "rideOut", "royalCommand", "scalesFell", "scarletCord", "sevenTimesJordan", "shieldUp",
+  "shieldWall", "soldField", "sonOfDavid", "song", "speakLord", "stoleHearts", "strangerLand", "suchATime",
+  "swiftToHear", "swordDown", "takeTooMuch", "taunt", "tenthOfAll", "theirFaith", "thirtySilver", "toiledAllNight",
+  "trulySonOfGod", "twoPence", "twoTalents", "walkedWithGod", "washedHands", "waterCamels", "watered", "whither",
+  "whomTrust", "withYouAlway", "wouldNotGoHome", "writingOnWall", "zealForLord",
+]);
+/** A skill's kind in the tabletop rules (decides which colour of energy card pays for it). */
+export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" => (TABLE_BLUE.has(skill) ? "faith" : SKILLS[skill].kind);
+
 export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   david: ["sling", "slingStone"],
   samuel: ["rebuke", "heal", "arise"],
@@ -1167,7 +1333,8 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   adam: ["till", "keep"],
   cain: ["offering", "mark"],
   abel: ["firstlings", "faithOffering"],
-  noah: ["ark", "rainbow"],
+  seth: ["anotherSeed", "callOnLord"],
+  noah: ["ark", "rainbow", "greatFlood"],
   abraham: ["stars", "provide"],
   isaac: ["harvest", "ram"],
   jacob: ["wrestle", "ladder"],
@@ -1200,7 +1367,7 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   josephNaz: ["carpenter", "dreamWarning"],
   johnBaptist: ["axe", "baptism"],
   jesus: ["peaceBeUnto", "withYouAlway"],
-  jesusUR: ["walkOnWater", "loaves"],
+  jesusUR: ["comeOut", "walkOnWater", "loaves"],
   peter: ["greatCatch", "drawSword"],
   andrew: ["comeAndSee", "aLadHere"],
   johnApostle: ["thunder", "loveOneAnother"],
@@ -1350,32 +1517,56 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
 };
 
 /**
- * Scripture cards give 1, 2 or 3 points of their energy. The big ones wait for their moment: the battle is the LORD's
- * and new strength come from turn 3, and coming in the name of the LORD needs some Faith in hand.
+ * Scripture cards give 1, 2 or 3 points of their energy, drawn from across the Bible. The big ones wait for their
+ * moment: the LORD fighting for you and new strength come from turn 3, and the sword of the Spirit needs Faith in hand.
  */
 export const CARDS_V2: Record<CardId, CardDef> = {
   delivered: { id: "delivered", energy: "faith", amount: 1 },
-  battle: { id: "battle", energy: "faith", amount: 3, condition: "turn3" },
-  trust: { id: "trust", energy: "faith", amount: 1 },
+  fightForYou: { id: "fightForYou", energy: "faith", amount: 3, condition: "turn3" },
+  allThings: { id: "allThings", energy: "faith", amount: 1 },
   assurance: { id: "assurance", energy: "faith", amount: 2 },
-  inname: { id: "inname", energy: "attack", amount: 3, condition: "needFaith" },
+  spiritSword: { id: "spiritSword", energy: "attack", amount: 3, condition: "needFaith" },
   trains: { id: "trains", energy: "attack", amount: 2 },
   stones: { id: "stones", energy: "attack", amount: 1 },
   wings: { id: "wings", energy: "guard", amount: 1 },
   shepherd: { id: "shepherd", energy: "guard", amount: 1 },
   renewed: { id: "renewed", energy: "guard", amount: 3, condition: "turn3" },
   bestrong: { id: "bestrong", energy: "guard", amount: 2 },
-  covenant: { id: "covenant", energy: "guard", amount: 1 },
+  threefoldCord: { id: "threefoldCord", energy: "guard", amount: 1 },
 };
 
 /** 15 scripture cards: ✨ Faith 4, 🗡️ Attack 6, 🕊️ Guard 5 — eight +1, four +2, three +3 (about 25 energy in all). */
 export const DECK_V2: CardId[] = [
-  "delivered", "trust", "assurance", "battle",
-  "stones", "stones", "stones", "trains", "trains", "inname",
-  "shepherd", "wings", "covenant", "bestrong", "renewed",
+  "delivered", "allThings", "assurance", "fightForYou",
+  "stones", "stones", "stones", "trains", "trains", "spiritSword",
+  "shepherd", "wings", "threefoldCord", "bestrong", "renewed",
 ];
 
 export const PHASE1_CYCLE: GoliathActionId[] = ["defy", "spear", "raise", "crush"];
 export const PHASE2_CYCLE: GoliathActionId[] = ["swing", "raise", "crush"];
 /** The Serpent keeps one cycle; after shedding its skin (half HP) its fang hits harder. */
 export const SERPENT_CYCLE: GoliathActionId[] = ["tempt", "fang", "coil", "fang"];
+/** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
+export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
+/** Pharaoh's chariots keep one cycle; at half HP the wheels come off (Charge weakens). */
+export const CHARIOTS_CYCLE: GoliathActionId[] = ["pursue", "charge", "arrows", "charge"];
+/** The walls of Jericho mend themselves until they crack at half HP; then the boulders come faster. */
+export const WALLS_CYCLE: GoliathActionId[] = ["stones", "arrows", "repair", "boulder"];
+export const WALLS_CRACKED_CYCLE: GoliathActionId[] = ["boulder", "stones", "arrows"];
+/** The prophets of Baal keep one cycle; in a frenzy (half HP) their Cry drains Faith and Cut hits harder. */
+export const BAAL_CYCLE: GoliathActionId[] = ["cry", "leap", "cut", "leap"];
+/** The lions keep one cycle; Maul hunts the weakest ally wherever they stand. */
+export const LIONS_CYCLE: GoliathActionId[] = ["roar", "pounce", "maul", "pounce"];
+/** Legion keeps one cycle; once unleashed (half HP) We Are Many hits every ally. */
+export const LEGION_CYCLE: GoliathActionId[] = ["many", "chains", "torment", "many"];
+
+/** Actions aimed at one ally (the front line on the v3 board). */
+export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains"];
+/** Actions aimed at several allies at once, and how many. */
+export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
+/** Actions that hunt the weakest ally (lowest HP), ignoring the front line. */
+export const HUNT_WEAKEST: GoliathActionId[] = ["maul"];
+/** Actions that hit every ally (We Are Many only once Legion is unleashed). */
+export const HITS_ALL: GoliathActionId[] = ["swing", "coil", "rain", "deluge", "arrows", "leap"];
+/** Actions that only shake (no damage). */
+export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment"];

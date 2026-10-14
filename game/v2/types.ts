@@ -2,23 +2,24 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "elizabeth" | "mordecai" | "sarah" | "rebekah" | "rachel" | "barak" | "jael" | "josephArimathea" | "ananias" | "threeFriends" | "job" | "enoch" | "melchizedek" | "caleb" | "jeremiah" | "ezekiel" | "ezra" | "nathan" | "hezekiah" | "josiah" | "magi" | "shepherds" | "bartimaeus" | "centurion" | "jairus" | "simonCyrene" | "thief" | "jamesJust" | "mockingThief" | "jesusCross" | "widow" | "fisherman" | "fourFriends" | "goodSamaritan" | "zarephath" | "shunammite" | "naaman" | "maid" | "bathsheba" | "mephibosheth" | "sheba" | "leah" | "esau" | "hagar" | "lot" | "jochebed" | "pharaohDaughter" | "jethro" | "zipporah" | "loisEunice" | "balaam" | "pharaoh" | "charioteer" | "jezebel" | "baalProphet" | "haman" | "delilah" | "nebuchadnezzar" | "ahab" | "absalom" | "sapphira" | "pilate" | "caiaphas" | "herod" | "barabbas" | "herodias" | "romanSoldier" | "romanSpearman" | "romanArcher" | "romanCavalry" | "romanCenturion" | "sennacherib" | "belshazzar" | "korah" | "achan" | "sisera" | "herodGreat" | "legionFreed" | "prodigal" | "ethiopian" | "johnPatmos" | "ehud" | "jephthah" | "joab" | "uriah" | "cyrus" | "zerubbabel" | "vashti" | "michal" | "gehazi" | "jehu" | "canaanite" | "richRuler" | "cleopas" | "malchus" | "jailer" | "rhoda" | "simonMagus" | "herodAgrippa" | "archerP" | "bearerP" | "goliathP" | "serpentP";
+export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "seth" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "elizabeth" | "mordecai" | "sarah" | "rebekah" | "rachel" | "barak" | "jael" | "josephArimathea" | "ananias" | "threeFriends" | "job" | "enoch" | "melchizedek" | "caleb" | "jeremiah" | "ezekiel" | "ezra" | "nathan" | "hezekiah" | "josiah" | "magi" | "shepherds" | "bartimaeus" | "centurion" | "jairus" | "simonCyrene" | "thief" | "jamesJust" | "mockingThief" | "jesusCross" | "widow" | "fisherman" | "fourFriends" | "goodSamaritan" | "zarephath" | "shunammite" | "naaman" | "maid" | "bathsheba" | "mephibosheth" | "sheba" | "leah" | "esau" | "hagar" | "lot" | "jochebed" | "pharaohDaughter" | "jethro" | "zipporah" | "loisEunice" | "balaam" | "pharaoh" | "charioteer" | "jezebel" | "baalProphet" | "haman" | "delilah" | "nebuchadnezzar" | "ahab" | "absalom" | "sapphira" | "pilate" | "caiaphas" | "herod" | "barabbas" | "herodias" | "romanSoldier" | "romanSpearman" | "romanArcher" | "romanCavalry" | "romanCenturion" | "sennacherib" | "belshazzar" | "korah" | "achan" | "sisera" | "herodGreat" | "legionFreed" | "prodigal" | "ethiopian" | "johnPatmos" | "ehud" | "jephthah" | "joab" | "uriah" | "cyrus" | "zerubbabel" | "vashti" | "michal" | "gehazi" | "jehu" | "canaanite" | "richRuler" | "cleopas" | "malchus" | "jailer" | "rhoda" | "simonMagus" | "herodAgrippa" | "archerP" | "bearerP" | "goliathP" | "serpentP";
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
 
 export type SkillId =
-  | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "peaceBeUnto" | "withYouAlway" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold" | "atHisFeet" | "spikenard" | "looseHim" | "manyBelieved" | "gracePower" | "heavensOpened" | "hereIsWater" | "samaria" | "armourOfGod" | "swordOfSpirit" | "encourage" | "soldField" | "midnightHymns" | "prisonOpened" | "example" | "stirUpGift" | "purpleCloth" | "abideHouse" | "tentmaking" | "expound" | "goInPeace" | "speakLord" | "tentRope" | "layDownNeck" | "garments" | "almsdeeds" | "centurionCommand" | "prayersAlms" | "mightyScriptures" | "watered" | "succourer" | "bearLetter" | "physician" | "inOrder" | "departed" | "profitable" | "setInOrder" | "earnestCare" | "refreshed" | "receiveHim" | "nowProfitable" | "belovedBrother" | "byNight" | "bornAgain" | "livingWater" | "comeSee" | "waiting" | "nuncDimittis" | "nightAndDay" | "gaveThanks" | "giveBasket" | "pebble" | "thirtySilver" | "moneyBag" | "philipComeSee" | "twoHundredPence" | "figTree" | "noGuile" | "quietFaith" | "oneOfTwelve" | "aQuestion" | "contendFaith" | "zeal" | "swordDown" | "lotFell" | "withEleven" | "leaped" | "blessedAmong" | "wouldNotBow" | "suchATime" | "laughter" | "tooHard" | "drinkMyLord" | "waterCamels" | "keepSheep" | "fewDays" | "ifThouGo" | "downTabor" | "blessedAbove" | "tentPeg" | "wentInBoldly" | "fineLinen" | "brotherSaul" | "scalesFell" | "butIfNot" | "fourthMan" | "lordGave" | "turnedCaptivity" | "walkedWithGod" | "saintsCome" | "breadAndWine" | "tenthOfAll" | "goUpAtOnce" | "thisMountain" | "almondRod" | "fireInBones" | "watchman" | "dryBones" | "preparedHeart" | "readTheLaw" | "thouArtTheMan" | "houseForever" | "spreadLetter" | "fifteenYears" | "heardTheBook" | "purgeIdols" | "hisStar" | "threeGifts" | "goodTidings" | "gloryHighest" | "sonOfDavid" | "castGarment" | "speakTheWord" | "underAuthority" | "onlyBelieve" | "talithaCumi" | "bearHisCross" | "comingFromCountry" | "rememberMe" | "paradise" | "swiftToHear" | "faithWorks" | "saveThyself" | "railedOn" | "forgiveThem" | "commitSpirit" | "twoMites" | "allHerLiving" | "toiledAllNight" | "atThyWord" | "throughTheRoof" | "theirFaith" | "oilAndWine" | "twoPence" | "hardenedHeart" | "makeBricks" | "pursued" | "chosenChariots" | "royalCommand" | "sealedLetters" | "callOnBaal" | "cutThemselves" | "kingsRing" | "hamansDecree" | "pieceOfSilver" | "whereinStrength" | "sevenTimesHotter" | "praiseKingOfHeaven" | "covetVineyard" | "humbledHimself" | "mealNotSpent" | "littleCake" | "littleChamber" | "itIsWell" | "sevenTimesJordan" | "captainOfHost" | "wouldGod" | "littleMaid" | "rememberOath" | "kingsMother" | "stoleHearts" | "fiftyMen" | "kingsTable" | "deadDog" | "hardQuestions" | "spicesAndGold" | "lookedUpon" | "nowPraise" | "cunningHunter" | "ranToMeet" | "godHeard" | "wellOpened" | "escapeForLife" | "lookedBack" | "arkOfBulrushes" | "nurseHim" | "hadCompassion" | "drewHimOut" | "shareBurden" | "greaterThanAll" | "wateredFlock" | "strangerLand" | "unfeignedFaith" | "fromAChild" | "soldPossession" | "keptBackPart" | "noFault" | "washedHands" | "oneManDie" | "rentClothes" | "hopedSign" | "gorgeousRobe" | "insurrection" | "releasedUnto" | "convenientDay" | "heldGrudge" | "shieldWall" | "gladius" | "braceSpears" | "pilum" | "aimedShot" | "arrowVolley" | "rideOut" | "cavalryCharge" | "commandCohort" | "trulySonOfGod" | "whomTrust" | "fencedCities" | "goldenVessels" | "writingOnWall" | "donkeySaw" | "blessNotCurse" | "takeTooMuch" | "strangeCensers" | "hiddenSpoil" | "troubleOfAchor" | "ironChariots" | "fledToTent" | "privilyCalled" | "exceedingWroth" | "rightMind" | "tellHowGreat" | "cameToHimself" | "bestRobe" | "readingIsaiah" | "wentRejoicing" | "inTheSpirit" | "newHeaven" | "leftHanded" | "blewTrumpet" | "judgeThisDay" | "rashVow" | "playTheMen" | "threeDarts" | "wouldNotGoHome" | "hottestBattle" | "sorceries" | "offeredMoney" | "pleasedJews" | "voiceOfGod" | "cyrusDecree" | "returnVessels" | "laidFoundation" | "notByMight" | "refusedToCome" | "royalFeast" | "letDownWindow" | "imageInBed" | "ranAfterNaaman" | "twoTalents" | "drivethFuriously" | "zealForLord" | "lordHelpMe" | "crumbs" | "keptAllThese" | "greatPossessions" | "heartsBurn" | "breakingBread" | "lanternsTorches" | "earHealed" | "whatMustIDo" | "washedStripes" | "forGladness" | "ranInTold"
+  | "anotherSeed" | "callOnLord"
+  | "greatFlood" | "comeOut" | "sling" | "slingStone" | "rebuke" | "heal" | "arise" | "sword" | "covshield" | "till" | "keep" | "mother" | "helper" | "offering" | "mark" | "firstlings" | "faithOffering" | "ark" | "rainbow" | "stars" | "provide" | "harvest" | "ram" | "wrestle" | "ladder" | "granary" | "meantForGood" | "sea" | "handsUp" | "blessing" | "breastplate" | "timbrel" | "song" | "tenWords" | "faceShone" | "courage" | "jericho" | "hideSpies" | "scarletCord" | "upToday" | "starsFought" | "fleece" | "torches" | "jawbone" | "pillars" | "glean" | "whither" | "counsel" | "restorer" | "wings" | "redeemer" | "prayer" | "hannahSong" | "javelin" | "rashOffering" | "provision" | "intercede" | "wisdom" | "templeFire" | "ravens" | "carmel" | "healWaters" | "chariots" | "castIntoSea" | "nineveh" | "sendMe" | "greatLight" | "fasting" | "contrary" | "stoneCut" | "lionsDen" | "buildWall" | "swordAndTrowel" | "incense" | "nameIsJohn" | "handmaid" | "magnificat" | "carpenter" | "dreamWarning" | "axe" | "baptism" | "peaceBeUnto" | "withYouAlway" | "loaves" | "walkOnWater" | "greatCatch" | "drawSword" | "comeAndSee" | "aLadHere" | "thunder" | "loveOneAnother" | "taxBooth" | "feast" | "mendNets" | "boanerges" | "reachFinger" | "myLord" | "spices" | "seenTheLord" | "serving" | "riseAgain" | "sycamore" | "fourfold" | "atHisFeet" | "spikenard" | "looseHim" | "manyBelieved" | "gracePower" | "heavensOpened" | "hereIsWater" | "samaria" | "armourOfGod" | "swordOfSpirit" | "encourage" | "soldField" | "midnightHymns" | "prisonOpened" | "example" | "stirUpGift" | "purpleCloth" | "abideHouse" | "tentmaking" | "expound" | "goInPeace" | "speakLord" | "tentRope" | "layDownNeck" | "garments" | "almsdeeds" | "centurionCommand" | "prayersAlms" | "mightyScriptures" | "watered" | "succourer" | "bearLetter" | "physician" | "inOrder" | "departed" | "profitable" | "setInOrder" | "earnestCare" | "refreshed" | "receiveHim" | "nowProfitable" | "belovedBrother" | "byNight" | "bornAgain" | "livingWater" | "comeSee" | "waiting" | "nuncDimittis" | "nightAndDay" | "gaveThanks" | "giveBasket" | "pebble" | "thirtySilver" | "moneyBag" | "philipComeSee" | "twoHundredPence" | "figTree" | "noGuile" | "quietFaith" | "oneOfTwelve" | "aQuestion" | "contendFaith" | "zeal" | "swordDown" | "lotFell" | "withEleven" | "leaped" | "blessedAmong" | "wouldNotBow" | "suchATime" | "laughter" | "tooHard" | "drinkMyLord" | "waterCamels" | "keepSheep" | "fewDays" | "ifThouGo" | "downTabor" | "blessedAbove" | "tentPeg" | "wentInBoldly" | "fineLinen" | "brotherSaul" | "scalesFell" | "butIfNot" | "fourthMan" | "lordGave" | "turnedCaptivity" | "walkedWithGod" | "saintsCome" | "breadAndWine" | "tenthOfAll" | "goUpAtOnce" | "thisMountain" | "almondRod" | "fireInBones" | "watchman" | "dryBones" | "preparedHeart" | "readTheLaw" | "thouArtTheMan" | "houseForever" | "spreadLetter" | "fifteenYears" | "heardTheBook" | "purgeIdols" | "hisStar" | "threeGifts" | "goodTidings" | "gloryHighest" | "sonOfDavid" | "castGarment" | "speakTheWord" | "underAuthority" | "onlyBelieve" | "talithaCumi" | "bearHisCross" | "comingFromCountry" | "rememberMe" | "paradise" | "swiftToHear" | "faithWorks" | "saveThyself" | "railedOn" | "forgiveThem" | "commitSpirit" | "twoMites" | "allHerLiving" | "toiledAllNight" | "atThyWord" | "throughTheRoof" | "theirFaith" | "oilAndWine" | "twoPence" | "hardenedHeart" | "makeBricks" | "pursued" | "chosenChariots" | "royalCommand" | "sealedLetters" | "callOnBaal" | "cutThemselves" | "kingsRing" | "hamansDecree" | "pieceOfSilver" | "whereinStrength" | "sevenTimesHotter" | "praiseKingOfHeaven" | "covetVineyard" | "humbledHimself" | "mealNotSpent" | "littleCake" | "littleChamber" | "itIsWell" | "sevenTimesJordan" | "captainOfHost" | "wouldGod" | "littleMaid" | "rememberOath" | "kingsMother" | "stoleHearts" | "fiftyMen" | "kingsTable" | "deadDog" | "hardQuestions" | "spicesAndGold" | "lookedUpon" | "nowPraise" | "cunningHunter" | "ranToMeet" | "godHeard" | "wellOpened" | "escapeForLife" | "lookedBack" | "arkOfBulrushes" | "nurseHim" | "hadCompassion" | "drewHimOut" | "shareBurden" | "greaterThanAll" | "wateredFlock" | "strangerLand" | "unfeignedFaith" | "fromAChild" | "soldPossession" | "keptBackPart" | "noFault" | "washedHands" | "oneManDie" | "rentClothes" | "hopedSign" | "gorgeousRobe" | "insurrection" | "releasedUnto" | "convenientDay" | "heldGrudge" | "shieldWall" | "gladius" | "braceSpears" | "pilum" | "aimedShot" | "arrowVolley" | "rideOut" | "cavalryCharge" | "commandCohort" | "trulySonOfGod" | "whomTrust" | "fencedCities" | "goldenVessels" | "writingOnWall" | "donkeySaw" | "blessNotCurse" | "takeTooMuch" | "strangeCensers" | "hiddenSpoil" | "troubleOfAchor" | "ironChariots" | "fledToTent" | "privilyCalled" | "exceedingWroth" | "rightMind" | "tellHowGreat" | "cameToHimself" | "bestRobe" | "readingIsaiah" | "wentRejoicing" | "inTheSpirit" | "newHeaven" | "leftHanded" | "blewTrumpet" | "judgeThisDay" | "rashVow" | "playTheMen" | "threeDarts" | "wouldNotGoHome" | "hottestBattle" | "sorceries" | "offeredMoney" | "pleasedJews" | "voiceOfGod" | "cyrusDecree" | "returnVessels" | "laidFoundation" | "notByMight" | "refusedToCome" | "royalFeast" | "letDownWindow" | "imageInBed" | "ranAfterNaaman" | "twoTalents" | "drivethFuriously" | "zealForLord" | "lordHelpMe" | "crumbs" | "keptAllThese" | "greatPossessions" | "heartsBurn" | "breakingBread" | "lanternsTorches" | "earHealed" | "whatMustIDo" | "washedStripes" | "forGladness" | "ranInTold"
   | "volley" | "shieldUp" | "bash" | "spearThrust" | "taunt" | "venom" | "beguile";
 
 export type CardId =
   // ✨ Faith
   | "delivered"
-  | "battle"
-  | "trust"
+  | "fightForYou"
+  | "allThings"
   | "assurance"
   // 🗡️ Attack
-  | "inname"
+  | "spiritSword"
   | "trains"
   | "stones"
   // 🕊️ Guard
@@ -26,7 +27,7 @@ export type CardId =
   | "shepherd"
   | "renewed"
   | "bestrong"
-  | "covenant";
+  | "threefoldCord";
 
 /**
  * Elements (reserved, switched off by RULES_V2.elements.enabled):
@@ -35,11 +36,22 @@ export type CardId =
  */
 export type Element = "metal" | "wood" | "water" | "fire" | "earth" | "light" | "dark";
 
-/** The enemy line-up: Goliath, his shield bearer (1 Sam 17:7) and a Philistine archer. */
-export type EnemyId = "bearer" | "goliath" | "archer" | "serpent";
+/**
+ * The enemies: Goliath with his shield bearer (1 Sam 17:7) and a Philistine archer, and the other campaign bosses,
+ * each fighting alone: the Serpent, the Flood, Pharaoh's chariots, the walls of Jericho, the prophets of Baal,
+ * the lions of the den and Legion.
+ */
+export type EnemyId =
+  | "bearer" | "goliath" | "archer" | "serpent"
+  | "flood" | "fountains" | "windows"
+  | "chariots" | "pharaohHost" | "chariotCaptain"
+  | "walls" | "jerichoKing" | "wallGuard"
+  | "baalProphets" | "ahabKing" | "jezebelQueen"
+  | "lion" | "presidents" | "princes"
+  | "legion" | "uncleanSpirits" | "swine";
 
-/** Which battle is being fought: Goliath with his shield bearer and archer, or the Serpent of Eden alone. */
-export type StageId = "goliath" | "eden";
+/** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
@@ -80,10 +92,40 @@ export interface CharacterState {
   shaken: boolean;
   /** Used a skill this turn (one per turn). */
   acted: boolean;
+  /** Personal pools (BattleState.pools === "personal"; always 0 in the team-energy mode): MP pays spells, SP pays strikes. */
+  mp: number;
+  sp: number;
+  /**
+   * Tabletop mode only: the energy cards stuck under this character, by colour, each with its value: red pays strikes,
+   * green pays heals and defence, blue pays magic. `mp` and `sp` then hold the totals of the blue and red cards.
+   */
+  cards?: { red: number[]; green: number[]; blue: number[] };
 }
 
-/** The boss's actions: Goliath's, then the Serpent's (tempt, fang, coil). */
-export type GoliathActionId = "defy" | "spear" | "raise" | "crush" | "swing" | "tempt" | "fang" | "coil";
+/**
+ * How energy works in a battle. "team": one shared pool of Faith, Attack and Guard that scripture cards fill and any
+ * ally's skills spend. "personal" (the free digital mode): every character has their own MP (spells: healing, shields,
+ * utility, ultimates) and SP (strikes) as large numbers; scripture cards are given to a chosen ally (see playCard).
+ * "table" (the tabletop rules): scripture cards of three colours (red attack, green heal, blue magic) are stuck under a
+ * character (at most attachPerTurn a turn, up to an energy cap by rarity) and skills cost 1 to 3 of their own colour;
+ * elements add or take away a flat 10.
+ */
+export type PoolMode = "team" | "personal" | "table";
+
+/**
+ * The boss's actions: Goliath's; the Serpent's (tempt, fang, coil); the Flood's (rain, surge, rise, deluge);
+ * the chariots' (pursue, charge, arrows); the walls' (stones, arrows, repair, boulder); the prophets of Baal's
+ * (cry, leap, cut); the lions' (roar, pounce, maul); Legion's (many, chains, torment).
+ */
+export type GoliathActionId =
+  | "defy" | "spear" | "raise" | "crush" | "swing"
+  | "tempt" | "fang" | "coil"
+  | "rain" | "surge" | "rise" | "deluge"
+  | "pursue" | "charge" | "arrows"
+  | "stones" | "repair" | "boulder"
+  | "cry" | "leap" | "cut"
+  | "roar" | "pounce" | "maul"
+  | "many" | "chains" | "torment";
 
 export interface Intent {
   action: GoliathActionId;
@@ -97,7 +139,11 @@ export interface EnemyState {
 
 /** Goliath's own status; his HP lives in `enemies.goliath`. */
 export interface GoliathState {
-  /** After the first Sling Stone Goliath switches to his phase 2 cycle. */
+  /**
+   * The boss's second phase: Goliath Enraged after the first Sling Stone; the Serpent shed at half HP; the Flood
+   * prevailing from turn 4; the chariots' wheels off, the walls cracked, the prophets in a frenzy and Legion
+   * unleashed at half HP (the lions have no second phase).
+   */
   enraged: boolean;
   charging: boolean;
   stunned: boolean;
@@ -118,6 +164,10 @@ export type BattleResult = "ongoing" | "victory" | "defeat";
 export interface BattleState {
   turn: number;
   energy: EnergyPool;
+  /** Team energy (the default), each character's own MP and SP, or the tabletop rules. */
+  pools: PoolMode;
+  /** Tabletop mode: energy cards attached so far this turn (at most R.table.attachPerTurn). */
+  attached: number;
   party: Record<CharacterId, CharacterState>;
   enemies: Record<EnemyId, EnemyState>;
   /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
@@ -127,7 +177,7 @@ export interface BattleState {
   coiled: CharacterId | null;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
-  /** Who the archer will shoot this turn. */
+  /** Who the stage's shooter (the archer, the captain of the chariots, ...) will hit this turn. */
   archerTarget: CharacterId | null;
   deck: CardInstance[];
   hand: CardInstance[];

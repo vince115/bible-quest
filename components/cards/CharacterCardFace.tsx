@@ -1,8 +1,9 @@
 "use client";
 
+import { useContext } from "react";
 // Full-size character card face (TCG layout): name/HP, art, skills, passive, weakness/resistance, verse.
 // With an illustration the card is full-art; without one it uses an art window with the character's emoji.
-import { CHARACTER_ELEMENT, CHARACTER_SKILLS, MAX_HP, NEVER_FALLS, RULES_V2 as R, SKILLS, STORY } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, CHARACTER_SKILLS, energyCap, MAX_HP, mpCap, NEVER_FALLS, RULES_V2 as R, SKILLS, STORY, tableKind } from "@/game/v2/data";
 import { baseSupportAmount, elementMultiplier } from "@/game/v2/engine";
 import type { CharacterId, Element, EnergyKind } from "@/game/v2/types";
 import { useT } from "@/game/locale";
@@ -12,11 +13,13 @@ import { Foil } from "./HoloCard";
 import { CARD_RARITY, RARITY, type Rarity } from "./rarity";
 import { ElementIcon } from "./ElementIcon";
 import { RarityMark } from "./RarityMark";
+import { EnergyIcon } from "./EnergyIcon";
+import { PoolModeContext } from "./PoolModeContext";
+import { asset } from "@/game/assets";
 
 export const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
-const ENERGY_ICON: Record<EnergyKind, string> = { faith: "✨", attack: "🗡️", guard: "🕊️" };
-const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", elizabeth: "🤰", mordecai: "🚪", sarah: "😄", rebekah: "🏺", rachel: "🐑", barak: "⛰️", jael: "⛺", josephArimathea: "🪨", ananias: "👁️", threeFriends: "🔥", job: "🌾", enoch: "🚶", melchizedek: "🍞", caleb: "⛰️", jeremiah: "🌸", ezekiel: "🦴", ezra: "📜", nathan: "👉", hezekiah: "✉️", josiah: "📖", magi: "⭐", shepherds: "🐑", bartimaeus: "👁️", centurion: "🪖", jairus: "🙏", simonCyrene: "✝️", thief: "🕊️", jamesJust: "👂", mockingThief: "😠", jesusCross: "✝️", widow: "🪙", fisherman: "🎣", fourFriends: "🛏️", goodSamaritan: "🫒", zarephath: "🫓", shunammite: "🛏️", naaman: "🌊", maid: "🧺", bathsheba: "👑", mephibosheth: "🍞", sheba: "💎", leah: "🌾", esau: "🏹", hagar: "💧", lot: "🧂", jochebed: "🧺", pharaohDaughter: "👶", jethro: "⛺", zipporah: "🐑", loisEunice: "📜", balaam: "🫏", legionFreed: "🌊", prodigal: "🏠", ethiopian: "📜", johnPatmos: "🏝️", ehud: "🗡️", jephthah: "🛡️", joab: "⚔️", uriah: "🛡️", cyrus: "📜", zerubbabel: "🧱", vashti: "👑", michal: "🪢", jehu: "🏇", canaanite: "🍞", richRuler: "💎", cleopas: "🔥", malchus: "👂", jailer: "🔑", rhoda: "🚪", pharaoh: "𓂀", charioteer: "🐎", jezebel: "👑", baalProphet: "🗿", haman: "💍", delilah: "✂️", nebuchadnezzar: "🔥", ahab: "🍇", absalom: "💇", sapphira: "💰", pilate: "⚖️", caiaphas: "🕯️", herod: "🥻", barabbas: "⛓️", herodias: "🍷", romanSoldier: "🛡️", romanSpearman: "🔱", romanArcher: "🏹", romanCavalry: "🐎", romanCenturion: "⚜️", sennacherib: "🦁", belshazzar: "🍷", korah: "🔥", achan: "🪙", sisera: "🛞", herodGreat: "👑", simonMagus: "💰", herodAgrippa: "🎭", gehazi: "🧥", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
-const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", eli: "061", aquila: "062", dorcas: "063", cornelius: "064", apollos: "065", phoebe: "066", luke: "067", johnMark: "068", titus: "069", philemon: "070", onesimus: "071", nicodemus: "072", samaritan: "073", simeon: "074", anna: "075", loavesBoy: "076", judas: "077", philipApostle: "078", nathanael: "079", jamesAlph: "080", thaddaeus: "081", simonZealot: "082", matthias: "083", elizabeth: "084", mordecai: "085", sarah: "086", rebekah: "087", rachel: "088", barak: "089", jael: "090", josephArimathea: "091", ananias: "092", threeFriends: "093", job: "094", enoch: "095", melchizedek: "096", caleb: "097", jeremiah: "098", ezekiel: "099", ezra: "100", nathan: "101", hezekiah: "102", josiah: "103", magi: "104", shepherds: "105", bartimaeus: "106", centurion: "107", jairus: "108", simonCyrene: "109", thief: "110", jamesJust: "111", jesusCross: "112", widow: "113", fisherman: "114", fourFriends: "115", goodSamaritan: "116", zarephath: "117", shunammite: "118", naaman: "119", maid: "120", bathsheba: "121", mephibosheth: "122", sheba: "123", leah: "124", esau: "125", hagar: "126", lot: "127", jochebed: "128", pharaohDaughter: "129", jethro: "130", zipporah: "131", loisEunice: "132", balaam: "133", legionFreed: "134", prodigal: "135", ethiopian: "136", johnPatmos: "137", ehud: "138", jephthah: "139", joab: "140", uriah: "141", cyrus: "142", zerubbabel: "143", vashti: "144", michal: "145", jehu: "146", canaanite: "147", richRuler: "148", cleopas: "149", malchus: "150", jailer: "151", rhoda: "152", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04", mockingThief: "E05", pharaoh: "E06", charioteer: "E07", jezebel: "E08", baalProphet: "E09", haman: "E10", delilah: "E11", nebuchadnezzar: "E12", ahab: "E13", absalom: "E14", sapphira: "E15", pilate: "E16", caiaphas: "E17", herod: "E18", barabbas: "E19", herodias: "E20", romanSoldier: "E21", romanSpearman: "E22", romanArcher: "E23", romanCavalry: "E24", romanCenturion: "E25", sennacherib: "E26", belshazzar: "E27", korah: "E28", achan: "E29", sisera: "E30", herodGreat: "E31", simonMagus: "E32", herodAgrippa: "E33", gehazi: "E34" };
+const PORTRAIT: Record<CharacterId, string> = { david: "🪨", samuel: "📜", jonathan: "🤝", adam: "🌳", eve: "🌸", cain: "🌾", abel: "🐑", seth: "🌱", noah: "🌈", abraham: "⭐", isaac: "🪵", jacob: "🪜", joseph: "🌾", moses: "🔥", aaron: "💎", miriam: "🪘", mosesSinai: "📜", joshua: "⚔️", rahab: "🧶", deborah: "🌴", gideon: "🔦", samson: "💪", ruth: "🌾", naomi: "🏠", boaz: "🌾", hannah: "🙏", saul: "👑", abigail: "🧺", solomon: "📜", elijah: "🐦‍⬛", elisha: "🧥", jonah: "🐋", isaiah: "🔥", esther: "👑", daniel: "🦁", nehemiah: "🧱", zechariah: "📝", mary: "🕊️", josephNaz: "🪚", johnBaptist: "🌊", jesus: "✝️", jesusUR: "✝️", peter: "🎣", andrew: "🐟", johnApostle: "⚡", matthew: "🪙", jamesZeb: "⛵", thomas: "✋", maryMagdalene: "🌿", martha: "🍞", zacchaeus: "🌳", maryBethany: "🏺", lazarus: "🪨", stephen: "😇", philip: "📜", paul: "✉️", barnabas: "🤝", silas: "🎶", timothy: "📖", lydia: "🟪", priscilla: "⛺", eli: "🪔", aquila: "🪢", dorcas: "🧵", cornelius: "🛡️", apollos: "📜", phoebe: "✉️", luke: "⚕️", johnMark: "🦁", titus: "🏛️", philemon: "🚪", onesimus: "🎒", nicodemus: "🌙", samaritan: "🏺", simeon: "👶", anna: "🕯️", loavesBoy: "🧺", judas: "💰", philipApostle: "👉", nathanael: "🌳", jamesAlph: "🤲", thaddaeus: "❓", simonZealot: "🔥", matthias: "🎲", elizabeth: "🤰", mordecai: "🚪", sarah: "😄", rebekah: "🏺", rachel: "🐑", barak: "⛰️", jael: "⛺", josephArimathea: "🪨", ananias: "👁️", threeFriends: "🔥", job: "🌾", enoch: "🚶", melchizedek: "🍞", caleb: "⛰️", jeremiah: "🌸", ezekiel: "🦴", ezra: "📜", nathan: "👉", hezekiah: "✉️", josiah: "📖", magi: "⭐", shepherds: "🐑", bartimaeus: "👁️", centurion: "🪖", jairus: "🙏", simonCyrene: "✝️", thief: "🕊️", jamesJust: "👂", mockingThief: "😠", jesusCross: "✝️", widow: "🪙", fisherman: "🎣", fourFriends: "🛏️", goodSamaritan: "🫒", zarephath: "🫓", shunammite: "🛏️", naaman: "🌊", maid: "🧺", bathsheba: "👑", mephibosheth: "🍞", sheba: "💎", leah: "🌾", esau: "🏹", hagar: "💧", lot: "🧂", jochebed: "🧺", pharaohDaughter: "👶", jethro: "⛺", zipporah: "🐑", loisEunice: "📜", balaam: "🫏", legionFreed: "🌊", prodigal: "🏠", ethiopian: "📜", johnPatmos: "🏝️", ehud: "🗡️", jephthah: "🛡️", joab: "⚔️", uriah: "🛡️", cyrus: "📜", zerubbabel: "🧱", vashti: "👑", michal: "🪢", jehu: "🏇", canaanite: "🍞", richRuler: "💎", cleopas: "🔥", malchus: "👂", jailer: "🔑", rhoda: "🚪", pharaoh: "𓂀", charioteer: "🐎", jezebel: "👑", baalProphet: "🗿", haman: "💍", delilah: "✂️", nebuchadnezzar: "🔥", ahab: "🍇", absalom: "💇", sapphira: "💰", pilate: "⚖️", caiaphas: "🕯️", herod: "𥥻", barabbas: "⛓️", herodias: "🍷", romanSoldier: "🛡️", romanSpearman: "🔱", romanArcher: "🏹", romanCavalry: "🐎", romanCenturion: "⚜️", sennacherib: "🦁", belshazzar: "🍷", korah: "🔥", achan: "🪙", sisera: "🛞", herodGreat: "👑", simonMagus: "💰", herodAgrippa: "🎭", gehazi: "🧥", archerP: "🏹", bearerP: "🛡️", goliathP: "🗿", serpentP: "🐍" };
+const CARD_NO: Record<CharacterId, string> = { david: "001", samuel: "002", jonathan: "003", adam: "004", eve: "005", cain: "006", abel: "007", seth: "153", noah: "008", abraham: "009", isaac: "010", jacob: "011", joseph: "012", moses: "013", aaron: "014", miriam: "015", mosesSinai: "016", joshua: "017", rahab: "018", deborah: "019", gideon: "020", samson: "021", ruth: "022", naomi: "023", boaz: "024", hannah: "025", saul: "026", abigail: "027", solomon: "028", elijah: "029", elisha: "030", jonah: "031", isaiah: "032", esther: "033", daniel: "034", nehemiah: "035", zechariah: "036", mary: "037", josephNaz: "038", johnBaptist: "039", jesus: "040", jesusUR: "041", peter: "042", andrew: "043", johnApostle: "044", matthew: "045", jamesZeb: "046", thomas: "047", maryMagdalene: "048", martha: "049", zacchaeus: "050", maryBethany: "051", lazarus: "052", stephen: "053", philip: "054", paul: "055", barnabas: "056", silas: "057", timothy: "058", lydia: "059", priscilla: "060", eli: "061", aquila: "062", dorcas: "063", cornelius: "064", apollos: "065", phoebe: "066", luke: "067", johnMark: "068", titus: "069", philemon: "070", onesimus: "071", nicodemus: "072", samaritan: "073", simeon: "074", anna: "075", loavesBoy: "076", judas: "077", philipApostle: "078", nathanael: "079", jamesAlph: "080", thaddaeus: "081", simonZealot: "082", matthias: "083", elizabeth: "084", mordecai: "085", sarah: "086", rebekah: "087", rachel: "088", barak: "089", jael: "090", josephArimathea: "091", ananias: "092", threeFriends: "093", job: "094", enoch: "095", melchizedek: "096", caleb: "097", jeremiah: "098", ezekiel: "099", ezra: "100", nathan: "101", hezekiah: "102", josiah: "103", magi: "104", shepherds: "105", bartimaeus: "106", centurion: "107", jairus: "108", simonCyrene: "109", thief: "110", jamesJust: "111", jesusCross: "112", widow: "113", fisherman: "114", fourFriends: "115", goodSamaritan: "116", zarephath: "117", shunammite: "118", naaman: "119", maid: "120", bathsheba: "121", mephibosheth: "122", sheba: "123", leah: "124", esau: "125", hagar: "126", lot: "127", jochebed: "128", pharaohDaughter: "129", jethro: "130", zipporah: "131", loisEunice: "132", balaam: "133", legionFreed: "134", prodigal: "135", ethiopian: "136", johnPatmos: "137", ehud: "138", jephthah: "139", joab: "140", uriah: "141", cyrus: "142", zerubbabel: "143", vashti: "144", michal: "145", jehu: "146", canaanite: "147", richRuler: "148", cleopas: "149", malchus: "150", jailer: "151", rhoda: "152", archerP: "E03", bearerP: "E02", goliathP: "E01", serpentP: "E04", mockingThief: "E05", pharaoh: "E06", charioteer: "E07", jezebel: "E08", baalProphet: "E09", haman: "E10", delilah: "E11", nebuchadnezzar: "E12", ahab: "E13", absalom: "E14", sapphira: "E15", pilate: "E16", caiaphas: "E17", herod: "E18", barabbas: "E19", herodias: "E20", romanSoldier: "E21", romanSpearman: "E22", romanArcher: "E23", romanCavalry: "E24", romanCenturion: "E25", sennacherib: "E26", belshazzar: "E27", korah: "E28", achan: "E29", sisera: "E30", herodGreat: "E31", simonMagus: "E32", herodAgrippa: "E33", gehazi: "E34" };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   david: { src: "/cards/david.jpg", figure: { cx: 0.49, head: 0.19, feet: 0.952 } },
@@ -24,6 +27,7 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   jonathan: { src: "/cards/jonathan.jpg", figure: { cx: 0.37, head: 0.161, feet: 0.947 } },
   adam: { src: "/cards/adam.jpg", figure: { cx: 0.43, head: 0.223, feet: 0.963 } },
   abel: { src: "/cards/abel.jpg", figure: { cx: 0.49, head: 0.112, feet: 0.952 } },
+  seth: { src: "/cards/seth.jpg", figure: { cx: 0.48, head: 0.115, feet: 0.958 } },
   abraham: { src: "/cards/abraham.jpg", figure: { cx: 0.49, head: 0.13, feet: 0.94 } },
   miriam: { src: "/cards/miriam.jpg", figure: { cx: 0.48, head: 0.112, feet: 0.952 } },
   matthias: { src: "/cards/matthias.jpg", figure: { cx: 0.51, head: 0.132, feet: 0.962 } },
@@ -250,9 +254,21 @@ export const THEME: Record<Element, { frame: string; panel: string; art: string 
 /** Rough display width of a name: CJK characters count double. */
 const nameWidth = (name: string) => [...name].reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? 2 : 1), 0);
 
+/** MP's colour for each element: a light tint of the element's frame colour, readable over the art. */
+const MP_COLOR: Record<Element, string> = {
+  light: "text-amber-300",
+  dark: "text-violet-300",
+  water: "text-sky-300",
+  fire: "text-red-300",
+  wood: "text-emerald-300",
+  metal: "text-slate-200",
+  earth: "text-yellow-300",
+};
+
 /** Name, title, HP and element. */
 function Header({ id, light }: { id: CharacterId; light?: boolean }) {
   const t = useT();
+  const mode = useContext(PoolModeContext);
   return (
     <div className={`flex items-end justify-between px-[6%] ${light ? "text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]" : ""}`}>
       <div className="min-w-0">
@@ -261,10 +277,21 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
         <div className={`truncate font-black leading-none ${nameWidth(t(`char.${id}.name`)) > 14 ? "text-[0.85em]" : "text-[1.35em]"}`}>{t(`char.${id}.name`)}</div>
       </div>
       {/* HP and element sit in the face's top-right corner, where the battle HP badge covers them. */}
-      <div className="absolute right-[2%] top-[calc(2.2%+10px)] flex items-baseline gap-1">
-        <span className="text-[0.6em] font-bold">HP</span>
-        <span className="text-[1.6em] font-black leading-none">{NEVER_FALLS.has(id) ? "∞" : MAX_HP[id]}</span>
-        <span className="relative -top-[3px] text-[1.3em] leading-none"><ElementIcon element={CHARACTER_ELEMENT[id]} /></span>
+      {/* HP and the element icon on one row, close together and level with each other; MP (smaller, in the element's colour, same scale as HP) right-aligned beneath them. */}
+      <div className="isolate absolute right-[2%] top-[calc(2.2%+10px)] flex flex-col items-end gap-[1px]">
+        <div className="flex items-center gap-[2px]">
+          <span className="text-[0.6em] font-bold">HP</span>
+          <span className="text-[1.6em] font-black leading-none">{NEVER_FALLS.has(id) ? "∞" : MAX_HP[id]}</span>
+          <span className="relative -left-[0.1em] -top-[0.1em] ml-[0.2em] text-[1.3em] leading-none"><ElementIcon element={CHARACTER_ELEMENT[id]} /></span>
+        </div>
+        <span className={`relative flex items-baseline gap-0.5 ${MP_COLOR[CHARACTER_ELEMENT[id]]} [text-shadow:0_1px_2px_rgb(0_0_0/0.85)]`} title="MP">
+          {/* A black slash at 10% opacity (a vector line, no shadow): a short slash standing just left of MP, as tall as the MP row. */}
+          <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute -left-[0.68em] -top-[0.11em] -z-10 h-[0.95em] w-[0.8em] overflow-visible [text-shadow:none]">
+            <line x1="3" y1="97" x2="97" y2="3" stroke="black" strokeOpacity="0.1" strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+          <span className="text-[0.5em] font-bold">{mode === "table" ? "能量" : "MP"}</span>
+          <span className="text-[1.05em] font-black leading-none">{mode === "table" ? energyCap(id) : mpCap(id)}</span>
+        </span>
       </div>
     </div>
   );
@@ -273,6 +300,7 @@ function Header({ id, light }: { id: CharacterId; light?: boolean }) {
 /** Passive, skills, weakness/resistance, verse and card number. */
 function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rarity: Rarity }) {
   const t = useT();
+  const mode = useContext(PoolModeContext);
   const element = CHARACTER_ELEMENT[id];
   // A card that never falls takes no damage, so it has no weakness or resistance to show.
   const weak = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
@@ -300,7 +328,11 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
           return (
             <div key={skill} className={`border-b border-stone-900/15 last:border-0 ${compact ? "pb-[1%]" : "pb-[2%]"}`}>
               <div className="flex items-center gap-[3%]">
-                <span className="w-[22%] shrink-0 text-[0.8em] tracking-tighter">{ENERGY_ICON[def.kind].repeat(def.cost)}</span>
+                <span className="w-[22%] shrink-0 flex items-center gap-[0.2em]">
+                  {Array.from({ length: def.cost }, (_, i) => (
+                    <EnergyIcon key={i} kind={mode === "table" ? tableKind(skill) : def.kind} circle className="h-[0.9em] w-[0.9em]" />
+                  ))}
+                </span>
                 <span className="flex-1 text-[0.95em] font-black">{t(`v2.skill.${skill}.name`)}</span>
                 <span className="text-[1.15em] font-black">{def.damage ? amount : amount > 0 && `${skill === "mark" ? "↩" : "+"}${amount}`}</span>
               </div>
@@ -364,11 +396,11 @@ function ParallaxArt({ src, alt, figure }: { src: string; alt: string; figure: F
     <>
       <div className="absolute inset-0" style={{ transform: shift(0.08) }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo */}
-        <img src={src} alt={alt} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
+        <img src={asset(src)} alt={alt} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
       </div>
       <div aria-hidden className="absolute inset-0" style={{ transform: shift(0.004), maskImage: cut, WebkitMaskImage: cut }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the same art, cut down to the figure */}
-        <img src={src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
+        <img src={asset(src)} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(figure)} />
       </div>
     </>
   );
@@ -398,7 +430,7 @@ export function CharacterCardFace({ id, ornament, rarity: printed }: { id: Chara
             <ParallaxArt src={art.src} alt={t(`char.${id}.name`)} figure={art.figure} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo
-            <img src={art.src} alt={t(`char.${id}.name`)} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(art.figure)} />
+            <img src={asset(art.src)} alt={t(`char.${id}.name`)} draggable={false} className="absolute inset-0 h-full w-full object-cover" style={frameFigure(art.figure)} />
           )}
           {/* Real art gets a light foil so the illustration stays readable. */}
           {RARITY[rarity].foil > 0 && <Foil element={element} strength={0.12} />}

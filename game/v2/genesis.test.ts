@@ -57,7 +57,7 @@ describe("Eve", () => {
   it("Mother of All Living heals every ally, up to their maximum", () => {
     const start = battle({ guard: 2 });
     start.party.david.hp = 50;
-    start.party.adam.hp = 120;
+    start.party.adam.hp = MAX_HP.adam - 10;
     const s = castSkill(start, "mother");
     expect(s.party.david.hp).toBe(50 + R.motherHeal);
     expect(s.party.adam.hp).toBe(MAX_HP.adam);
@@ -282,10 +282,11 @@ describe("Joseph", () => {
 
   it("God Meant It for Good: half the lost HP to the boss, capped, once per battle", () => {
     const start = joseph({ faith: 4 });
-    start.party.david.hp = 20; // lost 100
-    start.party.jacob.hp = 90; // lost 40 → 140 / 2 = 70
+    start.party.david.hp = 20;
+    start.party.jacob.hp = MAX_HP.jacob - 40; // lost (david's max − 20) + 40, half of it in steps of 10
+    const lost = MAX_HP.david - 20 + 40;
     let s = castSkill(start, "meantForGood");
-    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - 70);
+    expect(s.enemies.goliath.hp).toBe(ENEMY_HP.goliath - Math.min(R.goodCap, Math.floor(lost / 2 / 10) * 10));
     expect(skillBlockReason({ ...s, party: { ...s.party, joseph: { ...s.party.joseph, acted: false } } }, "meantForGood")).toBe("v2.reason.ariseUsed");
     start.party.jacob.hp = 10;
     s = castSkill(start, "meantForGood");
@@ -586,11 +587,12 @@ describe("Boaz", () => {
 
   it("Kinsman Redeemer lifts everyone below half HP back to half, once per battle", () => {
     const start = boaz({ guard: 2 });
-    start.party.david.hp = 20; // max 120 → 60
-    start.party.naomi.hp = 10; // max 90 → 40 (tens)
-    start.party.boaz.hp = 100; // above half: unchanged
+    const half = (id: CharacterId) => Math.floor(MAX_HP[id] / 2 / 10) * 10; // half the maximum, in steps of 10
+    start.party.david.hp = 20;
+    start.party.naomi.hp = 10;
+    start.party.boaz.hp = MAX_HP.boaz; // above half: unchanged
     const s = castSkill(start, "redeemer");
-    expect([s.party.david.hp, s.party.naomi.hp, s.party.boaz.hp]).toEqual([60, 40, 100]);
+    expect([s.party.david.hp, s.party.naomi.hp, s.party.boaz.hp]).toEqual([half("david"), half("naomi"), MAX_HP.boaz]);
     expect(s.redeemerUsed).toBe(true);
   });
 });
@@ -2094,7 +2096,8 @@ describe("The poor widow", () => {
     expect([m.energy.faith, m.energy.attack, m.energy.guard]).toEqual([4, 0, 0]);
     s0.party.david.hp = 30;
     const a = castSkill(s0, "allHerLiving");
-    expect([a.party.widow.hp, a.party.david.hp]).toEqual([MAX_HP.widow / 2, 30 + MAX_HP.widow / 2]);
+    const gift = Math.floor(MAX_HP.widow / 2 / 10) * 10; // half her HP, in steps of 10
+    expect([a.party.widow.hp, a.party.david.hp]).toEqual([MAX_HP.widow - gift, 30 + gift]);
   });
 });
 

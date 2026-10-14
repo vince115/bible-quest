@@ -1,15 +1,19 @@
 // The main campaign: the Bible's best-known stories in order, Genesis onward. Each stage lends the player a few cards
 // from its own time (the player's collection is not needed), fights a boss fixed by the story, and drops one card from
-// its drop list into the collection when cleared. Side stages come later; a stage without a battle yet is shown as
-// "coming soon" and is skipped when working out what is unlocked.
+// its drop list into the collection when cleared. Side stages come later; a stage without a battle (none right now)
+// is shown as "coming soon" and is skipped when working out what is unlocked.
 import { STAGE_BOSS } from "../v2/data";
 import type { Rng } from "../v2/engine";
 import type { CardId, CharacterId, EnemyId, StageId } from "../v2/types";
 
 export type CampaignStageId = "eden" | "ark" | "redSea" | "jericho" | "goliath" | "carmel" | "lions" | "gerasa";
 
+export type Testament = "old" | "new";
+
 export interface CampaignStage {
   id: CampaignStageId;
+  /** Old or New Testament: the stage list is shown in two parts. */
+  testament: Testament;
   /** The period in the card timeline (see components/cards/timeline.ts); every card in the pool comes from it. */
   era: string;
   /** The battle this stage plays, or null until its boss is built. */
@@ -24,24 +28,41 @@ export interface CampaignStage {
   art?: string;
   /** The scripture (energy) deck the stage lends, once decks are built per stage; the standard deck until then. */
   deck?: CardId[];
+  /** Custom background music for this stage. */
+  bgm?: string;
 }
 
 export const CAMPAIGN: CampaignStage[] = [
-  { id: "eden", era: "creation", battle: "eden", pool: ["adam", "eve", "cain", "abel", "enoch", "noah"], pick: 3 },
-  { id: "ark", era: "creation", battle: null, pool: ["noah", "enoch", "adam", "eve", "abel", "cain"], pick: 3 },
-  { id: "redSea", era: "exodus", battle: null, pool: ["moses", "aaron", "miriam", "jochebed", "zipporah", "jethro"], pick: 3, art: "/stages/red-sea.jpg" },
-  { id: "jericho", era: "exodus", battle: null, pool: ["joshua", "rahab", "caleb", "achan", "aaron", "miriam"], pick: 3, art: "/stages/jericho.jpg" },
-  { id: "goliath", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 3 },
-  { id: "carmel", era: "prophets", battle: null, pool: ["elijah", "elisha", "zarephath", "naaman", "maid", "shunammite"], pick: 3 },
-  { id: "lions", era: "exile", battle: null, pool: ["daniel", "threeFriends", "ezekiel", "esther", "mordecai", "nehemiah"], pick: 3 },
-  { id: "gerasa", era: "ministry", battle: null, pool: ["jesusUR", "peter", "andrew", "jamesZeb", "johnApostle", "legionFreed"], pick: 3, art: "/stages/legion.jpg" },
+  { id: "eden", testament: "old", era: "creation", battle: "eden", pool: ["adam", "eve", "cain", "abel", "seth", "enoch"], pick: 3, art: "/stages/eden.jpg", bgm: "/audio/bgm/eden.mp3" },
+  { id: "ark", testament: "old", era: "creation", battle: "ark", pool: ["noah", "enoch", "seth", "adam", "cain", "abel"], pick: 3, art: "/stages/ark.jpg", bgm: "/audio/bgm/ark.mp3" },
+  { id: "redSea", testament: "old", era: "exodus", battle: "redSea", pool: ["moses", "aaron", "miriam", "joshua", "jochebed", "zipporah"], pick: 3, art: "/stages/red-sea.jpg", bgm: "/audio/bgm/red-sea.m4a" },
+  { id: "jericho", testament: "old", era: "exodus", battle: "jericho", pool: ["joshua", "rahab", "caleb", "achan", "aaron", "miriam"], pick: 3, art: "/stages/jericho.jpg", bgm: "/audio/bgm/jericho.mp3" },
+  { id: "goliath", testament: "old", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 3, art: "/stages/goliath.jpg", bgm: "/audio/bgm/goliath.mp3" },
+  { id: "carmel", testament: "old", era: "prophets", battle: "carmel", pool: ["elijah", "elisha", "naaman", "jehu", "zarephath", "shunammite"], pick: 3, art: "/stages/carmel.jpg", bgm: "/audio/bgm/carmel.mp3" },
+  { id: "lions", testament: "old", era: "exile", battle: "lions", pool: ["daniel", "threeFriends", "nebuchadnezzar", "esther", "haman", "nehemiah"], pick: 3, art: "/stages/lions.jpg", bgm: "/audio/bgm/lions.mp3" },
+  { id: "gerasa", testament: "new", era: "ministry", battle: "gerasa", pool: ["jesusUR", "peter", "jamesZeb", "johnApostle", "simonZealot", "legionFreed"], pick: 3, art: "/stages/legion.jpg", bgm: "/audio/bgm/gerasa.mp3" },
 ];
 
 export const CAMPAIGN_IDS = CAMPAIGN.map((s) => s.id);
 
+/** The stages of each testament, in order. */
+export const TESTAMENTS: { testament: Testament; stages: CampaignStage[] }[] = (["old", "new"] as Testament[]).map((testament) => ({ testament, stages: CAMPAIGN.filter((s) => s.testament === testament) }));
+
 export const isCampaignStageId = (id: string): id is CampaignStageId => (CAMPAIGN_IDS as string[]).includes(id);
 
 export const campaignStage = (id: CampaignStageId): CampaignStage => CAMPAIGN.find((s) => s.id === id)!;
+
+/** The campaign stage that plays a battle (every battle belongs to one stage). */
+export const stageOfBattle = (battle: StageId): CampaignStage => CAMPAIGN.find((s) => s.battle === battle)!;
+
+/** Stage art for each battle, for free mode. */
+export const STAGE_ART: Partial<Record<StageId, string>> = Object.fromEntries(CAMPAIGN.filter((s) => s.battle && s.art).map((s) => [s.battle, s.art]));
+
+/** The background music of a campaign stage or a battle (Eden's when there is none). */
+export function stageBgm(id?: string | null): string {
+  const stage = id ? (isCampaignStageId(id) ? campaignStage(id) : CAMPAIGN.find((s) => s.battle === id)) : undefined;
+  return stage?.bgm ?? "/audio/bgm/eden.mp3";
+}
 
 /** The boss of a built stage. */
 export const campaignBoss = (stage: CampaignStage): EnemyId | null => (stage.battle ? STAGE_BOSS[stage.battle] : null);

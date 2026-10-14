@@ -1,11 +1,12 @@
 // Auto-battle: picks the player's next action from the current state, one step at a time.
 // Heuristic, not optimal: it saves Faith for Sling Stone and answers Goliath's telegraphed threats.
-import { CARDS_V2, CHARACTER_SKILLS, ENEMY_ORDER, MAX_HP, RULES_V2 as R, SKILLS } from "./data";
-import { attackableEnemies, enemyAlive, goodDamage, isAlive, payment, playableHand, skillBlockReason, skillDamage, type Target } from "./engine";
+import { CARDS_V2, CHARACTER_SKILLS, ENEMY_ORDER, energyCap, MAX_HP, mpCap, RULES_V2 as R, SHAKES, SKILLS, tableKind } from "./data";
+import { actionBase, attachedTotal, attackableEnemies, bossOf, canBasicAttack, cardsOf, cardValue, energyColor, enemyAlive, goodDamage, guardOf, hitsEveryone, isAlive, mpCost, payment, playableHand, shooterOf, skillBlockReason, skillDamage, skillTargetKind, spCost, type Target } from "./engine";
 import type { BattleState, CharacterId, EnemyId, SkillId } from "./types";
 
 export type AutoAction =
-  | { type: "play"; uid: number }
+  | { type: "play"; uid: number; target?: CharacterId }
+  | { type: "basic"; who: CharacterId; target: EnemyId }
   | { type: "cast"; skill: SkillId; target?: Target }
   | { type: "end" };
 
@@ -20,46 +21,158 @@ function canCast(s: BattleState, skill: SkillId, target?: Target): boolean {
   return SKILLS[skill].kind === "faith" || pay.faith === 0 || faithIsFree(s);
 }
 
-/** Does Goliath (or the archer) threaten real damage or Shaken this turn? */
+/** Does the boss threaten real damage or Shaken this turn? (Spear and Stones are light enough to take.) */
 function underThreat(s: BattleState): boolean {
   const { action, targets } = s.intents[0];
   if (s.goliath.stunned) return false;
-  if (action === "swing") return true;
-  if (action === "crush" && s.goliath.charging) return true;
-  if (action === "defy" || action === "tempt") return targets.some((id) => isAlive(s, id) && s.party[id].shield === 0);
-  if (action === "fang" || action === "coil") return true;
-  return false;
+  if (action === "crush" || action === "deluge") return s.goliath.charging;
+  if (SHAKES.includes(action) || action === "tempt") return targets.some((id) => isAlive(s, id) && s.party[id].shield === 0);
+  if (action === "cry") return s.goliath.enraged && s.energy.faith > 0;
+  return actionBase(s, action) >= 40 || hitsEveryone(s, action);
+}
+
+/** Will the boss's action land on `id` this turn (ignoring Shields)? */
+function bossHits(s: BattleState, id: CharacterId): boolean {
+  if (s.goliath.stunned) return false;
+  const { action, targets } = s.intents[0];
+  if (hitsEveryone(s, action)) return true;
+  if ((action === "crush" || action === "deluge") && !s.goliath.charging) return false;
+  return actionBase(s, action) > 0 && targets.includes(id);
 }
 
 /** Will an enemy hit Cain this turn (so his Mark strikes back)? */
 function cainTargeted(s: BattleState): boolean {
   if (!isAlive(s, "cain")) return false;
-  if (s.archerTarget === "cain" && enemyAlive(s, "archer")) return true;
-  if (s.goliath.stunned) return false;
-  const { action, targets } = s.intents[0];
-  if (action === "swing" || action === "coil") return true;
-  if (action === "crush" && !s.goliath.charging) return false;
-  return (action === "spear" || action === "crush" || action === "fang") && targets.includes("cain");
+  const shooter = shooterOf(s);
+  if (s.archerTarget === "cain" && shooter && enemyAlive(s, shooter)) return true;
+  return bossHits(s, "cain");
 }
 
 function attackTarget(s: BattleState, skill: SkillId): EnemyId | undefined {
   const options = attackableEnemies(s);
-  const dmg = skillDamage(s, skill, "archer");
-  // Finish the archer if this hit kills it; otherwise break the shield bearer, then go for Goliath.
-  if (options.includes("archer") && s.enemies.archer.hp <= dmg) return "archer";
-  if (options.includes("bearer")) return "bearer";
-  if (options.includes("goliath")) return "goliath";
-  if (options.includes("serpent")) return "serpent";
+  const shooter = shooterOf(s);
+  const guard = guardOf(s);
+  // Finish the shooter if this hit kills it; otherwise break the guard, then go for the boss.
+  if (shooter && options.includes(shooter) && s.enemies[shooter].hp <= skillDamage(s, skill, shooter)) return shooter;
+  if (guard && options.includes(guard)) return guard;
+  if (options.includes(bossOf(s))) return bossOf(s);
   return options[0];
 }
 
-export function nextAutoAction(s: BattleState): AutoAction {
-  if (s.result !== "ongoing") return { type: "end" };
+/**
+ * With personal pools the bot reads this team-sized summary wherever its rules ask "is there Faith / Attack energy to
+ * spare?": MP as a share of the party's caps (out of the team maximum) and the average SP. Payments still use the real pools.
+ */
+function withEnergyView(s: BattleState): BattleState {
+  const alive = s.lineup.filter((id) => isAlive(s, id));
+  if (!alive.length) return s;
+  const mp = alive.reduce((n, id) => n + s.party[id].mp, 0);
+  const sp = alive.reduce((n, id) => n + s.party[id].sp, 0);
+  if (s.pools === "table") {
+    const cap = alive.reduce((n, id) => n + energyCap(id), 0);
+    return { ...s, energy: { faith: Math.round((R.maxFaith * mp) / cap), attack: Math.round(sp / alive.length), guard: 0 } };
+  }
+  const cap = alive.reduce((n, id) => n + mpCap(id), 0);
+  return { ...s, energy: { faith: Math.round((R.maxFaith * mp) / cap), attack: Math.round(sp / alive.length / R.pools.spUnit), guard: 0 } };
+}
+
+/** Skills a character could pay with SP (strikes) or MP (everything else). */
+const skillsPaidBy = (id: CharacterId, pool: "sp" | "mp") => CHARACTER_SKILLS[id].filter((k) => (SKILLS[k].kind === "attack") === (pool === "sp"));
+
+/**
+ * The tabletop rules: the next card to stick on and to whom, or null to hold the rest. Each colour goes to someone who
+ * has skills of that kind: the most valuable card that fits under a character who is still short of that colour.
+ */
+function tableCardPlay(s: BattleState): AutoAction | null {
+  const alive = s.lineup.filter((id) => isAlive(s, id));
+  let best: { uid: number; target: CharacterId; score: number } | null = null;
+  for (const card of playableHand(s)) {
+    const { energy } = CARDS_V2[card.card];
+    const kind = energy === "attack" ? "attack" : energy === "guard" ? "guard" : "faith";
+    const color = energyColor(kind);
+    const value = cardValue(card.card);
+    for (const id of alive) {
+      const skills = CHARACTER_SKILLS[id].filter((k) => tableKind(k) === kind);
+      if (!skills.length) continue;
+      const room = energyCap(id) - attachedTotal(s, id);
+      if (value > room) continue;
+      const have = cardsOf(s, id)[color].reduce((n, v) => n + v, 0);
+      const wanted = Math.max(...skills.map((k) => SKILLS[k].cost));
+      // Short of the dearest skill's cost: worth a lot; otherwise worth a little. Prefer the biggest card that is still useful.
+      const score = (have < wanted ? 10 : 1) * 10 + Math.min(value, Math.max(1, wanted - have)) * 3 - have;
+      if (!best || score > best.score) best = { uid: card.uid, target: id, score };
+    }
+  }
+  return best ? { type: "play", uid: best.uid, target: best.target } : null;
+}
+
+/**
+ * Personal pools: the next scripture card to play and who gets it, or null to hold the rest.
+ * Red cards give SP to the strikers who are short of it, blue cards MP to the casters who are short of it,
+ * green cards a Shield to whoever the boss is about to hit (held back while nothing threatens).
+ */
+function personalCardPlay(s: BattleState): AutoAction | null {
+  const alive = s.lineup.filter((id) => isAlive(s, id));
+  for (const card of playableHand(s)) {
+    const { energy, amount } = CARDS_V2[card.card];
+    if (energy === "guard") {
+      if (!underThreat(s)) continue;
+      const aimed = s.intents[0].targets.find((id) => alive.includes(id));
+      const target = aimed ?? [...alive].sort((a, b) => (s.party[a].hp + s.party[a].shield) / MAX_HP[a] - (s.party[b].hp + s.party[b].shield) / MAX_HP[b])[0];
+      if (target) return { type: "play", uid: card.uid, target };
+      continue;
+    }
+    const pool = energy === "attack" ? "sp" : "mp";
+    let best: { id: CharacterId; value: number; short: number } | null = null;
+    for (const id of alive) {
+      const skills = skillsPaidBy(id, pool);
+      if (!skills.length) continue;
+      const have = pool === "sp" ? s.party[id].sp : s.party[id].mp;
+      const cap = pool === "sp" ? R.pools.spCap : mpCap(id);
+      const wanted = Math.max(...skills.map((k) => (pool === "sp" ? spCost(k) : mpCost(k))));
+      const gain = amount * (pool === "sp" ? R.pools.spUnit : R.pools.mpUnit);
+      const value = Math.min(gain, cap - have); // what actually fits
+      const short = Math.max(0, wanted - have); // how far they are from their dearest skill
+      if (value <= 0) continue;
+      if (!best || Math.min(value, short) > Math.min(best.value, best.short) || (Math.min(value, short) === Math.min(best.value, best.short) && have < (pool === "sp" ? s.party[best.id].sp : s.party[best.id].mp))) best = { id, value, short };
+    }
+    if (best) return { type: "play", uid: card.uid, target: best.id };
+  }
+  return null;
+}
+
+/** Does the bot still have a scripture card it wants to play this turn? (In the personal mode it may hold some back.) */
+export function cardsLeftToPlay(s: BattleState): boolean {
+  return s.pools === "table" ? tableCardPlay(withEnergyView(s)) !== null : s.pools === "personal" ? personalCardPlay(withEnergyView(s)) !== null : playableHand(s).length > 0;
+}
+
+export function nextAutoAction(real: BattleState): AutoAction {
+  if (real.result !== "ongoing") return { type: "end" };
+  const personalMode = real.pools !== "team";
+  const s = personalMode ? withEnergyView(real) : real;
 
   // 1. Turn every card into energy (Faith first, so the Sling Stone check sees it).
   const order = ["faith", "guard", "attack"];
-  const card = playableHand(s).sort((a, b) => order.indexOf(CARDS_V2[a.card].energy) - order.indexOf(CARDS_V2[b.card].energy))[0];
-  if (card) return { type: "play", uid: card.uid };
+  if (personalMode) {
+    const play = real.pools === "table" ? tableCardPlay(s) : personalCardPlay(s);
+    if (play) return play;
+  } else {
+    const card = playableHand(s).sort((a, b) => order.indexOf(CARDS_V2[a.card].energy) - order.indexOf(CARDS_V2[b.card].energy))[0];
+    if (card) return { type: "play", uid: card.uid };
+  }
+
+  // 1b. Finish the boss when one blow will do it.
+  const bossNow = bossOf(s);
+  if (attackableEnemies(s).includes(bossNow)) {
+    for (const id of s.lineup) {
+      if (!isAlive(s, id) || s.party[id].acted) continue;
+      for (const k of CHARACTER_SKILLS[id]) {
+        if (!SKILLS[k].damage || skillDamage(s, k, bossNow) < s.enemies[bossNow].hp) continue;
+        const kind = skillTargetKind(k);
+        if (kind === "none" ? canCast(s, k) : (kind === "enemy" || kind === "anyEnemy") && canCast(s, k, bossNow)) return { type: "cast", skill: k, ...(kind === "none" ? {} : { target: bossNow }) };
+      }
+    }
+  }
 
   // 2. The climax.
   if (canCast(s, "slingStone")) return { type: "cast", skill: "slingStone" };
@@ -89,8 +202,8 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.hannahSongHeal).length >= 2 && canCast(s, "hannahSong")) return { type: "cast", skill: "hannahSong" };
   if (underThreat(s) && canCast(s, "torches")) return { type: "cast", skill: "torches" };
   // Samson brings down the pillars to finish the leader, or when he is about to fall anyway.
-  const bossHp = s.enemies[s.stage === "eden" ? "serpent" : "goliath"].hp;
-  if ((bossHp <= skillDamage(s, "pillars", s.stage === "eden" ? "serpent" : "goliath") || (isAlive(s, "samson") && s.party.samson.hp <= 40)) && canCast(s, "pillars")) return { type: "cast", skill: "pillars" };
+  const bossHp = s.enemies[bossOf(s)].hp;
+  if ((bossHp <= skillDamage(s, "pillars", bossOf(s)) || (isAlive(s, "samson") && s.party.samson.hp <= 40)) && canCast(s, "pillars")) return { type: "cast", skill: "pillars" };
   if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "jawbone")) return { type: "cast", skill: "jawbone" };
   if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "nineveh")) return { type: "cast", skill: "nineveh" };
   if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "samaria")) return { type: "cast", skill: "samaria" };
@@ -208,7 +321,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (s.lineup.some((id) => isAlive(s, id) && s.party[id].hp <= 60) && canCast(s, "riseAgain")) return { type: "cast", skill: "riseAgain" };
   if (underThreat(s) && s.energy.guard < 2 && canCast(s, "serving")) return { type: "cast", skill: "serving" };
   // Esther turns the leader's heaviest blows back on it.
-  const heavy = !s.goliath.stunned && (["crush", "swing", "fang", "coil"] as const).some((a) => s.intents[0].action === a) && !(s.intents[0].action === "crush" && !s.goliath.charging);
+  const heavy = !s.goliath.stunned && (hitsEveryone(s, s.intents[0].action) || actionBase(s, s.intents[0].action) >= 60) && !((s.intents[0].action === "crush" || s.intents[0].action === "deluge") && !s.goliath.charging);
   if (heavy && canCast(s, "contrary")) return { type: "cast", skill: "contrary" };
   if (isAlive(s, "job") && s.party.job.hp <= MAX_HP.job / 2 && canCast(s, "turnedCaptivity")) return { type: "cast", skill: "turnedCaptivity" };
   if (heavy && !s.contrary && !s.lionsDen && canCast(s, "fourthMan")) return { type: "cast", skill: "fourthMan" };
@@ -261,7 +374,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   }
 
   // Defiance (and Miriam's timbrel) when two or more enemies stand.
-  if (attackableEnemies(s).length + (enemyAlive(s, "goliath") && enemyAlive(s, "bearer") ? 1 : 0) >= 2 && canCast(s, "taunt")) return { type: "cast", skill: "taunt" };
+  if (attackableEnemies(s).length + (guardOf(s) && enemyAlive(s, guardOf(s)!) ? 1 : 0) >= 2 && canCast(s, "taunt")) return { type: "cast", skill: "taunt" };
   if (ENEMY_ORDER.filter((id) => enemyAlive(s, id)).length >= 2 && canCast(s, "timbrel")) return { type: "cast", skill: "timbrel" };
 
   // 4b. Eve's Mother of All Living when two or more allies are hurt enough to use the full heal.
@@ -354,7 +467,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (canCast(s, "incense")) return { type: "cast", skill: "incense" };
   // Mary: the Magnificat once the leader is still strong or someone is low; Handmaid when Shaken or Faith has room.
   const lowest = Math.min(...s.lineup.filter((id) => isAlive(s, id)).map((id) => s.party[id].hp / MAX_HP[id]));
-  if ((s.enemies[s.stage === "eden" ? "serpent" : "goliath"].hp >= 160 || lowest <= 0.4) && canCast(s, "magnificat")) return { type: "cast", skill: "magnificat" };
+  if ((s.enemies[bossOf(s)].hp >= 160 || lowest <= 0.4) && canCast(s, "magnificat")) return { type: "cast", skill: "magnificat" };
   if ((shaken.length >= 1 || s.energy.faith < R.maxFaith) && canCast(s, "handmaid")) return { type: "cast", skill: "handmaid" };
   if (s.energy.faith <= R.maxFaith - R.fastingFaith && isAlive(s, "esther") && s.party.esther.hp > 40 && canCast(s, "fasting")) return { type: "cast", skill: "fasting" };
   if (canCast(s, "wisdom")) return { type: "cast", skill: "wisdom" };
@@ -382,6 +495,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (sore && canCast(s, "firstlings", sore)) return { type: "cast", skill: "firstlings", target: sore };
   const worn = s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.blessingHeal).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
   if (worn && canCast(s, "blessing", worn)) return { type: "cast", skill: "blessing", target: worn };
+  if (worn && canCast(s, "anotherSeed", worn)) return { type: "cast", skill: "anotherSeed", target: worn };
   if (worn && canCast(s, "counsel", worn)) return { type: "cast", skill: "counsel", target: worn };
   if (worn && canCast(s, "carpenter", worn)) return { type: "cast", skill: "carpenter", target: worn };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.loavesHeal).length >= 2 && canCast(s, "loaves")) return { type: "cast", skill: "loaves" };
@@ -461,7 +575,7 @@ export function nextAutoAction(s: BattleState): AutoAction {
 
   // 6. Attack with whatever 🗡️ is left.
   // The archer's Volley ignores the shield bearer: go straight for the boss.
-  const boss = s.stage === "eden" ? "serpent" : "goliath";
+  const boss = bossOf(s);
   if (enemyAlive(s, boss) && canCast(s, "volley", boss)) return { type: "cast", skill: "volley", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "courage", boss)) return { type: "cast", skill: "courage", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "cavalryCharge", boss)) return { type: "cast", skill: "cavalryCharge", target: boss };
@@ -469,9 +583,18 @@ export function nextAutoAction(s: BattleState): AutoAction {
   if (enemyAlive(s, boss) && canCast(s, "pilum", boss)) return { type: "cast", skill: "pilum", target: boss };
   if (enemyAlive(s, boss) && canCast(s, "sealedLetters", boss)) return { type: "cast", skill: "sealedLetters", target: boss };
   if (s.goliath.charging && attackableEnemies(s).includes(boss) && canCast(s, "purgeIdols", boss)) return { type: "cast", skill: "purgeIdols", target: boss };
-  for (const skill of [...(s.lineup.some((id) => id === "moses" || id === "mosesSinai" || id === "aaron") ? [] : ["strangeCensers" as const]), ...(isAlive(s, "achan") && s.party.achan.hp > R.achorCost + 30 ? ["troubleOfAchor" as const] : []), ...(s.lineup.some((id) => id === "deborah" || id === "barak") ? [] : ["ironChariots" as const]), ...(isAlive(s, "absalom") ? [] : ["threeDarts" as const]), ...(isAlive(s, "herodAgrippa") && s.party.herodAgrippa.hp > R.voiceCost + 30 ? ["voiceOfGod" as const] : []), ...(isAlive(s, "uriah") && s.party.uriah.hp > R.hottestBetrayed + 30 ? ["hottestBattle" as const] : []), ...(isAlive(s, "jephthah") && s.party.jephthah.hp > R.vowCost + 30 ? ["rashVow" as const] : []), ...(isAlive(s, "herodGreat") && s.party.herodGreat.hp > R.wrothCost + 30 ? ["exceedingWroth" as const] : []), ...(s.lineup.includes("hezekiah") ? [] : ["fencedCities" as const]), "arrowVolley", "gladius", ...(s.lineup.includes("johnBaptist") ? [] : ["heldGrudge" as const]), "insurrection", "rentClothes", "cunningHunter", "fiftyMen", "captainOfHost", "sevenTimesHotter", ...(s.lineup.includes("samson") ? [] : ["whereinStrength" as const]), ...(s.lineup.some((id) => id === "esther" || id === "mordecai") ? [] : ["hamansDecree" as const]), "callOnBaal", "pursued", "atThyWord", ...(s.party.mockingThief.hp > R.railCost + 10 ? ["railedOn" as const] : []), "saveThyself", "faithWorks", "castGarment", "purgeIdols", "thouArtTheMan", "fireInBones", "thisMountain", "saintsCome", "tentPeg", "leftHanded", "drivethFuriously", "notByMight", "downTabor", "zeal", "swordOfSpirit", "centurionCommand", "drawSword", "axe", "stoneCut", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel", "thunder", "boanerges", "gracePower", "samaria", "stirUpGift", "tentRope", "mightyScriptures", "profitable", "nowProfitable", "pebble", "moneyBag", "twoHundredPence", "noGuile", "oneOfTwelve", "contendFaith", "withEleven"] as SkillId[]) {
+  for (const skill of [...(s.lineup.some((id) => id === "moses" || id === "mosesSinai" || id === "aaron") ? [] : ["strangeCensers" as const]), ...(isAlive(s, "achan") && s.party.achan.hp > R.achorCost + 30 ? ["troubleOfAchor" as const] : []), ...(s.lineup.some((id) => id === "deborah" || id === "barak") ? [] : ["ironChariots" as const]), ...(isAlive(s, "absalom") ? [] : ["threeDarts" as const]), ...(isAlive(s, "herodAgrippa") && s.party.herodAgrippa.hp > R.voiceCost + 30 ? ["voiceOfGod" as const] : []), ...(isAlive(s, "uriah") && s.party.uriah.hp > R.hottestBetrayed + 30 ? ["hottestBattle" as const] : []), ...(isAlive(s, "jephthah") && s.party.jephthah.hp > R.vowCost + 30 ? ["rashVow" as const] : []), ...(isAlive(s, "herodGreat") && s.party.herodGreat.hp > R.wrothCost + 30 ? ["exceedingWroth" as const] : []), ...(s.lineup.includes("hezekiah") ? [] : ["fencedCities" as const]), "arrowVolley", "gladius", ...(s.lineup.includes("johnBaptist") ? [] : ["heldGrudge" as const]), "insurrection", "rentClothes", "cunningHunter", "fiftyMen", "captainOfHost", "sevenTimesHotter", ...(s.lineup.includes("samson") ? [] : ["whereinStrength" as const]), ...(s.lineup.some((id) => id === "esther" || id === "mordecai") ? [] : ["hamansDecree" as const]), "callOnBaal", "pursued", "atThyWord", ...(s.party.mockingThief.hp > R.railCost + 10 ? ["railedOn" as const] : []), "saveThyself", "faithWorks", "castGarment", "purgeIdols", "thouArtTheMan", "fireInBones", "thisMountain", "saintsCome", "tentPeg", "leftHanded", "drivethFuriously", "notByMight", "downTabor", "zeal", "swordOfSpirit", "centurionCommand", "drawSword", "axe", "stoneCut", "callOnLord", "comeOut", "greatFlood", "wrestle", "sling", "spearThrust", "venom", "sword", "till", "offering", "faithOffering", "harvest", "bash", "rebuke", "timbrel", "jawbone", "javelin", "nineveh", "sendMe", "swordAndTrowel", "thunder", "boanerges", "gracePower", "samaria", "stirUpGift", "tentRope", "mightyScriptures", "profitable", "nowProfitable", "pebble", "moneyBag", "twoHundredPence", "noGuile", "oneOfTwelve", "contendFaith", "withEleven"] as SkillId[]) {
     const target = attackTarget(s, skill);
     if (target && enemyAlive(s, target) && canCast(s, skill, target)) return { type: "cast", skill, target };
+  }
+
+  // The tabletop rules: anyone who is still free and has nothing better to do makes the free basic attack.
+  if (real.pools === "table") {
+    const options = attackableEnemies(s);
+    const shooter = shooterOf(s);
+    const target = options.find((e) => e === shooter && s.enemies[e].hp <= 20) ?? options.find((e) => e === guardOf(s)) ?? options.find((e) => e === bossOf(s)) ?? options[0];
+    const who = s.lineup.find((id) => canBasicAttack(s, id));
+    if (who && target !== undefined) return { type: "basic", who, target };
   }
 
   return { type: "end" };

@@ -1,14 +1,14 @@
 "use client";
 
 import { create } from "zustand";
-import { RULES_V2 } from "../v2/data";
+import { MAGIC_VERSION_ENABLED, RULES_V2 } from "../v2/data";
 import type { Target } from "../v2/engine";
-import type { CharacterId, SkillId, StageId } from "../v2/types";
+import type { CharacterId, EnemyId, PoolMode, SkillId, StageId } from "../v2/types";
 import { earnedBy, useAchievementStore, type AchievementId } from "./achievements";
 import type { CampaignStageId } from "./campaign";
 import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
-import { castOnBoard, createBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
+import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
 
 /** Pause between auto-battle steps so the player can follow along (ms). */
 const AUTO_STEP_DELAY = 450;
@@ -17,7 +17,7 @@ interface BattleV3Store {
   /** null while the player picks a line-up. */
   board: Board | null;
   /** The last line-up, preselected when picking again. */
-  lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId };
+  lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId; mode: PoolMode };
   resolving: boolean;
   auto: boolean;
   runId: number;
@@ -29,12 +29,18 @@ interface BattleV3Store {
   drop: CharacterId | null;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
   enter: (campaign: CampaignStageId | null) => void;
-  start: (lineup: CharacterId[], front: CharacterId, stage: StageId) => void;
+  start: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode?: PoolMode) => void;
   restart: () => void;
   pickLineup: () => void;
-  play: (uid: number) => void;
+  play: (uid: number, target?: CharacterId) => void;
   playAll: () => void;
+  /** Draw one card from the deck pile. */
+  draw: () => void;
+  /** Use up every draw left this turn. */
+  drawAll: () => void;
   cast: (skill: SkillId, target?: Target) => void;
+  /** The tabletop rules' free basic attack. */
+  basic: (who: CharacterId, target: EnemyId) => void;
   swap: (id: CharacterId) => void;
   endTurn: () => void;
   setAuto: (on: boolean) => void;
@@ -68,18 +74,22 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       return;
     }
     act((b) =>
-      action.type === "play"
-        ? playCardOnBoard(b, action.uid)
+      action.type === "draw"
+        ? drawOnBoard(b)
+        : action.type === "play"
+        ? playCardOnBoard(b, action.uid, action.target)
         : action.type === "front"
           ? swapFront(b, action.id)
-          : castOnBoard(b, action.skill, action.target),
+          : action.type === "basic"
+            ? basicAttackOnBoard(b, action.who, action.target)
+            : castOnBoard(b, action.skill, action.target),
     );
     setTimeout(() => autoStep(runId), AUTO_STEP_DELAY);
   };
 
   return {
     board: null,
-    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath" },
+    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
     resolving: false,
     auto: false,
     runId: 0,
@@ -90,21 +100,28 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       if (get().campaign === campaign) return;
       set((st) => ({ campaign, board: null, drop: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
     },
-    start: (lineup, front, stage) =>
+    start: (lineup, front, stage, mode) =>
       set((st) => ({
-        board: createBoard(lineup, front, Math.random, stage),
-        lastLineup: { lineup, front, stage },
+        board: createBoard(lineup, front, Math.random, stage, mode ?? st.lastLineup.mode),
+        lastLineup: { lineup, front, stage, mode: mode ?? st.lastLineup.mode },
         resolving: false,
         auto: false,
         runId: st.runId + 1,
         newAchievements: [],
         drop: null,
       })),
-    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage),
+    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage, get().lastLineup.mode),
     pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null })),
-    play: (uid) => act((b) => playCardOnBoard(b, uid)),
+    play: (uid, target) => act((b) => playCardOnBoard(b, uid, target)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),
+    draw: () => act((b) => drawOnBoard(b)),
+    drawAll: () =>
+      act((b) => {
+        while (canDrawOnBoard(b)) b = drawOnBoard(b);
+        return b;
+      }),
     cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
+    basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
     swap: (id) => act((b) => swapFront(b, id)),
     endTurn: () => {
       const { board, resolving, runId } = get();

@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "paper": "vitest run --config vitest.paper.config.mts"
   },
   "dependencies": {
     "framer-motion": "^14.0.0",
+    "lucide-react": "^1.55.0",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

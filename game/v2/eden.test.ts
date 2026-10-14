@@ -68,20 +68,20 @@ describe("Eden", () => {
   it("Venom Fang hits harder once the Serpent has shed its skin at half HP", () => {
     let s = eden();
     s.intents[0] = { action: "fang", targets: ["adam"] };
-    expect(130 - resolveGoliath(s, seeded()).party.adam.hp).toBe(R.fang);
+    expect(MAX_HP.adam - resolveGoliath(s, seeded()).party.adam.hp).toBe(R.fang);
     s.energy.attack = 1;
     s.enemies.serpent.hp = ENEMY_HP.serpent / 2 + 10;
     s = castSkill(s, "till", "serpent");
     expect(s.goliath.enraged).toBe(true);
     s.intents[0] = { action: "fang", targets: ["adam"] };
-    expect(130 - resolveGoliath(s, seeded()).party.adam.hp).toBe(R.fangShed);
+    expect(MAX_HP.adam - resolveGoliath(s, seeded()).party.adam.hp).toBe(R.fangShed);
   });
 
   it("Coil damages and holds the target until the next end of turn", () => {
     let s = eden();
     s.intents[0] = { action: "coil", targets: ["adam"] };
     s = resolveGoliath(s, seeded());
-    expect(130 - s.party.adam.hp).toBe(R.coil);
+    expect(MAX_HP.adam - s.party.adam.hp).toBe(R.coil);
     expect(s.coiled).toBe("adam");
     // It lasts through the next player turn and wears off when the Serpent acts again.
     s = startNextTurn(s, seeded());

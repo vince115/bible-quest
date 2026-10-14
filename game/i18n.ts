@@ -14,6 +14,7 @@ const en = {
   "char.adam.name": "Adam",
   "char.cain.name": "Cain",
   "char.abel.name": "Abel",
+  "char.seth.name": "Seth",
   "char.noah.name": "Noah",
   "char.abraham.name": "Abraham",
   "char.isaac.name": "Isaac",
@@ -200,6 +201,8 @@ const en = {
   "ui.campaign": "Campaign",
   "ui.free": "Free mode (test)",
   "ui.switchLanguage": "Switch language",
+  "ui.soundOn": "Music on",
+  "ui.soundOff": "Music muted",
 };
 
 type MessageKey = keyof typeof en;
@@ -211,6 +214,7 @@ const zh: Record<MessageKey, string> = {
   "char.adam.name": "亞當",
   "char.cain.name": "該隱",
   "char.abel.name": "亞伯",
+  "char.seth.name": "塞特",
   "char.noah.name": "挪亞",
   "char.abraham.name": "亞伯拉罕",
   "char.isaac.name": "以撒",
@@ -397,6 +401,8 @@ const zh: Record<MessageKey, string> = {
   "ui.campaign": "主線闖關",
   "ui.free": "自由模式（測試）",
   "ui.switchLanguage": "切換語言",
+  "ui.soundOn": "音樂開啟",
+  "ui.soundOff": "音樂靜音",
 };
 
 const DICTS: Record<Locale, Record<string, string>> = {
