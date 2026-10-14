@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className={`sticky top-12 hidden h-[calc(100dvh-3rem)] shrink-0 overflow-y-auto border-r border-stone-800 bg-stone-950 transition-[width] lg:block ${collapsed ? "w-16" : "w-56"}`}>
+        <aside className={`sticky top-12 z-30 hidden h-[calc(100dvh-3rem)] shrink-0 overflow-y-auto border-r border-stone-800 bg-stone-950 transition-[width] lg:block ${collapsed ? "w-16" : "w-56"}`}>
           {menu(!collapsed)}
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>

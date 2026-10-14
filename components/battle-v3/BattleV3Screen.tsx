@@ -63,13 +63,13 @@ const ENERGY_RING: Record<EnergyKind, string> = {
 /**
  * Desktop: responsive card sizing fitting 3 rows (enemies, 4 skill cards, 3 character cards) without board scrolling.
  */
-const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-20rem)*0.26))]";
+const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-23rem)*0.26))]";
 /** Phones: 3 character cards across screen width in bottom row. */
-const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-20rem)*0.26))]";
+const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.26))]";
 const CARD_WIDTH = { large: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}`, small: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}` };
 const CHAR_WIDTH = CARD_WIDTH;
 /** Upper row: 4 skill/energy card slots across screen width. */
-const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-20rem)*0.19))]";
+const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
 const CARD_RATIO = "aspect-[63/88]";
 
 
@@ -952,7 +952,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   return (
     <div
       onPointerMove={onPointerMove}
-      className="relative flex min-h-[100dvh] flex-1 flex-col items-center justify-center gap-3 bg-stone-950 py-4 sm:gap-4 sm:py-6 overflow-hidden"
+      className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col items-center justify-center gap-3 bg-stone-950 py-4 sm:gap-4 sm:py-6 overflow-hidden"
     >
       {/* ===== 背景 4 層架構 ===== */}
       {/* [底層 1] 放大關卡專屬場景照片（每關不同背景照片） */}
@@ -1329,7 +1329,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       onClick={() => {
         setActing(null);
       }}
-      className="relative flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
+      className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
     >
       {/* ===== 背景 4 層架構 ===== */}
       {/* [底層 1] 放大關卡專屬場景照片（每關不同背景照片） */}
