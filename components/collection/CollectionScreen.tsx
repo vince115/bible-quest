@@ -14,7 +14,7 @@ import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardF
 import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
-import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, StoryPanel, VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
+import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 
 const ALL_CARDS = TIMELINE.filter((id): id is CharacterId => id in CHARACTER_ELEMENT);
 const RARITY_TABS = ["UR", "SSR", "SR", "R", "N"] as const;
@@ -60,6 +60,13 @@ export function CollectionScreen() {
   });
   // The card size is the card demo's saved one (shared with it), adjustable here as there.
   const [scale, setScale] = useState(() => savedScale() || SCALE_DEFAULT);
+  // Whether the story panel shows is the card demo's saved choice too.
+  const [showStory, setShowStory] = useState(() => savedShowStory());
+  const toggleStory = () =>
+    setShowStory((on) => {
+      safeStorage.setItem(STORY_KEY, on ? "off" : "on");
+      return !on;
+    });
   const adjust = (next: (current: number) => number) =>
     setScale((current) => {
       const clamped = Math.round(Math.min(4, Math.max(0.5, next(current))) * 100) / 100;
@@ -158,12 +165,19 @@ export function CollectionScreen() {
                 <CharacterCardFace id={viewing} />
               </HoloCard>
             </motion.div>
-            <StoryPanel id={viewing} />
+            {showStory && <StoryPanel id={viewing} />}
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             <span className="tabular-nums text-stone-400">
               {viewable.indexOf(viewing) + 1} / {viewable.length}
             </span>
+            <button
+              onClick={toggleStory}
+              aria-pressed={showStory}
+              className={`rounded-full border px-3 py-1 text-xs ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+            >
+              {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
+            </button>
             <span className="text-stone-400">{t("v3.demo.calibrate")}</span>
             <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
               −
