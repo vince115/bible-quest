@@ -9,6 +9,7 @@
 // Keys live in .env.local (never committed, never shipped to the browser):
 //   OPENAI_API_KEY=...   ART_PROVIDER=openai (default)   OPENAI_IMAGE_MODEL=gpt-image-1
 //   GEMINI_API_KEY=...   ART_PROVIDER=gemini             GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
+//   LEONARDO_API_KEY=... ART_PROVIDER=leonardo          LEONARDO_MODEL_ID=<the id of the model you draw with on leonardo.ai>
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { it } from "vitest";
 import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
@@ -23,7 +24,7 @@ if (existsSync(".env.local")) {
   }
 }
 
-const provider = (process.env.ART_PROVIDER ?? "openai") as "openai" | "gemini";
+const provider = (process.env.ART_PROVIDER ?? "openai") as "openai" | "gemini" | "leonardo";
 const call = process.env.ART_CALL === "1";
 const force = process.env.ART_FORCE === "1";
 const DRAFTS = "art-drafts";
@@ -52,6 +53,28 @@ function promptFor(id: string): string {
     .join(" ");
 }
 
+/** Leonardo.ai: start a generation, wait for it to finish, download the picture. */
+async function generateWithLeonardo(prompt: string): Promise<Buffer> {
+  const key = process.env.LEONARDO_API_KEY;
+  const modelId = process.env.LEONARDO_MODEL_ID;
+  if (!key) throw new Error("LEONARDO_API_KEY is not set (put it in .env.local)");
+  if (!modelId) throw new Error("LEONARDO_MODEL_ID is not set: the id of the model you use on leonardo.ai");
+  const base = "https://cloud.leonardo.ai/api/rest/v1";
+  const headers = { "Content-Type": "application/json", accept: "application/json", authorization: `Bearer ${key}` };
+  const start = await fetch(`${base}/generations`, { method: "POST", headers, body: JSON.stringify({ prompt, modelId, width: 1024, height: 1024, num_images: 1 }) });
+  if (!start.ok) throw new Error(`Leonardo ${start.status}: ${await start.text()}`);
+  const id = ((await start.json()) as { sdGenerationJob: { generationId: string } }).sdGenerationJob.generationId;
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    const poll = await fetch(`${base}/generations/${id}`, { headers });
+    if (!poll.ok) throw new Error(`Leonardo ${poll.status}: ${await poll.text()}`);
+    const job = ((await poll.json()) as { generations_by_pk: { status: string; generated_images: { url: string }[] } }).generations_by_pk;
+    if (job.status === "FAILED") throw new Error("Leonardo: the generation failed");
+    if (job.status === "COMPLETE" && job.generated_images[0]) return Buffer.from(await (await fetch(job.generated_images[0].url)).arrayBuffer());
+  }
+  throw new Error("Leonardo: timed out waiting for the picture");
+}
+
 async function generate(prompt: string): Promise<Buffer> {
   if (provider === "openai") {
     const key = process.env.OPENAI_API_KEY;
@@ -67,6 +90,7 @@ async function generate(prompt: string): Promise<Buffer> {
     if (item.url) return Buffer.from(await (await fetch(item.url)).arrayBuffer());
     throw new Error("OpenAI returned no image");
   }
+  if (provider === "leonardo") return generateWithLeonardo(prompt);
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY is not set (put it in .env.local)");
   const model = process.env.GEMINI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
