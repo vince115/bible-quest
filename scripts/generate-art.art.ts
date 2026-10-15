@@ -129,6 +129,20 @@ const OPEN: Record<string, string> = {
   book: "At the centre, a large open Bible resting on an ornate wooden stand, a great eight-pointed star of light above it and many long rays of golden light streaming up and outwards from its pages across the field, with olive branches curving on both sides of the book and small stars scattered around.",
   book2: "At the centre, a large open Bible with radiant light rising from its pages in a fan of golden rays that reaches toward the borders, a bright star shining above, wreaths of olive leaves and wheat sprays flowing out from the book on both sides, small stars and sparkles all around.",
 };
+/**
+ * Ornamental frame border (ART_IDS=frame-gr): an openwork gold filigree picture frame on pure black, square, for the
+ * GR card frame. The black is keyed out afterwards. Set ART_SIZE=1024x1024.
+ */
+const FRAME_BASE =
+  "A flat, perfectly symmetrical, straight-on front view of an ornate antique gold picture-frame border, isolated on a pure " +
+  "flat black background, square picture. The frame is a thin, delicate band of dense openwork gold filigree: flowing " +
+  "acanthus scrolls, curling vines, small flowers and leaves, in finely chased, embossed antique gold with warm highlights " +
+  "and deep shadows, richly three-dimensional. Large ornate flourishes in the four corners, a fleur-de-lis style " +
+  "centrepiece at the middle of the top and bottom edges and a small floral boss at the middle of the left and right edges. " +
+  "Just inside the filigree, a thin inner double-line gold moulding with a fine beaded pattern. The band is narrow, about " +
+  "one eighth of the picture's width on each side, and the whole centre of the picture is empty pure black. " +
+  "The top edge is straight and flat, with no arch. No text, no letters, no watermark, no figures.";
+const promptForFrame = () => FRAME_BASE;
 const promptForBack = (id: string) => {
   const open = OPEN[id.replace(/^back-open-/, "")];
   if (id.startsWith("back-open-") && open) return `${OPEN_BASE} ${open}`;
@@ -258,7 +272,7 @@ it("draws draft card art", async () => {
   mkdirSync(DRAFTS, { recursive: true });
   const lines: string[] = [];
   for (const id of wanted) {
-    const prompt = id.startsWith("wrap-") ? promptForWrap(id) : id.startsWith("back-") ? promptForBack(id) : id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
+    const prompt = id.startsWith("frame-") ? promptForFrame() : id.startsWith("wrap-") ? promptForWrap(id) : id.startsWith("back-") ? promptForBack(id) : id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
     lines.push(`${id}\n  ${prompt}\n`);
     if (!call) continue;
     const out = `${DRAFTS}/${id}.png`;
