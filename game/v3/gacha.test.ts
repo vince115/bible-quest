@@ -36,7 +36,8 @@ describe("booster packs", () => {
   it("splits every collectible card into exactly one kind of pack", () => {
     const all = PACKS.flatMap(packCards);
     expect(new Set(all).size).toBe(all.length);
-    expect([...all].sort()).toEqual([...COLLECTIBLE].sort());
+    // Every collectible card is in exactly one pack, except the GR cards, which no pack holds.
+    expect([...all].sort()).toEqual(COLLECTIBLE.filter((id) => CARD_RARITY[id] !== "GR").sort());
     expect(new Set(PACKS.map((p) => p.id)).size).toBe(PACKS.length);
     for (const p of PACKS) expect(packCards(p), `${p.id}: the featured card is in its own pack`).toContain(p.featured);
   });
@@ -54,7 +55,8 @@ describe("booster packs", () => {
   });
 
   it("draws the rare slot near its stated odds when the period has every rarity", () => {
-    const pack = PACKS.find((p) => p.id === "ministry")!;
+    // A pack whose period has an SR, an SSR and a UR card to draw (the ministry and passion packs lost their UR cards to GR).
+    const pack = PACKS.find((p) => ["SR", "SSR", "UR"].every((r) => packCards(p).some((id) => CARD_RARITY[id] === r)))!;
     const rng = seeded(11);
     const n = 20000;
     const seen: Record<string, number> = { SR: 0, SSR: 0, UR: 0 };

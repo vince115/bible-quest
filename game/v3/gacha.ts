@@ -26,7 +26,7 @@ export const PACKS: PackKind[] = [
   { id: "exile", eras: ["exile"], featured: "daniel" },
   { id: "nativity", eras: ["nativity"], featured: "mary" },
   { id: "ministry", eras: ["ministry"], featured: "peter" },
-  { id: "passion", eras: ["passion"], featured: "jesusCross" },
+  { id: "passion", eras: ["passion"], featured: "simonCyrene" },
   { id: "church", eras: ["church", "revelation"], featured: "paul" },
 ];
 
@@ -72,7 +72,8 @@ const pick = <T,>(list: T[], rng: Rng) => list[Math.min(list.length - 1, Math.fl
 /** The collectible cards in a kind of pack. */
 export function packCards(pack: PackKind): CharacterId[] {
   const inEra = new Set<string>(TIMELINE_ERAS.filter((e) => pack.eras.includes(e.era)).flatMap((e) => e.cards));
-  return COLLECTIBLE.filter((id) => inEra.has(id));
+  // GR (God Rate: the Father, the Son and the Holy Spirit) is never in a pack; those cards are given some other way.
+  return COLLECTIBLE.filter((id) => inEra.has(id) && CARD_RARITY[id] !== "GR");
 }
 
 /** The rarity of one card in a pack slot, given that slot's odds. */
