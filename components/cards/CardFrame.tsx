@@ -135,8 +135,8 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
-            // GR: its gold filigree frame glows softly
-            filter: look.divine ? "drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
+            // GR: the gold is lifted to bright white gold and glows
+            filter: look.divine ? "brightness(1.6) saturate(0.85) contrast(1.05) drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
@@ -146,16 +146,26 @@ export function CardFrame({
           }}
         />
       )}
-      {/* GR: light glides across the gold as the card turns (the frame image is the mask) */}
+      {/* GR: light glides across the gold as the card turns, and a bright sheen keeps running along it
+          (the frame image is the mask) */}
       {art && look.divine && (
         <div aria-hidden className="pointer-events-none absolute inset-0 z-10">
           <div
-            className="absolute inset-0 mix-blend-soft-light"
+            className="absolute inset-0 mix-blend-overlay"
             style={{
               backgroundImage: "linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 1) 48%, rgb(255 244 200 / 1) 52%, transparent 70%)",
               backgroundSize: "300% 100%",
               backgroundPosition: "var(--px, 50%) 0",
-              opacity: "calc(0.25 + var(--o, 0) * 0.75)",
+              opacity: "calc(0.35 + var(--o, 0) * 0.65)",
+              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+            }}
+          />
+          <div
+            className="bq-animated absolute inset-0 mix-blend-overlay"
+            style={{
+              backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 246 200 / 1) 50%, transparent 60%)",
+              backgroundSize: "250% 100%",
+              animation: "bq-sheen 3.6s ease-in-out infinite",
               WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
             }}
           />
