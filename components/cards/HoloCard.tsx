@@ -171,14 +171,14 @@ export function Foil({ element, strength = 1, className = "" }: { element: Eleme
  * GR: soft, fine rays of light turning slowly behind the card (two layers going opposite ways, feathered and blurred so
  * there are no hard edges), and a halo that breathes. Outside the card, so it needs room around it.
  */
-const RAYS = "repeating-conic-gradient(from 0deg, transparent 0deg, rgb(255 246 214 / 0.5) 1.2deg, transparent 2.6deg, transparent 7deg)";
-const RAYS_FINE = "repeating-conic-gradient(from 3deg, transparent 0deg, rgb(255 240 190 / 0.35) 0.6deg, transparent 1.4deg, transparent 3.7deg)";
-const RAY_MASK = "radial-gradient(circle, #000 14%, rgb(0 0 0 / 0.55) 40%, transparent 72%)";
+const RAYS = "repeating-conic-gradient(from 0deg, transparent 0deg, rgb(255 246 214 / 0.34) 1.4deg, transparent 3.2deg, transparent 7deg)";
+const RAYS_FINE = "repeating-conic-gradient(from 3deg, transparent 0deg, rgb(255 240 190 / 0.22) 0.8deg, transparent 1.8deg, transparent 3.7deg)";
+const RAY_MASK = "radial-gradient(circle, #000 12%, rgb(0 0 0 / 0.45) 30%, rgb(0 0 0 / 0.12) 44%, transparent 56%)";
 function DivineAura() {
   return (
-    <div aria-hidden className="pointer-events-none absolute -inset-[28%]">
-      <div className="bq-animated absolute inset-0 rounded-full mix-blend-screen [filter:blur(1.6px)]" style={{ backgroundImage: RAYS, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 90s linear infinite" }} />
-      <div className="bq-animated absolute inset-0 rounded-full opacity-80 mix-blend-screen [filter:blur(1px)]" style={{ backgroundImage: RAYS_FINE, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 140s linear infinite reverse" }} />
+    <div aria-hidden className="pointer-events-none absolute -inset-[22%]">
+      <div className="bq-animated absolute inset-0 rounded-full mix-blend-screen [filter:blur(2.6px)]" style={{ backgroundImage: RAYS, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 90s linear infinite" }} />
+      <div className="bq-animated absolute inset-0 rounded-full opacity-80 mix-blend-screen [filter:blur(1.8px)]" style={{ backgroundImage: RAYS_FINE, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 140s linear infinite reverse" }} />
       <div
         className="bq-animated absolute inset-[20%] rounded-full"
         style={{ background: "radial-gradient(circle, rgb(255 238 170 / 0.5) 0%, rgb(255 220 120 / 0.16) 45%, transparent 70%)", animation: "bq-breathe 5s ease-in-out infinite" }}
@@ -187,12 +187,32 @@ function DivineAura() {
   );
 }
 
+/**
+ * GR: a texture of small Christian crosses in a staggered grid, in the place of the element texture the other tiers have.
+ * It shows faintly all over the card and lights up around the pointer, like the element textures do.
+ */
+const CROSS_TEXTURE =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cg fill='none' stroke='%23fff6d6' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M9 4v14M5 8.5h8'/%3E%3Cpath d='M27 22v14M23 26.5h8'/%3E%3C/g%3E%3Cg fill='%23fff6d6'%3E%3Ccircle cx='27' cy='11' r='0.9'/%3E%3Ccircle cx='9' cy='29' r='0.9'/%3E%3C/g%3E%3C/svg%3E\")";
+function DivineTexture() {
+  const lit = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.55) 30%, rgb(0 0 0 / 0.14) 62%)";
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: 0.3 }} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: "calc(var(--o) * 0.55)", WebkitMaskImage: lit, maskImage: lit }}
+      />
+    </>
+  );
+}
+
 /** GR: a soft column of light from the top of the card, and tiny photons drifting up over it. */
 const PHOTONS = Array.from({ length: 34 }, (_, i) => ({
   x: (i * 37 + 7) % 100,
   size: 0.35 + ((i * 13) % 7) / 10, // 0.35% to 1.05% of the card's width
-  rise: 9 + ((i * 29) % 90) / 10, // seconds to drift to the top
-  delay: -((i * 23) % 100) / 10,
+  rise: 26 + ((i * 29) % 140) / 10, // seconds to drift to the top (slow)
+  delay: -((i * 23) % 400) / 10,
   sway: 6 + (i % 5) * 3, // px
 }));
 function DivineLight() {
@@ -313,7 +333,12 @@ export function HoloCard({
             />
           </>
         )}
-        {effects && divine && <DivineLight />}
+        {effects && divine && (
+          <>
+            <DivineTexture />
+            <DivineLight />
+          </>
+        )}
         {effects && glare && (
           <div
             aria-hidden
