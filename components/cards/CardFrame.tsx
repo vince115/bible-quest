@@ -135,8 +135,8 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
-            // GR: the gold is lifted to bright white gold and glows
-            filter: look.divine ? "brightness(1.6) saturate(0.85) contrast(1.05) drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
+            // GR: the gold becomes white gold (platinum) and glows
+            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0 2px rgb(255 255 255 / 0.95)) drop-shadow(0 0 7px rgb(255 248 225 / 0.8)) drop-shadow(0 0 16px rgb(255 240 200 / 0.5))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
@@ -153,7 +153,7 @@ export function CardFrame({
           <div
             className="absolute inset-0 mix-blend-overlay"
             style={{
-              backgroundImage: "linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 1) 48%, rgb(255 244 200 / 1) 52%, transparent 70%)",
+              backgroundImage: "linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 1) 48%, rgb(255 252 235 / 1) 52%, transparent 70%)",
               backgroundSize: "300% 100%",
               backgroundPosition: "var(--px, 50%) 0",
               opacity: "calc(0.35 + var(--o, 0) * 0.65)",
@@ -163,7 +163,7 @@ export function CardFrame({
           <div
             className="bq-animated absolute inset-0 mix-blend-overlay"
             style={{
-              backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 246 200 / 1) 50%, transparent 60%)",
+              backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 255 250 / 1) 50%, transparent 60%)",
               backgroundSize: "250% 100%",
               animation: "bq-sheen 3.6s ease-in-out infinite",
               WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
