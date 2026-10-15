@@ -129,45 +129,14 @@ export function CardFrame({
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_1.2cqw_2cqw_rgb(0_0_0/0.55),inset_0_0_1cqw_rgb(0_0_0/0.4)]" />
       </div>
 
-      {/* GR: no flat ground and no bare background: the border is lit from within. A soft light along the outer edge, and
-          two blurred, brightened copies of the filigree (a tight one and a wide bloom) that fill the gaps between its strands */}
-      {look.divine && art && (
-        <>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: "linear-gradient(135deg, #fbe7a4 0%, #e9bf5e 50%, #fbe7a4 100%)",
-              clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cardW(INSET)} ${cardW(INSET)}, ${cardW(INSET)} calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) ${cardW(INSET)}, ${cardW(INSET)} ${cardW(INSET)})`,
-            }}
-          />
-          <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_3.2cqw_rgb(255_244_200/0.85),inset_0_0_1cqw_rgb(255_255_255/0.6)]" />
-          {[
-            { blur: "1.5cqw", opacity: 1, image: "linear-gradient(135deg, #fff6cc, #ffdc78 50%, #fff6cc)" },
-            { blur: "3.4cqw", opacity: 0.75, image: "linear-gradient(135deg, #ffffff, #fff0b0 50%, #ffffff)" },
-          ].map((g) => (
-            <div
-              key={g.blur}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 mix-blend-screen"
-              style={{
-                backgroundImage: g.image,
-                filter: `blur(${g.blur})`,
-                opacity: `calc(${g.opacity} * (0.85 + var(--o, 0) * 0.15))`,
-                WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
-              }}
-            />
-          ))}
-        </>
-      )}
       {/* Gold floral ornaments over the border and the face's corners (none on N cards) */}
       {art && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
-            // GR: the gold becomes white gold (platinum) on a gold base; the glow around the card comes from its outer shadow
-            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0.4px 0.6px rgb(110 70 8 / 0.95)) drop-shadow(0 0 1px rgb(150 100 20 / 0.7))" : undefined,
+            // GR: the image itself is the finished white-gold filigree on a solid gold ground; it only gets a soft glow
+            filter: look.divine ? "drop-shadow(0 0 2px rgb(255 244 200 / 0.8))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
@@ -176,6 +145,10 @@ export function CardFrame({
             borderImage: `url(/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
           }}
         />
+      )}
+      {/* GR: soft light bathing the border: a glow along the outer edge and another along the picture's edge */}
+      {art && look.divine && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 mix-blend-screen shadow-[inset_0_0_3.4cqw_rgb(255_240_190/0.75),inset_0_0_1.2cqw_rgb(255_255_255/0.55)]" />
       )}
       {/* GR: light glides across the gold as the card turns, and a bright sheen keeps running along it
           (the frame image is the mask) */}
