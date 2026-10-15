@@ -298,4 +298,9 @@ describe("the free basic attack (tabletop mode)", () => {
     const personal = createBattle(seeded(), ["david"], "goliath", 0, "personal");
     expect(canBasicAttack(personal, "david")).toBe(false);
   });
+
+  it("has a GR tier above UR in every rarity table", () => {
+    expect(R.table.cap.GR).toBeGreaterThan(R.table.cap.UR);
+    expect(R.table.basicDamage.GR).toBeGreaterThan(R.table.basicDamage.UR);
+  });
 });

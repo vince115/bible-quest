@@ -8,7 +8,7 @@ import { playSfx } from "@/game/sfx";
 import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
 
-const STRIP = 14; // the torn-off top strip, percent of the pack's height
+const STRIP = 7; // the torn-off top strip (the pack's top foil seal), percent of its height
 const NEEDED = 0.85; // how much of the width has to be torn to open it
 
 export function PackTear({ pack, onTorn }: { pack: PackKind; onTorn: () => void }) {

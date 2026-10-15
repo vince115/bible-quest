@@ -426,7 +426,7 @@ export function CharacterCardFace({ id, ornament, rarity: printed }: { id: Chara
         <CardFrame frame={theme.frame} rarity={rarity} ornament={ornament}>
         <div className="relative h-full overflow-hidden rounded-[0.6%]">
           {/* Only UR gets the 2.5D parallax; the rest show the picture flat. */}
-          {rarity === "UR" ? (
+          {rarity === "UR" || rarity === "GR" ? (
             <ParallaxArt src={art.src} alt={t(`char.${id}.name`)} figure={art.figure} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- static card art; no resizing needed for a demo

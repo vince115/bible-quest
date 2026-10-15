@@ -44,9 +44,9 @@ const zh = (key: string, params?: Record<string, string | number>) => translate(
 const has = (key: string) => zh(key) !== key;
 
 /** How much Energy a character can hold (the total value of the cards stuck under them). */
-const ENERGY_CAP: Record<Rarity, number> = { N: 3, R: 4, SR: 5, SSR: 6, UR: 8 };
+const ENERGY_CAP: Record<Rarity, number> = { N: 3, R: 4, SR: 5, SSR: 6, UR: 8, GR: 10 };
 const ELEMENTS: Element[] = ["metal", "wood", "water", "fire", "earth", "light", "dark"];
-const RARITY_COLOR: Record<Rarity, string> = { N: "#7b8794", R: "#2f855a", SR: "#2b6cb0", SSR: "#b7791f", UR: "#c05621" };
+const RARITY_COLOR: Record<Rarity, string> = { N: "#7b8794", R: "#2f855a", SR: "#2b6cb0", SSR: "#b7791f", UR: "#c05621", GR: "#d69e2e" };
 const ENERGY_COLOR = { red: "#c53030", blue: "#2b6cb0", green: "#2f855a" } as const;
 
 /** The physical rules replace "Faith" by blue Energy; skill texts are adapted. */

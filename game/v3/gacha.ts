@@ -26,23 +26,12 @@ export const PACKS: PackKind[] = [
   { id: "exile", eras: ["exile"], featured: "daniel" },
   { id: "nativity", eras: ["nativity"], featured: "mary" },
   { id: "ministry", eras: ["ministry"], featured: "peter" },
-  { id: "passion", eras: ["passion"], featured: "jesusCross" },
+  { id: "passion", eras: ["passion"], featured: "simonCyrene" },
   { id: "church", eras: ["church", "revelation"], featured: "paul" },
 ];
 
-/** How many packs stand on the ring: all of the one kind that is on offer. */
-export const PACKS_ON_RING = 12;
-
-/** Days since the epoch by the player's own calendar (a day turns over at their local midnight). */
-const localDay = (now: Date) => Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
-
-/** The kind of pack on offer today: one at a time, and each day the next kind in the list. */
-export function currentPack(now: Date = new Date()): PackKind {
-  return PACKS[((localDay(now) % PACKS.length) + PACKS.length) % PACKS.length];
-}
-
-/** When the offer changes: the next local midnight. */
-export const nextRotation = (now: Date = new Date()): Date => new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+/** How many packs stand on the ring: all of the one kind the player has chosen. */
+export const PACKS_ON_RING = 13;
 
 /** A booster pack: five cards, each position with its own rarity odds (percent). */
 export const PACK = {
@@ -65,14 +54,15 @@ export const CLEAR_POINTS = { first: 300, repeat: 100 };
 /** What a new player starts with: one pack. */
 export const STARTING_POINTS = 500;
 
-const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR"];
+const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR", "GR"];
 
 const pick = <T,>(list: T[], rng: Rng) => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
 
 /** The collectible cards in a kind of pack. */
 export function packCards(pack: PackKind): CharacterId[] {
   const inEra = new Set<string>(TIMELINE_ERAS.filter((e) => pack.eras.includes(e.era)).flatMap((e) => e.cards));
-  return COLLECTIBLE.filter((id) => inEra.has(id));
+  // GR (God Rate: the Father, the Son and the Holy Spirit) is never in a pack; those cards are given some other way.
+  return COLLECTIBLE.filter((id) => inEra.has(id) && CARD_RARITY[id] !== "GR");
 }
 
 /** The rarity of one card in a pack slot, given that slot's odds. */

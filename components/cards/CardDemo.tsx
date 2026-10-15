@@ -10,14 +10,15 @@ import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
 import { FlipCard } from "./FlipCard";
+import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
-import { CARD_RARITY, type Rarity } from "./rarity";
+import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
-const RARITY_TABS: Rarity[] = ["UR", "SSR", "SR", "R", "N"];
+const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
@@ -188,6 +189,7 @@ export function CardDemo() {
   const [effects, setEffects] = useState(true);
   const [viewing, setViewing] = useState<Viewed | null>(null);
   const [flipped, setFlipped] = useState(false); // the viewed card turned to its back
+  const [ceremony, setCeremony] = useState<CharacterId | null>(null); // previewing how a GR card arrives
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a different card always opens face up
     setFlipped(false);
@@ -384,6 +386,11 @@ export function CardDemo() {
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
+            {!viewing.scripture && !viewing.enemy && CARD_RARITY[viewing.id as CharacterId] === "GR" && (
+              <button onClick={() => setCeremony(viewing.id as CharacterId)} className="rounded-full border border-amber-200 bg-amber-100/90 px-3 py-1 text-xs font-bold text-stone-900 hover:bg-white">
+                ✦ {t("v3.demo.ceremony")}
+              </button>
+            )}
             {!viewing.scripture && (
               <button
                 onClick={toggleStory}
@@ -413,6 +420,7 @@ export function CardDemo() {
           </div>
         </div>
       )}
+      {ceremony && <GrCeremony id={ceremony} onClose={() => setCeremony(null)} />}
     </main>
   );
 }

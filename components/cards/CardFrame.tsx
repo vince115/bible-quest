@@ -6,10 +6,14 @@
 import type { ReactNode } from "react";
 import { RARITY, type Rarity } from "./rarity";
 
-export type Ornament = "dove" | "lily" | "ur";
+export type Ornament = "dove" | "lily" | "ur" | "gr";
 
-/** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. */
+/** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. (GR's image is 780 px wide with 250 px corners.) */
 const SLICE = 34;
+/** The GR frame picture is redrawn often: bump this so browsers fetch the new one instead of showing a cached copy. */
+const GR_FRAME_VERSION = 14;
+const frameSrc = (art: Ornament) => (art === "gr" ? `/cards/frame-gr.png?v=${GR_FRAME_VERSION}` : `/cards/frame-${art}.png`);
+const sliceOf = (art: Ornament) => (art === "gr" ? "250" : `${SLICE}%`);
 /** UR: all seven neon colours across the card at once; the hues then keep cycling (bq-prism). */
 const NEON = "linear-gradient(125deg, #ff2fd0 0%, #ff8a00 16%, #ffe600 32%, #2dff6a 48%, #00e5ff 64%, #6a5cff 80%, #ff2fd0 100%)";
 /**
@@ -64,7 +68,7 @@ export function CardFrame({
   const look = RARITY[rarity];
   const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
-    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${frame}`} style={{ padding: `${INSET}%` }}>
+    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#e9c15c] via-[#c9962f] to-[#f1d078]" : frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
       <div
         aria-hidden
@@ -134,14 +138,45 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
+            // GR: the image itself is the finished white-gold filigree on a solid gold ground; it only gets a soft glow
+            filter: look.divine ? "drop-shadow(0 0 2px rgb(255 244 200 / 0.8))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
             borderWidth: cardW(look.ornamentSize),
             // The lily frame comes in gold, silver and bronze; the dove frame only in gold.
-            borderImage: `url(/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
+            borderImage: `url(${art === "gr" ? frameSrc(art) : `/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png`}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
           }}
         />
+      )}
+      {/* GR: soft light bathing the border: a glow along the outer edge and another along the picture's edge */}
+      {art && look.divine && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 mix-blend-screen shadow-[inset_0_0_1.4cqw_rgb(255_240_190/0.6),inset_0_0_0.5cqw_rgb(255_255_255/0.4)]" />
+      )}
+      {/* GR: light glides across the gold as the card turns, and a bright sheen keeps running along it
+          (the frame image is the mask) */}
+      {art && look.divine && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10">
+          <div
+            className="absolute inset-0 mix-blend-overlay"
+            style={{
+              backgroundImage: "linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 1) 48%, rgb(255 252 235 / 1) 52%, transparent 70%)",
+              backgroundSize: "300% 100%",
+              backgroundPosition: "var(--px, 50%) 0",
+              opacity: "calc(0.35 + var(--o, 0) * 0.65)",
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+            }}
+          />
+          <div
+            className="bq-animated absolute inset-0 mix-blend-overlay"
+            style={{
+              backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 255 250 / 1) 50%, transparent 60%)",
+              backgroundSize: "250% 100%",
+              animation: "bq-sheen 3.6s ease-in-out infinite",
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+            }}
+          />
+        </div>
       )}
       {/* UR: the same ornaments painted in flowing neon rainbow colours (the ornament image is used as a mask;
           browsers without mask-box-image keep the gold ornaments underneath) */}
@@ -152,7 +187,7 @@ export function CardFrame({
             style={{
               backgroundImage: NEON,
               animation: "bq-prism 4s linear infinite",
-              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${SLICE}% / ${cardW(look.ornamentSize)} round`,
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
             }}
           />
         </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CARD_RARITY } from "@/components/cards/rarity";
-import { CLEAR_POINTS, COLLECTIBLE, PACK, PACKS, STARTING_POINTS, currentPack, nextRotation, openPack, packCards, rollRarity } from "./gacha";
+import { CLEAR_POINTS, COLLECTIBLE, PACK, PACKS, STARTING_POINTS, openPack, packCards, rollRarity } from "./gacha";
 
 /** A repeatable stream of numbers in [0, 1). */
 const seeded = (seed: number) => () => {
@@ -36,7 +36,8 @@ describe("booster packs", () => {
   it("splits every collectible card into exactly one kind of pack", () => {
     const all = PACKS.flatMap(packCards);
     expect(new Set(all).size).toBe(all.length);
-    expect([...all].sort()).toEqual([...COLLECTIBLE].sort());
+    // Every collectible card is in exactly one pack, except the GR cards, which no pack holds.
+    expect([...all].sort()).toEqual(COLLECTIBLE.filter((id) => CARD_RARITY[id] !== "GR").sort());
     expect(new Set(PACKS.map((p) => p.id)).size).toBe(PACKS.length);
     for (const p of PACKS) expect(packCards(p), `${p.id}: the featured card is in its own pack`).toContain(p.featured);
   });
@@ -54,26 +55,12 @@ describe("booster packs", () => {
   });
 
   it("draws the rare slot near its stated odds when the period has every rarity", () => {
-    const pack = PACKS.find((p) => p.id === "ministry")!;
+    // A pack whose period has an SR, an SSR and a UR card to draw (the ministry and passion packs lost their UR cards to GR).
+    const pack = PACKS.find((p) => ["SR", "SSR", "UR"].every((r) => packCards(p).some((id) => CARD_RARITY[id] === r)))!;
     const rng = seeded(11);
     const n = 20000;
     const seen: Record<string, number> = { SR: 0, SSR: 0, UR: 0 };
     for (let i = 0; i < n; i++) seen[CARD_RARITY[openPack(pack, rng)[4]]]++;
     for (const [r, pct] of Object.entries(PACK.slots[4])) expect(Math.abs((seen[r] / n) * 100 - pct!), r).toBeLessThan(1.2);
-  });
-
-  it("offers one kind of pack a day, the next kind each day, going round all of them", () => {
-    const day = (n: number) => new Date(2026, 9, 1 + n, 15, 30);
-    expect(currentPack(day(0)).id).toBe(currentPack(new Date(2026, 9, 1, 0, 5)).id); // all through one local day
-    const seen = new Set(Array.from({ length: PACKS.length }, (_, n) => currentPack(day(n)).id));
-    expect(seen.size).toBe(PACKS.length);
-    expect(currentPack(day(PACKS.length)).id).toBe(currentPack(day(0)).id);
-    expect(currentPack(day(1)).id).not.toBe(currentPack(day(0)).id);
-  });
-
-  it("changes the offer at the next local midnight", () => {
-    const at = new Date(2026, 9, 14, 23, 0);
-    expect(nextRotation(at)).toEqual(new Date(2026, 9, 15, 0, 0));
-    expect(currentPack(nextRotation(at)).id).not.toBe(currentPack(at).id);
   });
 });

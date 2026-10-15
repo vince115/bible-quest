@@ -3,7 +3,7 @@
 // A trading card that tilts toward the pointer, with a glare and an element foil that follow it.
 // Our own take on the technique popularised by pokemon-cards-css (no code or art copied):
 // pointer position → springs → CSS variables (--px, --py, --o) read by the foil and glare layers.
-import { motion, useMotionTemplate, useReducedMotion, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionTemplate, useReducedMotion, useSpring, useTransform, type MotionValue } from "framer-motion";
 import type { PointerEvent, ReactNode } from "react";
 import type { Element } from "@/game/v2/types";
 import { RARITY, type Rarity } from "./rarity";
@@ -143,6 +143,19 @@ const REVERSE_RAINBOW =
   "linear-gradient(115deg, hsl(0 90% 70%), hsl(50 100% 70%), hsl(120 80% 70%), hsl(190 90% 70%), hsl(260 80% 75%), hsl(320 90% 72%), hsl(0 90% 70%))";
 
 /** SSR: a soft rainbow sheen that glides across the card as it turns. */
+/**
+ * GR: the glossy reflection of a holographic card. A soft, wide smear of the spectrum drifts across the card as it
+ * turns (brightest where the pointer is), over a fine diagonal hatching of light lines like a holo foil, plus a
+ * broad specular glint that follows the pointer.
+ */
+const GR_HOLO =
+  "linear-gradient(115deg, rgb(255 90 150) 0%, rgb(255 190 70) 12%, rgb(245 245 80) 24%, rgb(80 235 140) 36%, rgb(70 215 255) 48%, rgb(100 120 255) 60%, rgb(205 100 255) 72%, rgb(255 90 170) 84%, rgb(255 190 70) 100%)";
+const GR_REFLECT =
+  "conic-gradient(from 20deg at var(--px) var(--py), rgb(255 70 120), rgb(255 170 60), rgb(250 245 80), rgb(70 235 130), rgb(60 215 255), rgb(100 110 255), rgb(205 90 255), rgb(255 70 120))";
+const GR_REFLECT_MASK = "radial-gradient(circle at var(--px) var(--py), rgb(0 0 0 / 0.25) 0%, #000 14%, rgb(0 0 0 / 0.7) 34%, rgb(0 0 0 / 0.18) 56%, transparent 74%)";
+const GR_HATCH = "repeating-linear-gradient(115deg, transparent 0 4px, rgb(255 255 255 / 0.9) 4px 5px)";
+const GR_HATCH_MASK = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.5) 38%, rgb(0 0 0 / 0.16) 75%)";
+
 const SSR_RAINBOW =
   "linear-gradient(115deg, transparent 20%, hsl(0 90% 72% / 0.55) 32%, hsl(45 100% 70% / 0.6) 40%, hsl(120 80% 70% / 0.55) 48%, hsl(195 90% 70% / 0.6) 56%, hsl(270 80% 75% / 0.55) 64%, transparent 76%)";
 
@@ -167,6 +180,102 @@ export function Foil({ element, strength = 1, className = "" }: { element: Eleme
  * foil: strength of the foil over the whole card (lower it for full-art cards so the illustration keeps its colours).
  * touchTilt: false leaves touch gestures to the page (e.g. swiping a row of cards); only a mouse tilts the card.
  */
+/**
+ * GR: soft, fine rays of light turning slowly behind the card (two layers going opposite ways, feathered and blurred so
+ * there are no hard edges), and a halo that breathes. Outside the card, so it needs room around it.
+ */
+const RAYS = "repeating-conic-gradient(from 0deg, transparent 0deg, rgb(255 246 214 / 0.34) 1.4deg, transparent 3.2deg, transparent 7deg)";
+const RAYS_FINE = "repeating-conic-gradient(from 3deg, transparent 0deg, rgb(255 240 190 / 0.22) 0.8deg, transparent 1.8deg, transparent 3.7deg)";
+const RAY_MASK = "radial-gradient(circle, #000 12%, rgb(0 0 0 / 0.45) 30%, rgb(0 0 0 / 0.12) 44%, transparent 56%)";
+function DivineAura({ o }: { o: MotionValue<number> }) {
+  // Nearly dark while the card lies still; it glows as the card is turned (like a foil card catching the light).
+  const opacity = useTransform(o, (v) => 0.12 + v * 0.88);
+  return (
+    <motion.div aria-hidden className="pointer-events-none absolute -inset-[22%]" style={{ opacity }}>
+      <div className="bq-animated absolute inset-0 rounded-full mix-blend-screen [filter:blur(2.6px)]" style={{ backgroundImage: RAYS, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 90s linear infinite" }} />
+      <div className="bq-animated absolute inset-0 rounded-full opacity-80 mix-blend-screen [filter:blur(1.8px)]" style={{ backgroundImage: RAYS_FINE, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 140s linear infinite reverse" }} />
+      <div
+        className="bq-animated absolute inset-[20%] rounded-full"
+        style={{ background: "radial-gradient(circle, rgb(255 238 170 / 0.5) 0%, rgb(255 220 120 / 0.16) 45%, transparent 70%)", animation: "bq-breathe 5s ease-in-out infinite" }}
+      />
+    </motion.div>
+  );
+}
+
+/**
+ * GR: a texture of small Christian crosses in a staggered grid, in the place of the element texture the other tiers have.
+ * It shows faintly all over the card and lights up around the pointer, like the element textures do.
+ */
+const CROSS_TEXTURE =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cg fill='none' stroke='%23fff6d6' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M9 4v14M5 8.5h8'/%3E%3Cpath d='M27 22v14M23 26.5h8'/%3E%3C/g%3E%3Cg fill='%23fff6d6'%3E%3Ccircle cx='27' cy='11' r='0.9'/%3E%3Ccircle cx='9' cy='29' r='0.9'/%3E%3C/g%3E%3C/svg%3E\")";
+function DivineTexture() {
+  const lit = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.55) 30%, rgb(0 0 0 / 0.14) 62%)";
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: "calc(0.12 + var(--o) * 0.2)" }} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: "calc(var(--o) * 0.55)", WebkitMaskImage: lit, maskImage: lit }}
+      />
+    </>
+  );
+}
+
+/** A small seeded random generator, so the scatter is irregular but the same on the server and the client. */
+function seeded(seed: number) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/** GR: a soft column of light from the top of the card, and tiny photons drifting up over it, each at its own random speed. */
+const PHOTONS = (() => {
+  const r = seeded(115);
+  return Array.from({ length: 34 }, () => ({
+    x: r() * 100,
+    size: 0.35 + r() * 0.7, // 0.35% to 1.05% of the card's width
+    rise: 14 + r() * 40, // seconds to drift to the top: 14 s to 54 s
+    delay: -r() * 54,
+    sway: 4 + r() * 14, // px
+  }));
+})();
+/** A few larger, softer orbs of light among them (a little bigger than the photons, also at random speeds). */
+const ORBS = (() => {
+  const r = seeded(1105);
+  return Array.from({ length: 7 }, () => ({
+    x: 3 + r() * 92,
+    size: 1.7 + r() * 0.5, // 1.7% to 2.2% of the card's width
+    rise: 24 + r() * 40, // 24 s to 64 s
+    delay: -r() * 64,
+    sway: 8 + r() * 18,
+  }));
+})();
+function DivineLight() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity: "calc(0.2 + var(--o) * 0.8)" }}>
+      <div className="absolute inset-x-[18%] top-0 h-[70%] mix-blend-screen" style={{ opacity: "calc(var(--o) * 0.4)", background: "linear-gradient(to bottom, rgb(255 246 210 / 0.8), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)", maskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)" }} />
+      {ORBS.map((m, i) => (
+        <span
+          key={`orb${i}`}
+          className="bq-animated absolute rounded-full mix-blend-screen"
+          style={{ left: `${m.x}%`, width: `${m.size}%`, aspectRatio: "1", background: "radial-gradient(circle, rgb(255 252 235 / 0.95) 0%, rgb(255 236 170 / 0.55) 40%, rgb(255 220 120 / 0) 72%)", boxShadow: "0 0 10px 3px rgb(255 232 150 / 0.4)", animation: `bq-mote ${m.rise}s linear ${m.delay}s infinite`, ["--sway" as string]: `${m.sway}px` }}
+        />
+      ))}
+      {PHOTONS.map((m, i) => (
+        <span
+          key={i}
+          className="bq-animated absolute rounded-full bg-[#fffbe6] mix-blend-screen"
+          style={{ left: `${m.x}%`, width: `${m.size}%`, aspectRatio: "1", boxShadow: "0 0 3px 1px rgb(255 244 200 / 0.85), 0 0 8px 2px rgb(255 225 140 / 0.35)", animation: `bq-mote ${m.rise}s linear ${m.delay}s infinite`, ["--sway" as string]: `${m.sway}px` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function HoloCard({
   element,
   children,
@@ -193,7 +302,8 @@ export function HoloCard({
   const maxTilt = look ? look.tilt : TILT;
   const glare = look ? look.glare : true;
   const ur = rarity === "UR";
-  const textured = rarity === "SSR" || rarity === "UR";
+  const divine = rarity === "GR";
+  const textured = rarity === "SSR" || ur;
   const reduce = useReducedMotion();
   const px = useSpring(50, SPRING);
   const py = useSpring(50, SPRING);
@@ -219,7 +329,8 @@ export function HoloCard({
   };
 
   return (
-    <div className={`[perspective:900px] ${className}`}>
+    <div className={`relative [perspective:900px] ${className}`}>
+      {effects && divine && <DivineAura o={o} />}
       <motion.div
         onPointerMove={move}
         onPointerDown={move}
@@ -236,11 +347,11 @@ export function HoloCard({
           "--bgx": bgx,
           "--bgy": bgy,
         } as never}
-        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
+        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${divine && effects ? "[box-shadow:0_0_calc(4px+10px*var(--o))_calc(1px+2px*var(--o))_rgb(255_236_170/calc(0.1+0.45*var(--o))),0_0_calc(10px+30px*var(--o))_calc(2px+6px*var(--o))_rgb(255_220_120/calc(0.05+0.25*var(--o))),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
       >
         {children}
         {effects && foilStrength > 0 && <Foil element={element} strength={foilStrength} />}
-        {effects && textured && <LitTexture texture={ELEMENT_TEXTURES[element]} tint={REVERSE_RAINBOW} spot={rarity === "UR" ? 55 : 42} strength={0.85} keepOut={figure} />}
+        {effects && textured && <LitTexture texture={ELEMENT_TEXTURES[element]} tint={REVERSE_RAINBOW} spot={ur ? 55 : 42} strength={0.85} keepOut={figure} />}
         {effects && rarity === "SSR" && (
           <div
             aria-hidden
@@ -266,6 +377,18 @@ export function HoloCard({
                 opacity: "calc(0.12 + var(--o) * 0.4)",
               }}
             />
+          </>
+        )}
+        {effects && divine && (
+          <>
+            <DivineTexture />
+            <DivineLight />
+            {/* The holo foil: a soft spectrum smear that drifts with the pointer, hatched with fine light lines, and a glint */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ backgroundImage: GR_HOLO, backgroundSize: "260% 260%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(var(--o) * 0.55)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: GR_HATCH, WebkitMaskImage: GR_HATCH_MASK, maskImage: GR_HATCH_MASK, opacity: "calc(0.04 + var(--o) * 0.55)" }} />
+            {/* The reflection: where the light hits the card it splits into a rainbow, a soft ring of the spectrum around the pointer with a white hot spot at its heart */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_REFLECT, WebkitMaskImage: GR_REFLECT_MASK, maskImage: GR_REFLECT_MASK, opacity: "calc(var(--o) * 0.6)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: "radial-gradient(circle at var(--px) var(--py), rgb(255 255 255 / 0.95) 0%, rgb(255 255 255 / 0.3) 18%, transparent 46%)", opacity: "calc(var(--o) * 0.9)" }} />
           </>
         )}
         {effects && glare && (

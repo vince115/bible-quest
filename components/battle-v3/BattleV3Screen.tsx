@@ -38,7 +38,7 @@ import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
-import { CARD_RARITY, lookOf, type Rarity } from "@/components/cards/rarity";
+import { CARD_RARITY, USED_TIERS, lookOf, type Rarity } from "@/components/cards/rarity";
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
@@ -1130,7 +1130,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             style={SELECT_ARROW}
             className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 pl-3 pr-8 py-2 text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
           >
-            {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => (
+            {(["all", ...USED_TIERS] as const).map((f) => (
               <option key={f} value={f}>
                 {f === "all" ? t("v3.demo.all") : f} {f === "all" ? matching.length : matching.filter((id) => CARD_RARITY[id] === f).length}
               </option>
@@ -1138,7 +1138,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
           </select>
         </div>
         <div role="tablist" aria-label={t("v3.demo.filter")} className="hidden flex-wrap justify-center gap-2 px-4 sm:flex">
-          {(["all", "UR", "SSR", "SR", "R", "N"] as const).map((f) => {
+          {(["all", ...USED_TIERS] as const).map((f) => {
             const count = f === "all" ? matching.length : matching.filter((id) => CARD_RARITY[id] === f).length;
             return (
               <button

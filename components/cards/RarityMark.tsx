@@ -13,6 +13,7 @@ const METAL: Record<Rarity, { stops: string[]; glow: string }> = {
   SR: { stops: ["#ffffff", "#9ca3af", "#e5e7eb", "#4b5563"], glow: "#cbd5e1" },
   SSR: { stops: ["#fff3b0", "#f59e0b", "#fde68a", "#92400e"], glow: "#fbbf24" },
   UR: { stops: ["#ff2fd0", "#ffe600", "#2dff6a", "#00e5ff", "#6a5cff"], glow: "#c084fc" },
+  GR: { stops: ["#ffffff", "#fff0b0", "#f5d36a", "#fffbe8"], glow: "#ffe9a0" },
 };
 
 // element is kept in the signature for callers; the outline now follows the rarity, like the frame ornaments.
