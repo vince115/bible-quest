@@ -6,7 +6,7 @@
 import type { ReactNode } from "react";
 import { RARITY, type Rarity } from "./rarity";
 
-export type Ornament = "dove" | "lily" | "ur";
+export type Ornament = "dove" | "lily" | "ur" | "gr";
 
 /** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. */
 const SLICE = 34;
@@ -134,8 +134,8 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
-            // GR: the gold ornaments are lifted to white gold and glow softly
-            filter: look.divine ? "brightness(1.35) saturate(0.6) drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
+            // GR: its stained-glass frame glows softly
+            filter: look.divine ? "drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
