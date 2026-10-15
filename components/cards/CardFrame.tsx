@@ -11,7 +11,7 @@ export type Ornament = "dove" | "lily" | "ur" | "gr";
 /** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. (GR's image is 780 px wide with 250 px corners.) */
 const SLICE = 34;
 /** The GR frame picture is redrawn often: bump this so browsers fetch the new one instead of showing a cached copy. */
-const GR_FRAME_VERSION = 12;
+const GR_FRAME_VERSION = 13;
 const frameSrc = (art: Ornament) => (art === "gr" ? `/cards/frame-gr.png?v=${GR_FRAME_VERSION}` : `/cards/frame-${art}.png`);
 const sliceOf = (art: Ornament) => (art === "gr" ? "250" : `${SLICE}%`);
 /** UR: all seven neon colours across the card at once; the hues then keep cycling (bq-prism). */
