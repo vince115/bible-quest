@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilOf, packPicture } from "./packStyle";
+import { FOIL, foilOf, packPicture } from "./packStyle";
 
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
@@ -51,10 +51,11 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
 }
 
 /**
- * The back of a pack: the same foil, a ghost of the wrapper picture, a quiet cross pattern, and a gilt panel that says
- * what is inside (the pack's name, how many cards, the guarantee).
+ * The back of a pack carries the front's picture on: the same picture turned the other way round, so the foil seals at
+ * the top and bottom are the same, the middle darkened into a starry field, and a silver strip down the centre with a
+ * disc for each kind of pack (this pack's disc lit).
  */
-function paintBack(id: string, title: string, art: HTMLImageElement | null, lines: [string, string]): HTMLCanvasElement {
+function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = W;
   c.height = H;
@@ -62,79 +63,71 @@ function paintBack(id: string, title: string, art: HTMLImageElement | null, line
   const [light, mid, dark] = foilOf(id);
   const grad = g.createLinearGradient(W, 0, 0, H);
   grad.addColorStop(0, light);
-  grad.addColorStop(0.5, mid);
+  grad.addColorStop(0.55, mid);
   grad.addColorStop(1, dark);
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   if (art) {
-    // A faint, flipped ghost of the front picture, so the back belongs to the same pack
     const k = Math.max(W / art.width, H / art.height);
     const w = art.width * k, h = art.height * k;
     g.save();
-    g.globalAlpha = 0.32;
     g.translate(W, 0);
     g.scale(-1, 1);
     g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
     g.restore();
-    const wash = g.createLinearGradient(0, 0, 0, H);
-    wash.addColorStop(0, `${mid}cc`);
-    wash.addColorStop(1, `${dark}dd`);
-    g.fillStyle = wash;
-    g.fillRect(0, 0, W, H);
+  } else {
+    crimp(g);
   }
-  // A lattice of small crosses
-  g.strokeStyle = "rgba(255,255,255,0.1)";
-  g.lineWidth = 1.2;
-  const step = 34;
-  for (let y = H * 0.09; y < H * 0.94; y += step) {
-    for (let x = step / 2; x < W; x += step) {
-      g.beginPath();
-      g.moveTo(x, y - 5);
-      g.lineTo(x, y + 5);
-      g.moveTo(x - 4, y - 1);
-      g.lineTo(x + 4, y - 1);
-      g.stroke();
-    }
+  // The middle sinks into a dark field; the foil seals above and below stay as on the front
+  const wash = g.createLinearGradient(0, 0, 0, H);
+  wash.addColorStop(0.07, "rgba(6,4,18,0)");
+  wash.addColorStop(0.15, "rgba(6,4,18,0.72)");
+  wash.addColorStop(0.85, "rgba(6,4,18,0.72)");
+  wash.addColorStop(0.93, "rgba(6,4,18,0)");
+  g.fillStyle = wash;
+  g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W * 0.5, H * 0.5, 10, W * 0.5, H * 0.5, W * 0.8);
+  glow.addColorStop(0, `${mid}55`);
+  glow.addColorStop(1, `${mid}00`);
+  g.fillStyle = glow;
+  g.fillRect(0, H * 0.1, W, H * 0.8);
+  // Stars
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * W, y = H * (0.14 + rnd() * 0.72), r = 0.6 + rnd() * 1.6;
+    g.fillStyle = `rgba(255,240,190,${0.35 + rnd() * 0.5})`;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
   }
-  crimp(g);
-  // The gilt panel
-  const px = W * 0.12, py = H * 0.2, pw = W * 0.76, ph = H * 0.6;
-  g.fillStyle = "rgba(10,8,6,0.55)";
-  g.fillRect(px, py, pw, ph);
-  const gold = g.createLinearGradient(0, py, 0, py + ph);
-  gold.addColorStop(0, "#fff3b8");
-  gold.addColorStop(0.5, "#d9a93a");
-  gold.addColorStop(1, "#fff0a8");
-  g.strokeStyle = gold;
-  g.lineWidth = 3;
-  g.strokeRect(px, py, pw, ph);
-  g.lineWidth = 1;
-  g.strokeRect(px + 7, py + 7, pw - 14, ph - 14);
-  // A cross in a ring
-  g.beginPath();
-  g.arc(W / 2, py + ph * 0.3, 44, 0, Math.PI * 2);
-  g.lineWidth = 2.5;
-  g.stroke();
-  g.fillStyle = gold;
-  g.fillRect(W / 2 - 4, py + ph * 0.3 - 28, 8, 56);
-  g.fillRect(W / 2 - 18, py + ph * 0.3 - 12, 36, 8);
-  g.textAlign = "center";
-  g.lineJoin = "round";
-  g.fillStyle = "rgba(255,255,255,0.9)";
-  g.font = "bold 14px sans-serif";
-  g.fillText("B I B L E   Q U E S T", W / 2, py + ph * 0.58);
-  g.fillStyle = "#fff";
-  g.strokeStyle = "rgba(0,0,0,0.7)";
-  g.lineWidth = 6;
-  g.font = "900 38px sans-serif";
-  g.strokeText(title, W / 2, py + ph * 0.7);
-  g.fillText(title, W / 2, py + ph * 0.7);
-  g.fillStyle = "rgba(255,236,170,0.95)";
-  g.font = "bold 16px sans-serif";
-  g.fillText(lines[0], W / 2, py + ph * 0.82);
-  g.font = "13px sans-serif";
-  g.fillStyle = "rgba(255,255,255,0.8)";
-  g.fillText(lines[1], W / 2, py + ph * 0.9);
+  // The silver strip down the centre, with a disc for each kind of pack
+  const sw = W * 0.075, sx = W * 0.5 - sw / 2, sy = H * 0.12, sh = H * 0.78;
+  const silver = g.createLinearGradient(sx, 0, sx + sw, 0);
+  silver.addColorStop(0, "#b8bcc6");
+  silver.addColorStop(0.45, "#ffffff");
+  silver.addColorStop(1, "#aeb3bf");
+  g.fillStyle = silver;
+  g.fillRect(sx, sy, sw, sh);
+  g.fillStyle = "rgba(0,0,0,0.25)";
+  g.fillRect(sx - 2, sy, 2, sh);
+  g.fillRect(sx + sw, sy, 2, sh);
+  const kinds = Object.keys(FOIL);
+  const gap = sh / kinds.length;
+  kinds.forEach((kind, i) => {
+    const cy = sy + gap * (i + 0.5), r = sw * 0.38;
+    const lit = kind === id;
+    g.beginPath();
+    g.arc(W / 2, cy, r, 0, Math.PI * 2);
+    g.fillStyle = foilOf(kind)[1];
+    g.fill();
+    g.lineWidth = lit ? 3 : 1.5;
+    g.strokeStyle = lit ? "#fff3b0" : "rgba(255,255,255,0.7)";
+    g.stroke();
+    g.fillStyle = lit ? "#fff3b0" : "rgba(255,255,255,0.85)";
+    g.fillRect(W / 2 - 1, cy - r * 0.55, 2, r * 1.1);
+    g.fillRect(W / 2 - r * 0.38, cy - r * 0.22, r * 0.76, 2);
+  });
   return c;
 }
 
@@ -161,8 +154,6 @@ const loadImage = (src: string) =>
 export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackKind; count: number; canOpen?: boolean; onPick: (pack: PackKind) => void }) {
   const t = useT();
   const title = t(`v3.pack.${pack.id}.name`);
-  const backCards = t("v3.gacha.backCards");
-  const backGuarantee = t("v3.gacha.guarantee");
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<{ go: (d: number) => void } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -223,7 +214,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
-      const backTex = new THREE.CanvasTexture(paintBack(pack.id, title, art, [backCards, backGuarantee]));
+      const backTex = new THREE.CanvasTexture(paintBack(pack.id, art));
       for (const tex of [frontTex, backTex]) {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -377,7 +368,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       disposed = true;
       cleanup();
     };
-  }, [pack, count, title, backCards, backGuarantee]);
+  }, [pack, count, title]);
 
   const go = useCallback((d: number) => api.current?.go(d), []);
 

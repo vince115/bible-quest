@@ -31,7 +31,7 @@ export const PACKS: PackKind[] = [
 ];
 
 /** How many packs stand on the ring: all of the one kind the player has chosen. */
-export const PACKS_ON_RING = 12;
+export const PACKS_ON_RING = 15;
 
 /** A booster pack: five cards, each position with its own rarity odds (percent). */
 export const PACK = {
