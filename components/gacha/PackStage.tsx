@@ -274,22 +274,6 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         };
         return m;
       };
-      // A soft sheen of light on the water under the ring
-      const sheen = document.createElement("canvas");
-      sheen.width = sheen.height = 256;
-      const sg = sheen.getContext("2d")!;
-      const radial = sg.createRadialGradient(128, 128, 0, 128, 128, 128);
-      radial.addColorStop(0, "rgba(255,240,210,0.32)");
-      radial.addColorStop(0.6, "rgba(255,240,210,0.1)");
-      radial.addColorStop(1, "rgba(255,240,210,0)");
-      sg.fillStyle = radial;
-      sg.fillRect(0, 0, 256, 256);
-      const sheenTex = new THREE.CanvasTexture(sheen);
-      const sheenMat = new THREE.MeshBasicMaterial({ map: sheenTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-      const sheenMesh = new THREE.Mesh(new THREE.PlaneGeometry(R * 3.2, R * 3.2), sheenMat);
-      sheenMesh.rotation.x = -Math.PI / 2;
-      sheenMesh.position.y = 0.002;
-      scene.add(sheenMesh);
       const meshes = Array.from({ length: count }, (_, i) => {
         const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
         const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
@@ -440,9 +424,6 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
         geometries.forEach((geo) => geo.dispose());
-        sheenMesh.geometry.dispose();
-        sheenMat.dispose();
-        sheenTex.dispose();
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
