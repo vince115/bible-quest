@@ -65,7 +65,7 @@ export function CardFrame({
   const look = RARITY[rarity];
   const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
-    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#8a5d12] via-[#5a3b0a] to-[#9a6c18]" : frame}`} style={{ padding: `${INSET}%` }}>
+    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#e9c15c] via-[#c9962f] to-[#f1d078]" : frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
       <div
         aria-hidden
@@ -129,19 +129,36 @@ export function CardFrame({
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_1.2cqw_2cqw_rgb(0_0_0/0.55),inset_0_0_1cqw_rgb(0_0_0/0.4)]" />
       </div>
 
-      {/* GR: instead of a flat ground, the frame's own pattern glows: a blurred, brightened copy of it lights the gaps
-          between the filigree strands */}
+      {/* GR: no flat ground and no bare background: the border is lit from within. A soft light along the outer edge, and
+          two blurred, brightened copies of the filigree (a tight one and a wide bloom) that fill the gaps between its strands */}
       {look.divine && art && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: "linear-gradient(135deg, #fff1b8, #ffd466 50%, #fff1b8)",
-            filter: "blur(0.9cqw) brightness(1.15)",
-            opacity: "calc(0.8 + var(--o, 0) * 0.2)",
-            WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
-          }}
-        />
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: "linear-gradient(135deg, #fbe7a4 0%, #e9bf5e 50%, #fbe7a4 100%)",
+              clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cardW(INSET)} ${cardW(INSET)}, ${cardW(INSET)} calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) ${cardW(INSET)}, ${cardW(INSET)} ${cardW(INSET)})`,
+            }}
+          />
+          <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_3.2cqw_rgb(255_244_200/0.85),inset_0_0_1cqw_rgb(255_255_255/0.6)]" />
+          {[
+            { blur: "1.5cqw", opacity: 1, image: "linear-gradient(135deg, #fff6cc, #ffdc78 50%, #fff6cc)" },
+            { blur: "3.4cqw", opacity: 0.75, image: "linear-gradient(135deg, #ffffff, #fff0b0 50%, #ffffff)" },
+          ].map((g) => (
+            <div
+              key={g.blur}
+              aria-hidden
+              className="pointer-events-none absolute inset-0 mix-blend-screen"
+              style={{
+                backgroundImage: g.image,
+                filter: `blur(${g.blur})`,
+                opacity: `calc(${g.opacity} * (0.85 + var(--o, 0) * 0.15))`,
+                WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+              }}
+            />
+          ))}
+        </>
       )}
       {/* Gold floral ornaments over the border and the face's corners (none on N cards) */}
       {art && (
@@ -150,7 +167,7 @@ export function CardFrame({
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
             // GR: the gold becomes white gold (platinum) on a gold base; the glow around the card comes from its outer shadow
-            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0 1.5px rgb(255 255 255 / 0.9))" : undefined,
+            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0.4px 0.6px rgb(110 70 8 / 0.95)) drop-shadow(0 0 1px rgb(150 100 20 / 0.7))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
