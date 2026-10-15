@@ -199,7 +199,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const aim = () => {
         const e = ((LOW + pitch * (HIGH - LOW)) * Math.PI) / 180;
         camera.position.set(0, DIST * Math.sin(e), DIST * Math.cos(e));
-        camera.lookAt(0, 0.3, 0.2);
+        camera.lookAt(0, -0.35, 0.2);
       };
       aim();
 
@@ -251,6 +251,43 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       scene.add(ring);
       const step = (Math.PI * 2) / count;
       const materials: InstanceType<typeof THREE.MeshStandardMaterial>[] = [];
+
+      // Water: the floor is a glossy pool, so every pack has a reflection below it. The reflection is the same pack
+      // upside down under the floor, rippling a little and fading out the further it goes from the floor.
+      const mirrorRing = new THREE.Group();
+      mirrorRing.scale.y = -1;
+      scene.add(mirrorRing);
+      const uTime = { value: 0 };
+      const FADE = PH * 0.95;
+      const mirrorMaterial = (map: InstanceType<typeof THREE.CanvasTexture>) => {
+        const m = new THREE.MeshStandardMaterial({ map, roughness: 0.5, metalness: 0.1, transparent: true, depthWrite: false });
+        m.onBeforeCompile = (shader) => {
+          shader.uniforms.uTime = uTime;
+          shader.vertexShader = shader.vertexShader
+            .replace("#include <common>", "#include <common>\nuniform float uTime;\nvarying float vH;")
+            .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.x += sin(transformed.y * 16.0 + uTime * 2.2) * 0.012;\nvH = (modelMatrix * vec4(transformed, 1.0)).y;");
+          shader.fragmentShader = shader.fragmentShader
+            .replace("#include <common>", "#include <common>\nvarying float vH;")
+            .replace("#include <dithering_fragment>", `#include <dithering_fragment>\ngl_FragColor.a *= 0.5 * clamp(1.0 + vH / ${FADE.toFixed(3)}, 0.0, 1.0);`);
+        };
+        return m;
+      };
+      // A soft sheen of light on the water under the ring
+      const sheen = document.createElement("canvas");
+      sheen.width = sheen.height = 256;
+      const sg = sheen.getContext("2d")!;
+      const radial = sg.createRadialGradient(128, 128, 0, 128, 128, 128);
+      radial.addColorStop(0, "rgba(255,240,210,0.32)");
+      radial.addColorStop(0.6, "rgba(255,240,210,0.1)");
+      radial.addColorStop(1, "rgba(255,240,210,0)");
+      sg.fillStyle = radial;
+      sg.fillRect(0, 0, 256, 256);
+      const sheenTex = new THREE.CanvasTexture(sheen);
+      const sheenMat = new THREE.MeshBasicMaterial({ map: sheenTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+      const sheenMesh = new THREE.Mesh(new THREE.PlaneGeometry(R * 3.2, R * 3.2), sheenMat);
+      sheenMesh.rotation.x = -Math.PI / 2;
+      sheenMesh.position.y = 0.002;
+      scene.add(sheenMesh);
       const meshes = Array.from({ length: count }, (_, i) => {
         const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
         const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
@@ -261,11 +298,17 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         backFace.userData.index = i;
         const mesh = new THREE.Group();
         mesh.add(frontFace, backFace);
+        const mirrorFront = mirrorMaterial(frontTex);
+        const mirrorBack = mirrorMaterial(backTex);
+        materials.push(mirrorFront, mirrorBack);
+        const mirror = new THREE.Group();
+        mirror.add(new THREE.Mesh(geometries[0], mirrorFront), new THREE.Mesh(geometries[1], mirrorBack));
+        mirrorRing.add(mirror);
         const angle = i * step;
         mesh.position.set(Math.sin(angle) * R, PH / 2 + 0.03, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mats: [front, back], baseY: PH / 2 + 0.03 };
+        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], baseY: PH / 2 + 0.03 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
@@ -364,7 +407,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           aim();
         }
         ring.rotation.y = -current * step;
-        meshes.forEach(({ mesh, mats, baseY }, i) => {
+        mirrorRing.rotation.y = ring.rotation.y;
+        uTime.value = time;
+        meshes.forEach(({ mesh, mirror, mats, baseY }, i) => {
           let off = (((i - current) % count) + count) % count;
           if (off > count / 2) off -= count;
           const away = Math.abs(off);
@@ -376,6 +421,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           mesh.rotation.y = i * step + Math.PI * flip.cur;
           mesh.position.y = baseY + near * (0.1 + Math.sin(time * 1.6) * 0.03);
           mesh.scale.setScalar(1 + near * 0.08);
+          mirror.position.copy(mesh.position);
+          mirror.rotation.copy(mesh.rotation);
+          mirror.scale.copy(mesh.scale);
         });
         renderer.render(scene, camera);
       };
@@ -390,6 +438,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
         geometries.forEach((geo) => geo.dispose());
+        sheenMesh.geometry.dispose();
+        sheenMat.dispose();
+        sheenTex.dispose();
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
@@ -410,7 +461,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div
-        className="relative h-[360px] w-full max-w-3xl select-none outline-none sm:h-[420px]"
+        className="relative h-[440px] w-full max-w-3xl select-none outline-none sm:h-[520px]"
         tabIndex={0}
         role="group"
         aria-label={title}
