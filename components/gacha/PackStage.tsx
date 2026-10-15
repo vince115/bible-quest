@@ -192,14 +192,14 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
       // The camera orbits the stage at a fixed distance; the mouse's height over the stage sets how high it is
       // (low and level at the bottom of the stage, almost overhead at the top).
-      const DIST = 9;
+      const DIST = 9.5;
       const LOW = 0, HIGH = 15, REST = 8; // degrees above the floor
       let pitch = (REST - LOW) / (HIGH - LOW); // 0..1, where the camera is now
       let pitchTarget = pitch;
       const aim = () => {
         const e = ((LOW + pitch * (HIGH - LOW)) * Math.PI) / 180;
         camera.position.set(0, DIST * Math.sin(e), DIST * Math.cos(e));
-        camera.lookAt(0, -0.35, 0.2);
+        camera.lookAt(0, -0.3, 0.2);
       };
       aim();
 
@@ -220,6 +220,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
       const PW = 1.05, PH = (PW * 14) / 9, R = 3.15;
+      // A pack is about 6.5 cm wide, so one unit is about 6 cm: the packs hover a couple of centimetres above the water
+      const HOVER = 0.3;
       // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
       // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
       const BULGE = 0.065;
@@ -268,7 +270,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
             .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.x += sin(transformed.y * 16.0 + uTime * 2.2) * 0.012;\nvH = (modelMatrix * vec4(transformed, 1.0)).y;");
           shader.fragmentShader = shader.fragmentShader
             .replace("#include <common>", "#include <common>\nvarying float vH;")
-            .replace("#include <dithering_fragment>", `#include <dithering_fragment>\ngl_FragColor.a *= 0.5 * clamp(1.0 + vH / ${FADE.toFixed(3)}, 0.0, 1.0);`);
+            .replace("#include <dithering_fragment>", `#include <dithering_fragment>\ngl_FragColor.a *= 0.5 * clamp(1.0 + (vH + ${HOVER.toFixed(3)}) / ${FADE.toFixed(3)}, 0.0, 1.0);`);
         };
         return m;
       };
@@ -305,10 +307,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         mirror.add(new THREE.Mesh(geometries[0], mirrorFront), new THREE.Mesh(geometries[1], mirrorBack));
         mirrorRing.add(mirror);
         const angle = i * step;
-        mesh.position.set(Math.sin(angle) * R, PH / 2 + 0.03, Math.cos(angle) * R);
+        mesh.position.set(Math.sin(angle) * R, HOVER + PH / 2, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], baseY: PH / 2 + 0.03 };
+        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], baseY: HOVER + PH / 2 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
