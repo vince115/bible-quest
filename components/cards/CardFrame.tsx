@@ -65,7 +65,7 @@ export function CardFrame({
   const look = RARITY[rarity];
   const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
-    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#fffdf2] via-[#f4dc94] to-[#fff6d2]" : frame}`} style={{ padding: `${INSET}%` }}>
+    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#f9de83] via-[#d6a033] to-[#f6d577]" : frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
       <div
         aria-hidden
@@ -129,14 +129,25 @@ export function CardFrame({
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_1.2cqw_2cqw_rgb(0_0_0/0.55),inset_0_0_1cqw_rgb(0_0_0/0.4)]" />
       </div>
 
+      {/* GR: a solid yellow-gold ground behind the white-gold filigree (a ring just over the border band) */}
+      {look.divine && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: "linear-gradient(135deg, #ffe7a0 0%, #e0aa3c 28%, #a8741a 52%, #ecc15a 78%, #fff0b8 100%)",
+            clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cardW(INSET)} ${cardW(INSET)}, ${cardW(INSET)} calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) ${cardW(INSET)}, ${cardW(INSET)} ${cardW(INSET)})`,
+          }}
+        />
+      )}
       {/* Gold floral ornaments over the border and the face's corners (none on N cards) */}
       {art && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
-            // GR: the gold becomes white gold (platinum) and glows
-            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0 2px rgb(255 255 255 / 0.95)) drop-shadow(0 0 7px rgb(255 248 225 / 0.8)) drop-shadow(0 0 16px rgb(255 240 200 / 0.5))" : undefined,
+            // GR: the gold becomes white gold (platinum) on a gold base; the glow around the card comes from its outer shadow
+            filter: look.divine ? "saturate(0.12) sepia(0.22) brightness(1.7) contrast(1.15) drop-shadow(0 0 1.5px rgb(255 255 255 / 0.9))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",
