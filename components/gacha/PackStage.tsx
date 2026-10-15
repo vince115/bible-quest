@@ -240,6 +240,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         return { mesh, mats: [edge, front, back], baseY: PH / 2 + 0.03 };
       });
 
+      // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
+      const flips = meshes.map(() => ({ cur: 0, target: 0 }));
+
       // Turning: `target` is where the ring is going, in packs; `current` follows it smoothly
       let target = 0;
       let current = 0;
@@ -259,7 +262,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const observer = new ResizeObserver(size);
       observer.observe(el);
 
-      // Pointer: drag to turn, tap a pack to bring it to the front (or open the one already there)
+      // Pointer: drag to turn, tap a pack to bring it to the front; on the pack in front, tap its sides to turn it over or its middle to open it
       const raycaster = new THREE.Raycaster();
       let down: { x: number; target: number } | null = null;
       let moved = false;
@@ -297,9 +300,11 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         const i = hit.object.userData.index as number;
         const front = frontIndex();
         if (i === front) {
-          if (allowed.current) pick.current(pack);
-        }
-        else {
+          // The left and right sides of the pack turn it over; the middle opens it
+          const local = hit.object.worldToLocal(hit.point.clone());
+          if (Math.abs(local.x) > PW * 0.2) flips[i].target = flips[i].target ? 0 : 1;
+          else if (allowed.current) pick.current(pack);
+        } else {
           let d = i - front;
           if (d > count / 2) d -= count;
           if (d < -count / 2) d += count;
@@ -339,6 +344,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           const shade = Math.max(0.4, 1 - away * 0.1);
           for (const m of mats) m.color.setScalar(m === mats[0] ? 1 : shade);
           mats[0].color.set(mid).multiplyScalar(shade);
+          const flip = flips[i];
+          flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
+          mesh.rotation.y = i * step + Math.PI * flip.cur;
           mesh.position.y = baseY + near * (0.1 + Math.sin(time * 1.6) * 0.03);
           mesh.scale.setScalar(1 + near * 0.08);
         });
