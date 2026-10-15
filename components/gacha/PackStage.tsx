@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { FOIL, foilOf, packPicture } from "./packStyle";
+import { foilOf, packPicture } from "./packStyle";
 
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
@@ -52,8 +52,7 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
 
 /**
  * The back of a pack carries the front's picture on: the same picture turned the other way round, so the foil seals at
- * the top and bottom are the same, the middle darkened into a starry field, and a silver strip down the centre with a
- * disc for each kind of pack (this pack's disc lit).
+ * the top and bottom are the same, the middle darkened into a starry field, and a rainbow strip down the centre.
  */
 function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
@@ -101,33 +100,19 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
     g.arc(x, y, r, 0, Math.PI * 2);
     g.fill();
   }
-  // The silver strip down the centre, with a disc for each kind of pack
+  // A rainbow strip down the centre (a stand-in for the type strip on a Pokémon pack's back)
   const sw = W * 0.075, sx = W * 0.5 - sw / 2, sy = H * 0.12, sh = H * 0.78;
-  const silver = g.createLinearGradient(sx, 0, sx + sw, 0);
-  silver.addColorStop(0, "#b8bcc6");
-  silver.addColorStop(0.45, "#ffffff");
-  silver.addColorStop(1, "#aeb3bf");
-  g.fillStyle = silver;
+  const rainbow = g.createLinearGradient(0, sy, 0, sy + sh);
+  ["#ff4d6d", "#ff9f1c", "#ffe14d", "#4ade80", "#38bdf8", "#6366f1", "#c084fc"].forEach((col, i, all) => rainbow.addColorStop(i / (all.length - 1), col));
+  g.fillStyle = rainbow;
   g.fillRect(sx, sy, sw, sh);
-  g.fillStyle = "rgba(0,0,0,0.25)";
-  g.fillRect(sx - 2, sy, 2, sh);
-  g.fillRect(sx + sw, sy, 2, sh);
-  const kinds = Object.keys(FOIL);
-  const gap = sh / kinds.length;
-  kinds.forEach((kind, i) => {
-    const cy = sy + gap * (i + 0.5), r = sw * 0.38;
-    const lit = kind === id;
-    g.beginPath();
-    g.arc(W / 2, cy, r, 0, Math.PI * 2);
-    g.fillStyle = foilOf(kind)[1];
-    g.fill();
-    g.lineWidth = lit ? 3 : 1.5;
-    g.strokeStyle = lit ? "#fff3b0" : "rgba(255,255,255,0.7)";
-    g.stroke();
-    g.fillStyle = lit ? "#fff3b0" : "rgba(255,255,255,0.85)";
-    g.fillRect(W / 2 - 1, cy - r * 0.55, 2, r * 1.1);
-    g.fillRect(W / 2 - r * 0.38, cy - r * 0.22, r * 0.76, 2);
-  });
+  // A sheen across the strip, light at the middle and shaded at both edges, so it reads as a glossy ribbon
+  const sheen = g.createLinearGradient(sx, 0, sx + sw, 0);
+  sheen.addColorStop(0, "rgba(0,0,0,0.3)");
+  sheen.addColorStop(0.4, "rgba(255,255,255,0.45)");
+  sheen.addColorStop(1, "rgba(0,0,0,0.3)");
+  g.fillStyle = sheen;
+  g.fillRect(sx, sy, sw, sh);
   return c;
 }
 
