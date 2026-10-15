@@ -144,13 +144,14 @@ const REVERSE_RAINBOW =
 
 /** SSR: a soft rainbow sheen that glides across the card as it turns. */
 /**
- * GR: straight diagonal zones of rainbow light across the card, like light caught in a prism: one wide band of the seven
- * colours (red to violet) with a thin echo beside it. They slide as the card turns, strongest under the pointer.
+ * GR: the glossy reflection of a holographic card. A soft, wide smear of the spectrum drifts across the card as it
+ * turns (brightest where the pointer is), over a fine diagonal hatching of light lines like a holo foil, plus a
+ * broad specular glint that follows the pointer.
  */
-const GR_BAND =
-  "linear-gradient(112deg, transparent 0%, transparent 46%, rgb(255 70 70 / 0.8) 46.8%, rgb(255 165 50 / 0.8) 47.7%, rgb(255 242 80 / 0.8) 48.6%, rgb(80 240 120 / 0.8) 49.5%, rgb(70 225 255 / 0.8) 50.4%, rgb(90 120 255 / 0.8) 51.3%, rgb(195 100 255 / 0.8) 52.2%, transparent 53.2%, transparent 100%)";
-const GR_BAND_ECHO =
-  "linear-gradient(112deg, transparent 0%, transparent 60%, rgb(255 130 205 / 0.55) 60.7%, rgb(125 235 255 / 0.55) 61.4%, rgb(255 242 160 / 0.55) 62.1%, transparent 63%, transparent 100%)";
+const GR_HOLO =
+  "linear-gradient(115deg, rgb(255 90 150) 0%, rgb(255 190 70) 12%, rgb(245 245 80) 24%, rgb(80 235 140) 36%, rgb(70 215 255) 48%, rgb(100 120 255) 60%, rgb(205 100 255) 72%, rgb(255 90 170) 84%, rgb(255 190 70) 100%)";
+const GR_HATCH = "repeating-linear-gradient(115deg, transparent 0 4px, rgb(255 255 255 / 0.9) 4px 5px)";
+const GR_HATCH_MASK = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.5) 38%, rgb(0 0 0 / 0.16) 75%)";
 
 const SSR_RAINBOW =
   "linear-gradient(115deg, transparent 20%, hsl(0 90% 72% / 0.55) 32%, hsl(45 100% 70% / 0.6) 40%, hsl(120 80% 70% / 0.55) 48%, hsl(195 90% 70% / 0.6) 56%, hsl(270 80% 75% / 0.55) 64%, transparent 76%)";
@@ -346,9 +347,10 @@ export function HoloCard({
           <>
             <DivineTexture />
             <DivineLight />
-            {/* The prism bands: straight zones of the seven colours that slide with the pointer (and drift a little on their own) */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_BAND, backgroundSize: "300% 300%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.35 + var(--o) * 0.5)" }} />
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_BAND_ECHO, backgroundSize: "300% 300%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.3 + var(--o) * 0.4)" }} />
+            {/* The holo foil: a soft spectrum smear that drifts with the pointer, hatched with fine light lines, and a glint */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ backgroundImage: GR_HOLO, backgroundSize: "260% 260%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.3 + var(--o) * 0.5)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: GR_HATCH, WebkitMaskImage: GR_HATCH_MASK, maskImage: GR_HATCH_MASK, opacity: "calc(0.25 + var(--o) * 0.6)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: "radial-gradient(farthest-corner circle at var(--px) var(--py), rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 35%, transparent 70%)", opacity: "calc(var(--o) * 0.8)" }} />
           </>
         )}
         {effects && glare && (
