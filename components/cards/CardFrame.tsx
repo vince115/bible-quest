@@ -64,7 +64,7 @@ export function CardFrame({
   const look = RARITY[rarity];
   const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
-    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${frame}`} style={{ padding: `${INSET}%` }}>
+    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#fffdf2] via-[#f4dc94] to-[#fff6d2]" : frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
       <div
         aria-hidden
@@ -134,6 +134,8 @@ export function CardFrame({
           aria-hidden
           className="pointer-events-none absolute inset-0 z-10 drop-shadow-[0_1px_1px_rgb(0_0_0/0.7)]"
           style={{
+            // GR: the gold ornaments are lifted to white gold and glow softly
+            filter: look.divine ? "brightness(1.35) saturate(0.6) drop-shadow(0 0 3px rgb(255 240 190 / 0.9))" : undefined,
             opacity: look.ornamentOpacity,
             borderStyle: "solid",
             borderColor: "transparent",

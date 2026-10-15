@@ -13,14 +13,14 @@ const METAL: Record<Rarity, { stops: string[]; glow: string }> = {
   SR: { stops: ["#ffffff", "#9ca3af", "#e5e7eb", "#4b5563"], glow: "#cbd5e1" },
   SSR: { stops: ["#fff3b0", "#f59e0b", "#fde68a", "#92400e"], glow: "#fbbf24" },
   UR: { stops: ["#ff2fd0", "#ffe600", "#2dff6a", "#00e5ff", "#6a5cff"], glow: "#c084fc" },
-  GR: { stops: ["#fff7d6", "#ffd84d", "#ff9ad5", "#7df0ff", "#fff7d6"], glow: "#ffe27a" },
+  GR: { stops: ["#ffffff", "#fff0b0", "#f5d36a", "#fffbe8"], glow: "#ffe9a0" },
 };
 
 // element is kept in the signature for callers; the outline now follows the rarity, like the frame ornaments.
 export function RarityMark({ rarity, className = "" }: { rarity: Rarity; element?: Element; className?: string }) {
   const id = useId().replace(/:/g, "");
   const metal = METAL[rarity];
-  const ur = rarity === "UR" || rarity === "GR";
+  const ur = rarity === "UR";
   // Each letter gets ~62 units; the text is fitted to that width so the SVG box matches it exactly.
   const width = rarity.length * 62 + 36;
   const text = {

@@ -238,6 +238,8 @@ export interface RarityLook {
   sheen: boolean;
   /** Prismatic (rainbow) frame, with the ornaments in flowing neon rainbow colours. */
   prism: boolean;
+  /** GR only: a frame of white gold and a slow divine light around and over the card instead of colour effects. */
+  divine?: boolean;
   /** Colour of the rarity mark printed by the card number. */
   mark: string;
   /** Gradient filling the rarity letters (with a glossy band across the top). */
@@ -250,8 +252,8 @@ export const RARITY: Record<Rarity, RarityLook> = {
   SR: { ornament: "lily", ornamentSize: 15, ornamentOpacity: 1, ornamentMetal: "silver", foil: 0.06, glare: true, tilt: 14, shine: true, sheen: false, prism: false, mark: "text-violet-700", metal: "linear-gradient(180deg,#ffffff 0%,#ede9fe 36%,#a78bfa 52%,#ddd6fe 74%,#6d28d9 100%)" },
   SSR: { ornament: "dove", ornamentSize: 18, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.1, glare: true, tilt: 16, shine: true, sheen: true, prism: false, mark: "text-amber-600", metal: "linear-gradient(180deg,#fffbe6 0%,#fde68a 36%,#f59e0b 52%,#fcd34d 74%,#b45309 100%)" },
   UR: { ornament: "ur", ornamentSize: 13, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.16, glare: true, tilt: 16, shine: true, sheen: true, prism: true, mark: "text-fuchsia-600", metal: "linear-gradient(120deg,#f9a8d4 0%,#fde68a 22%,#86efac 42%,#7dd3fc 62%,#c4b5fd 82%,#f9a8d4 100%)" },
-  // GR (the highest tier, above UR): the UR frame and rainbow, with the gold at full strength, a stronger foil and a wider tilt.
-  GR: { ornament: "ur", ornamentSize: 15, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.24, glare: true, tilt: 20, shine: true, sheen: true, prism: true, mark: "text-amber-500", metal: "linear-gradient(120deg,#fff7d6 0%,#fde68a 18%,#f9a8d4 36%,#a5f3fc 54%,#fde68a 72%,#fff7d6 100%)" },
+  // GR (God Rate, above UR): no rainbow. A white-gold frame, a nearly still card, and a slow divine light around and over it.
+  GR: { ornament: "ur", ornamentSize: 15, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0, glare: true, tilt: 7, shine: false, sheen: true, prism: false, divine: true, mark: "text-amber-300", metal: "linear-gradient(180deg,#ffffff 0%,#fff3c4 40%,#f5d36a 60%,#fffbe8 100%)" },
 };
 
 /** The tiers that have at least one card, highest first (a tier with no card yet, like GR, stays out of the filters). */

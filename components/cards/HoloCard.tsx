@@ -167,6 +167,49 @@ export function Foil({ element, strength = 1, className = "" }: { element: Eleme
  * foil: strength of the foil over the whole card (lower it for full-art cards so the illustration keeps its colours).
  * touchTilt: false leaves touch gestures to the page (e.g. swiping a row of cards); only a mouse tilts the card.
  */
+/**
+ * GR: soft, fine rays of light turning slowly behind the card (two layers going opposite ways, feathered and blurred so
+ * there are no hard edges), and a halo that breathes. Outside the card, so it needs room around it.
+ */
+const RAYS = "repeating-conic-gradient(from 0deg, transparent 0deg, rgb(255 246 214 / 0.5) 1.2deg, transparent 2.6deg, transparent 7deg)";
+const RAYS_FINE = "repeating-conic-gradient(from 3deg, transparent 0deg, rgb(255 240 190 / 0.35) 0.6deg, transparent 1.4deg, transparent 3.7deg)";
+const RAY_MASK = "radial-gradient(circle, #000 14%, rgb(0 0 0 / 0.55) 40%, transparent 72%)";
+function DivineAura() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute -inset-[28%]">
+      <div className="bq-animated absolute inset-0 rounded-full mix-blend-screen [filter:blur(1.6px)]" style={{ backgroundImage: RAYS, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 90s linear infinite" }} />
+      <div className="bq-animated absolute inset-0 rounded-full opacity-80 mix-blend-screen [filter:blur(1px)]" style={{ backgroundImage: RAYS_FINE, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 140s linear infinite reverse" }} />
+      <div
+        className="bq-animated absolute inset-[20%] rounded-full"
+        style={{ background: "radial-gradient(circle, rgb(255 238 170 / 0.5) 0%, rgb(255 220 120 / 0.16) 45%, transparent 70%)", animation: "bq-breathe 5s ease-in-out infinite" }}
+      />
+    </div>
+  );
+}
+
+/** GR: a soft column of light from the top of the card, and tiny photons drifting up over it. */
+const PHOTONS = Array.from({ length: 34 }, (_, i) => ({
+  x: (i * 37 + 7) % 100,
+  size: 0.35 + ((i * 13) % 7) / 10, // 0.35% to 1.05% of the card's width
+  rise: 9 + ((i * 29) % 90) / 10, // seconds to drift to the top
+  delay: -((i * 23) % 100) / 10,
+  sway: 6 + (i % 5) * 3, // px
+}));
+function DivineLight() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-x-[18%] top-0 h-[70%] opacity-40 mix-blend-screen" style={{ background: "linear-gradient(to bottom, rgb(255 246 210 / 0.8), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)", maskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)" }} />
+      {PHOTONS.map((m, i) => (
+        <span
+          key={i}
+          className="bq-animated absolute rounded-full bg-[#fffbe6] mix-blend-screen"
+          style={{ left: `${m.x}%`, width: `${m.size}%`, aspectRatio: "1", boxShadow: "0 0 3px 1px rgb(255 244 200 / 0.85), 0 0 8px 2px rgb(255 225 140 / 0.35)", animation: `bq-mote ${m.rise}s linear ${m.delay}s infinite`, ["--sway" as string]: `${m.sway}px` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function HoloCard({
   element,
   children,
@@ -192,7 +235,8 @@ export function HoloCard({
   const foilStrength = look ? look.foil : foil;
   const maxTilt = look ? look.tilt : TILT;
   const glare = look ? look.glare : true;
-  const ur = rarity === "UR" || rarity === "GR";
+  const ur = rarity === "UR";
+  const divine = rarity === "GR";
   const textured = rarity === "SSR" || ur;
   const reduce = useReducedMotion();
   const px = useSpring(50, SPRING);
@@ -219,7 +263,8 @@ export function HoloCard({
   };
 
   return (
-    <div className={`[perspective:900px] ${className}`}>
+    <div className={`relative [perspective:900px] ${className}`}>
+      {effects && divine && <DivineAura />}
       <motion.div
         onPointerMove={move}
         onPointerDown={move}
@@ -236,7 +281,7 @@ export function HoloCard({
           "--bgx": bgx,
           "--bgy": bgy,
         } as never}
-        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
+        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${divine && effects ? "shadow-[0_0_14px_3px_rgb(255_236_170/0.55),0_0_40px_8px_rgb(255_220_120/0.3),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
       >
         {children}
         {effects && foilStrength > 0 && <Foil element={element} strength={foilStrength} />}
@@ -268,6 +313,7 @@ export function HoloCard({
             />
           </>
         )}
+        {effects && divine && <DivineLight />}
         {effects && glare && (
           <div
             aria-hidden
