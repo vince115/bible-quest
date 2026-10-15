@@ -43,20 +43,21 @@ export function GoldFrame({ size = 34 }: { size?: number }) {
 }
 
 /**
- * A thin ornate frame with scrolled corners: a 9-slice of public/ui-frame-ornate.png (a supplied black line frame turned
- * into gold lines on a transparent ground, trimmed so the frame touches the edges). `size` is its width in pixels.
+ * A thin stained-glass frame with scrolled gold corners: a 9-slice of public/ui-frame-glass.png (blue glass between gold
+ * lines, with a gold tracery that repeats along the edges; the corner scrolls come from the earlier ui-frame-ornate.png).
+ * Only the outer ~55% of `size` is painted, the rest is transparent. `size` is its width in pixels.
  */
 export function OrnateFrame({ size = 22 }: { size?: number }) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 opacity-80"
+      className="pointer-events-none absolute inset-0 opacity-95"
       style={{
         borderStyle: "solid",
         borderWidth: size,
-        borderImage: `url(/ui-frame-ornate.png) 64 / ${size}px stretch`,
-        // A little relief: a pale edge catching the light on the top left, a dark one in shadow on the bottom right.
-        filter: "brightness(1.1) drop-shadow(-1px -1px 0 rgb(255 248 220 / 0.6)) drop-shadow(1px 1px 1px rgb(0 0 0 / 0.75))",
+        borderImage: `url(/ui-frame-glass.png) 128 / ${size}px round`,
+        // A soft shadow lifts the frame off the card.
+        filter: "drop-shadow(0 1px 1px rgb(0 0 0 / 0.7))",
       }}
     />
   );
