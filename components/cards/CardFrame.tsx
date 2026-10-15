@@ -148,7 +148,7 @@ export function CardFrame({
       )}
       {/* GR: soft light bathing the border: a glow along the outer edge and another along the picture's edge */}
       {art && look.divine && (
-        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 mix-blend-screen shadow-[inset_0_0_3.4cqw_rgb(255_240_190/0.75),inset_0_0_1.2cqw_rgb(255_255_255/0.55)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10 mix-blend-screen shadow-[inset_0_0_1.4cqw_rgb(255_240_190/0.6),inset_0_0_0.5cqw_rgb(255_255_255/0.4)]" />
       )}
       {/* GR: light glides across the gold as the card turns, and a bright sheen keeps running along it
           (the frame image is the mask) */}
