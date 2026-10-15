@@ -220,8 +220,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
       const PW = 1.05, PH = (PW * 14) / 9, R = 3.15;
-      // A pack is about 6.5 cm wide, so one unit is about 6 cm: the packs hover a couple of centimetres above the water
-      const HOVER = 0.3;
+      // A pack is about 6.5 cm wide, so one unit is about 6 cm: the packs hover about a centimetre above the water
+      const HOVER = 0.14;
       // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
       // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
       const BULGE = 0.065;
