@@ -13,11 +13,11 @@ import { FlipCard } from "./FlipCard";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE } from "./timeline";
-import { CARD_RARITY, type Rarity } from "./rarity";
+import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
-const RARITY_TABS: Rarity[] = ["UR", "SSR", "SR", "R", "N"];
+const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */

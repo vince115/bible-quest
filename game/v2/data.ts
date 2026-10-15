@@ -108,8 +108,8 @@ export const RULES_V2 = {
     /** In the tabletop mode a Shield is extra HP: it stays until damage uses it up (no timing to remember), up to bonusCap. */
     bonusCap: 60,
     /** The free basic attack every character can make once a turn (it takes their action), by rarity. */
-    basicDamage: { N: 10, R: 10, SR: 20, SSR: 20, UR: 30 } as Record<Rarity, number>,
-    cap: { N: 3, R: 4, SR: 5, SSR: 6, UR: 8 } as Record<Rarity, number>,
+    basicDamage: { N: 10, R: 10, SR: 20, SSR: 20, UR: 30, GR: 40 } as Record<Rarity, number>,
+    cap: { N: 3, R: 4, SR: 5, SSR: 6, UR: 8, GR: 10 } as Record<Rarity, number>,
   },
   pools: {
     mpUnit: 30,

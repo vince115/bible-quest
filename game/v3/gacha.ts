@@ -65,7 +65,7 @@ export const CLEAR_POINTS = { first: 300, repeat: 100 };
 /** What a new player starts with: one pack. */
 export const STARTING_POINTS = 500;
 
-const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR"];
+const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR", "GR"];
 
 const pick = <T,>(list: T[], rng: Rng) => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
 

@@ -13,12 +13,12 @@ import { characterSearchText } from "@/components/cards/CardDemo";
 import { FlipCard } from "@/components/cards/FlipCard";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
-import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
+import { CARD_RARITY, USED_TIERS, type Rarity } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 
 const ALL_CARDS = TIMELINE.filter((id): id is CharacterId => id in CHARACTER_ELEMENT);
-const RARITY_TABS = ["UR", "SSR", "SR", "R", "N"] as const;
+const RARITY_TABS = USED_TIERS;
 
 export function CollectionScreen() {
   const t = useT();

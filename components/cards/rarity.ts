@@ -4,7 +4,7 @@
 import type { CharacterId, EnemyId } from "@/game/v2/types";
 import type { Ornament } from "./CardFrame";
 
-export type Rarity = "N" | "R" | "SR" | "SSR" | "UR";
+export type Rarity = "N" | "R" | "SR" | "SSR" | "UR" | "GR";
 
 /** Which rarity each card is printed at. R and UR are kept for later cards (common soldiers, special editions). */
 export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
@@ -250,7 +250,12 @@ export const RARITY: Record<Rarity, RarityLook> = {
   SR: { ornament: "lily", ornamentSize: 15, ornamentOpacity: 1, ornamentMetal: "silver", foil: 0.06, glare: true, tilt: 14, shine: true, sheen: false, prism: false, mark: "text-violet-700", metal: "linear-gradient(180deg,#ffffff 0%,#ede9fe 36%,#a78bfa 52%,#ddd6fe 74%,#6d28d9 100%)" },
   SSR: { ornament: "dove", ornamentSize: 18, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.1, glare: true, tilt: 16, shine: true, sheen: true, prism: false, mark: "text-amber-600", metal: "linear-gradient(180deg,#fffbe6 0%,#fde68a 36%,#f59e0b 52%,#fcd34d 74%,#b45309 100%)" },
   UR: { ornament: "ur", ornamentSize: 13, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.16, glare: true, tilt: 16, shine: true, sheen: true, prism: true, mark: "text-fuchsia-600", metal: "linear-gradient(120deg,#f9a8d4 0%,#fde68a 22%,#86efac 42%,#7dd3fc 62%,#c4b5fd 82%,#f9a8d4 100%)" },
+  // GR (the highest tier, above UR): the UR frame and rainbow, with the gold at full strength, a stronger foil and a wider tilt.
+  GR: { ornament: "ur", ornamentSize: 15, ornamentOpacity: 1, ornamentMetal: "gold", foil: 0.24, glare: true, tilt: 20, shine: true, sheen: true, prism: true, mark: "text-amber-500", metal: "linear-gradient(120deg,#fff7d6 0%,#fde68a 18%,#f9a8d4 36%,#a5f3fc 54%,#fde68a 72%,#fff7d6 100%)" },
 };
+
+/** The tiers that have at least one card, highest first (a tier with no card yet, like GR, stays out of the filters). */
+export const USED_TIERS: Rarity[] = (["GR", "UR", "SSR", "SR", "R", "N"] as Rarity[]).filter((r) => Object.values(CARD_RARITY).includes(r));
 
 export const lookOf = (id: CharacterId | EnemyId) => RARITY[CARD_RARITY[id]];
 

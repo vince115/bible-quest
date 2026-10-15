@@ -192,8 +192,8 @@ export function HoloCard({
   const foilStrength = look ? look.foil : foil;
   const maxTilt = look ? look.tilt : TILT;
   const glare = look ? look.glare : true;
-  const ur = rarity === "UR";
-  const textured = rarity === "SSR" || rarity === "UR";
+  const ur = rarity === "UR" || rarity === "GR";
+  const textured = rarity === "SSR" || ur;
   const reduce = useReducedMotion();
   const px = useSpring(50, SPRING);
   const py = useSpring(50, SPRING);
@@ -240,7 +240,7 @@ export function HoloCard({
       >
         {children}
         {effects && foilStrength > 0 && <Foil element={element} strength={foilStrength} />}
-        {effects && textured && <LitTexture texture={ELEMENT_TEXTURES[element]} tint={REVERSE_RAINBOW} spot={rarity === "UR" ? 55 : 42} strength={0.85} keepOut={figure} />}
+        {effects && textured && <LitTexture texture={ELEMENT_TEXTURES[element]} tint={REVERSE_RAINBOW} spot={ur ? 55 : 42} strength={0.85} keepOut={figure} />}
         {effects && rarity === "SSR" && (
           <div
             aria-hidden
