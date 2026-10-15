@@ -136,6 +136,32 @@ const promptForBack = (id: string) => {
   return STORIES[key] ? `${STORY_BASE} ${STORIES[key]}` : `${BACK_BASE} ${BACKS[key] ?? ""}`;
 };
 
+/**
+ * Full-bleed booster pack wrapper art (ART_IDS=wrap-beginnings ...), in the manner of a trading card game booster: the
+ * scene fills the whole pack, crimped foil seals at the top and bottom edges, dynamic and glossy, with a calm area left
+ * for the title that the game prints on top. Portrait (set ART_SIZE=1024x1536).
+ */
+const WRAP_BASE =
+  "Full-bleed artwork for the front of a trading card game booster pack wrapper, seen flat and straight on, filling the " +
+  "whole portrait picture edge to edge. Hand-painted watercolor and gouache storybook style with luminous glossy foil " +
+  "highlights and a bold, dynamic, heroic composition: one large main subject in the foreground overlapping the background " +
+  "scene, rays of golden light, sparkles. The top 6% and bottom 5% of the picture are the crimped foil seals of the pack: " +
+  "narrow strips of ridged, vertically pleated metallic gold foil running across the full width. A calm, darker, simple " +
+  "area is kept in the lower third of the picture for a title to be printed over it later. " +
+  "No text, no letters, no logos, no numbers, no watermark, no border.";
+const WRAPS: Record<string, string> = {
+  beginnings: "Subject: the Garden of Eden at first light. A great fruit tree with a glowing trunk in the centre, a lion lying beside a lamb and deer drinking in the foreground, a river and a golden sunrise behind.",
+  exodus: "Subject: the crossing of the Red Sea. Towering walls of blue water on both sides, a pillar of cloud glowing above, a long line of travellers with bundles and flocks, a robed leader with a staff raised in the foreground.",
+  kingdom: "Subject: a young shepherd boy with a sling poised in the foreground on a hillside above a valley, sheep around him, the camps of two armies faint in the distance, a golden dawn.",
+  prophets: "Subject: Mount Carmel. A prophet in a plain robe with arms lifted to the sky beside a blazing altar of stones, a tall column of fire and smoke rising, a small cloud over the sea behind.",
+  exile: "Subject: a wise old man kneeling in prayer at an open window of a Babylonian house, towers and palms glowing at dusk outside, a lion resting calmly at his side.",
+  nativity: "Subject: the Nativity. A great star of Bethlehem blazing above a small stable, the holy family around a manger in a warm glow, shepherds and sheep arriving, wise men on camels far behind.",
+  ministry: "Subject: the shore of the Sea of Galilee at sunrise. A teacher in a white robe with open hands speaking to a crowd on the hillside, fishing boats and drying nets, two fishermen turning to listen in the foreground.",
+  passion: "Subject: three wooden crosses on a hill under a dramatic sky with a break of golden light, Jerusalem in the distance, a few women watching from afar. Reverent and gentle, no suffering shown.",
+  church: "Subject: early believers sharing bread in a courtyard, a small flame of light resting above them, travellers with scrolls setting out along a road toward the sea at the edge of the picture.",
+};
+const promptForWrap = (id: string) => `${WRAP_BASE} ${WRAPS[id.replace(/^wrap-/, "")] ?? ""}`;
+
 /** The prompt for a pack picture. */
 const promptForBackdrop = (id: string) => `${BACKDROPS[id.replace(/^bg-/, "")] ?? ""} Wide composition, calm and soft, no text, no lettering, no watermark, no frame, no border.`;
 
@@ -232,7 +258,7 @@ it("draws draft card art", async () => {
   mkdirSync(DRAFTS, { recursive: true });
   const lines: string[] = [];
   for (const id of wanted) {
-    const prompt = id.startsWith("back-") ? promptForBack(id) : id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
+    const prompt = id.startsWith("wrap-") ? promptForWrap(id) : id.startsWith("back-") ? promptForBack(id) : id.startsWith("bg-") ? promptForBackdrop(id) : id.startsWith("pack-") ? promptForPack(id) : promptFor(id);
     lines.push(`${id}\n  ${prompt}\n`);
     if (!call) continue;
     const out = `${DRAFTS}/${id}.png`;

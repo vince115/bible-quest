@@ -12,7 +12,7 @@ import { foilOf, packPicture } from "./packStyle";
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
 
-/** The front of a pack, drawn on a canvas for the 3D model: foil, crimped seals, the featured card, the name. */
+/** The front of a pack, drawn on a canvas for the 3D model: the wrapper picture filling the pack, then the names. */
 function paintFront(id: string, title: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = W;
@@ -25,40 +25,28 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
   grad.addColorStop(1, dark);
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
-  crimp(g);
-  // The window with the featured card
-  const x = W * 0.09, y = H * 0.14, w = W * 0.82, h = H * 0.52;
-  g.save();
-  g.beginPath();
-  g.roundRect(x, y, w, h, 4);
-  g.clip();
   if (art) {
-    const scale = w / art.width; // fit the width, keep the top of the picture
-    const sh = Math.min(art.height, h / scale);
-    g.drawImage(art, 0, 0, art.width, sh, x, y, w, sh * scale);
+    // Like object-fit: cover, so the picture fills the pack
+    const k = Math.max(W / art.width, H / art.height);
+    const w = art.width * k, h = art.height * k;
+    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
   } else {
-    g.fillStyle = "rgba(0,0,0,0.25)";
-    g.fillRect(x, y, w, h);
+    crimp(g);
   }
-  const fade = g.createLinearGradient(0, y, 0, y + h);
-  fade.addColorStop(0.6, "rgba(0,0,0,0)");
-  fade.addColorStop(1, "rgba(0,0,0,0.35)");
-  g.fillStyle = fade;
-  g.fillRect(x, y, w, h);
-  g.restore();
-  g.lineWidth = 4;
-  g.strokeStyle = "rgba(255,255,255,0.75)";
-  g.strokeRect(x, y, w, h);
-  // Names
   g.textAlign = "center";
-  g.shadowColor = "rgba(0,0,0,0.8)";
-  g.shadowBlur = 6;
-  g.fillStyle = "rgba(255,255,255,0.85)";
-  g.font = "bold 18px sans-serif";
-  g.fillText("B I B L E   Q U E S T", W / 2, H * 0.78);
+  g.lineJoin = "round";
+  g.fillStyle = "rgba(255,255,255,0.92)";
+  g.strokeStyle = "rgba(0,0,0,0.7)";
+  g.lineWidth = 5;
+  g.font = "bold 17px sans-serif";
+  g.strokeText("B I B L E   Q U E S T", W / 2, H * 0.8);
+  g.fillText("B I B L E   Q U E S T", W / 2, H * 0.8);
   g.fillStyle = "#fff";
-  g.font = "900 46px sans-serif";
-  g.fillText(title, W / 2, H * 0.87);
+  g.strokeStyle = "rgba(0,0,0,0.75)";
+  g.lineWidth = 9;
+  g.font = "900 54px sans-serif";
+  g.strokeText(title, W / 2, H * 0.875);
+  g.fillText(title, W / 2, H * 0.875);
   return c;
 }
 
