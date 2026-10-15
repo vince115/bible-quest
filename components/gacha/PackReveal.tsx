@@ -25,6 +25,7 @@ const GLOW: Record<Rarity, string> = {
   SR: "shadow-[0_0_34px_8px_rgb(167_139_250/0.7)]",
   SSR: "shadow-[0_0_40px_10px_rgb(251_191_36/0.8)]",
   UR: "shadow-[0_0_46px_12px_rgb(244_114_182/0.85)]",
+  GR: "shadow-[0_0_56px_16px_rgb(255_226_122/0.95)]",
 };
 
 const Badge = ({ isNew, label }: { isNew: boolean; label: string }) => (
@@ -38,7 +39,7 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
   const [all, setAll] = useState(false);
 
   const current = results[at];
-  const rare = (i: number) => ["SR", "SSR", "UR"].includes(CARD_RARITY[results[i].card]);
+  const rare = (i: number) => ["SR", "SSR", "UR", "GR"].includes(CARD_RARITY[results[i].card]);
   // The cards land on the table one after another: a soft thud for each, as it arrives.
   useEffect(() => {
     if (!all) return;
