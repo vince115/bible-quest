@@ -131,6 +131,65 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   return c;
 }
 
+/**
+ * The left and right edges of a pack (a thin strip, as tall as the pack): foil that is lit along the middle and shaded
+ * toward the front and back, with the fine ridges of the crimped seals at the head and foot.
+ */
+function paintSide(id: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 48;
+  c.height = H;
+  const g = c.getContext("2d")!;
+  const [light, mid, dark] = foilOf(id);
+  const across = g.createLinearGradient(0, 0, 48, 0);
+  across.addColorStop(0, dark);
+  across.addColorStop(0.35, light);
+  across.addColorStop(0.65, mid);
+  across.addColorStop(1, dark);
+  g.fillStyle = across;
+  g.fillRect(0, 0, 48, H);
+  // Gloss down the length
+  const gloss = g.createLinearGradient(0, 0, 0, H);
+  gloss.addColorStop(0, "rgba(255,255,255,0.35)");
+  gloss.addColorStop(0.5, "rgba(255,255,255,0)");
+  gloss.addColorStop(1, "rgba(0,0,0,0.3)");
+  g.fillStyle = gloss;
+  g.fillRect(0, 0, 48, H);
+  // Crimp ridges at the head and foot
+  for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
+    g.fillStyle = "rgba(0,0,0,0.25)";
+    g.fillRect(0, y, 48, h);
+    g.fillStyle = "rgba(255,255,255,0.35)";
+    for (let yy = y; yy < y + h; yy += 5) g.fillRect(0, yy, 48, 1.6);
+  }
+  return c;
+}
+
+/** The top and bottom edges of a pack: the crimped seal seen end-on, a row of ridges in foil. */
+function paintEnd(id: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = 48;
+  const g = c.getContext("2d")!;
+  const [light, mid, dark] = foilOf(id);
+  const across = g.createLinearGradient(0, 0, 0, 48);
+  across.addColorStop(0, dark);
+  across.addColorStop(0.5, mid);
+  across.addColorStop(1, dark);
+  g.fillStyle = across;
+  g.fillRect(0, 0, W, 48);
+  for (let x = 0; x < W; x += 8) {
+    g.fillStyle = light;
+    g.globalAlpha = 0.7;
+    g.fillRect(x, 0, 3, 48);
+    g.fillStyle = "#000";
+    g.globalAlpha = 0.25;
+    g.fillRect(x + 4, 0, 2, 48);
+  }
+  g.globalAlpha = 1;
+  return c;
+}
+
 /** The crimped seals along the top and bottom edges. */
 function crimp(g: CanvasRenderingContext2D) {
   for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
@@ -215,29 +274,31 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
       const backTex = new THREE.CanvasTexture(paintBack(pack.id, art));
-      for (const tex of [frontTex, backTex]) {
+      const sideTex = new THREE.CanvasTexture(paintSide(pack.id));
+      const endTex = new THREE.CanvasTexture(paintEnd(pack.id));
+      for (const tex of [frontTex, backTex, sideTex, endTex]) {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
-      const [, mid] = foilOf(pack.id);
-      const PW = 1.05, PH = (PW * 14) / 9, PD = 0.06, R = 3.15;
+      const PW = 1.05, PH = (PW * 14) / 9, PD = 0.1, R = 3.15;
       const geometry = new THREE.BoxGeometry(PW, PH, PD);
       const ring = new THREE.Group();
       scene.add(ring);
       const step = (Math.PI * 2) / count;
       const materials: InstanceType<typeof THREE.MeshStandardMaterial>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
-        const edge = new THREE.MeshStandardMaterial({ color: mid, roughness: 0.5, metalness: 0.2 });
+        const side = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.45, metalness: 0.25 });
+        const end = new THREE.MeshStandardMaterial({ map: endTex, roughness: 0.45, metalness: 0.25 });
         const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.38, metalness: 0.15 });
         const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.4, metalness: 0.15 });
-        materials.push(edge, front, back);
-        const mesh = new THREE.Mesh(geometry, [edge, edge, edge, edge, front, back]);
+        materials.push(side, end, front, back);
+        const mesh = new THREE.Mesh(geometry, [side, side, end, end, front, back]);
         mesh.userData.index = i;
         const angle = i * step;
         mesh.position.set(Math.sin(angle) * R, PH / 2 + 0.03, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mats: [edge, front, back], baseY: PH / 2 + 0.03 };
+        return { mesh, mats: [side, end, front, back], baseY: PH / 2 + 0.03 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
@@ -342,8 +403,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           const away = Math.abs(off);
           const near = Math.max(0, 1 - away);
           const shade = Math.max(0.4, 1 - away * 0.1);
-          for (const m of mats) m.color.setScalar(m === mats[0] ? 1 : shade);
-          mats[0].color.set(mid).multiplyScalar(shade);
+          for (const m of mats) m.color.setScalar(shade);
           const flip = flips[i];
           flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
           mesh.rotation.y = i * step + Math.PI * flip.cur;
@@ -366,6 +426,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
+        sideTex.dispose();
+        endTex.dispose();
         renderer.dispose();
         canvas.remove();
         api.current = null;
