@@ -106,12 +106,13 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   ["#ff4d6d", "#ff9f1c", "#ffe14d", "#4ade80", "#38bdf8", "#6366f1", "#c084fc"].forEach((col, i, all) => rainbow.addColorStop(i / (all.length - 1), col));
   g.fillStyle = rainbow;
   g.fillRect(sx, sy, sw, sh);
-  // A sheen across the strip, light at the middle and shaded at both edges, so it reads as a glossy ribbon
-  const sheen = g.createLinearGradient(sx, 0, sx + sw, 0);
-  sheen.addColorStop(0, "rgba(0,0,0,0.3)");
-  sheen.addColorStop(0.4, "rgba(255,255,255,0.45)");
-  sheen.addColorStop(1, "rgba(0,0,0,0.3)");
-  g.fillStyle = sheen;
+  // Only a little shade at both edges of the strip, no light down its middle
+  const edge = g.createLinearGradient(sx, 0, sx + sw, 0);
+  edge.addColorStop(0, "rgba(0,0,0,0.28)");
+  edge.addColorStop(0.2, "rgba(0,0,0,0)");
+  edge.addColorStop(0.8, "rgba(0,0,0,0)");
+  edge.addColorStop(1, "rgba(0,0,0,0.28)");
+  g.fillStyle = edge;
   g.fillRect(sx, sy, sw, sh);
   return c;
 }
