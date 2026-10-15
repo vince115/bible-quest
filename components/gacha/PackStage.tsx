@@ -101,7 +101,7 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
     g.fill();
   }
   // A rainbow strip down the centre (a stand-in for the type strip on a Pokémon pack's back)
-  const sw = W * 0.075, sx = W * 0.5 - sw / 2, sy = H * 0.12, sh = H * 0.78;
+  const sw = W * 0.04, sx = W * 0.5 - sw / 2, sy = H * 0.12, sh = H * 0.78;
   const rainbow = g.createLinearGradient(0, sy, 0, sy + sh);
   ["#ff4d6d", "#ff9f1c", "#ffe14d", "#4ade80", "#38bdf8", "#6366f1", "#c084fc"].forEach((col, i, all) => rainbow.addColorStop(i / (all.length - 1), col));
   g.fillStyle = rainbow;
