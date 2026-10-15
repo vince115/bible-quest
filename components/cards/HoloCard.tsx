@@ -222,18 +222,49 @@ function DivineTexture() {
   );
 }
 
-/** GR: a soft column of light from the top of the card, and tiny photons drifting up over it. */
-const PHOTONS = Array.from({ length: 34 }, (_, i) => ({
-  x: (i * 37 + 7) % 100,
-  size: 0.35 + ((i * 13) % 7) / 10, // 0.35% to 1.05% of the card's width
-  rise: 26 + ((i * 29) % 140) / 10, // seconds to drift to the top (slow)
-  delay: -((i * 23) % 400) / 10,
-  sway: 6 + (i % 5) * 3, // px
-}));
+/** A small seeded random generator, so the scatter is irregular but the same on the server and the client. */
+function seeded(seed: number) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/** GR: a soft column of light from the top of the card, and tiny photons drifting up over it, each at its own random speed. */
+const PHOTONS = (() => {
+  const r = seeded(115);
+  return Array.from({ length: 34 }, () => ({
+    x: r() * 100,
+    size: 0.35 + r() * 0.7, // 0.35% to 1.05% of the card's width
+    rise: 14 + r() * 40, // seconds to drift to the top: 14 s to 54 s
+    delay: -r() * 54,
+    sway: 4 + r() * 14, // px
+  }));
+})();
+/** A few larger, softer orbs of light among them (a little bigger than the photons, also at random speeds). */
+const ORBS = (() => {
+  const r = seeded(1105);
+  return Array.from({ length: 7 }, () => ({
+    x: 3 + r() * 92,
+    size: 1.7 + r() * 0.5, // 1.7% to 2.2% of the card's width
+    rise: 24 + r() * 40, // 24 s to 64 s
+    delay: -r() * 64,
+    sway: 8 + r() * 18,
+  }));
+})();
 function DivineLight() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity: "calc(0.2 + var(--o) * 0.8)" }}>
       <div className="absolute inset-x-[18%] top-0 h-[70%] mix-blend-screen" style={{ opacity: "calc(var(--o) * 0.4)", background: "linear-gradient(to bottom, rgb(255 246 210 / 0.8), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)", maskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)" }} />
+      {ORBS.map((m, i) => (
+        <span
+          key={`orb${i}`}
+          className="bq-animated absolute rounded-full mix-blend-screen"
+          style={{ left: `${m.x}%`, width: `${m.size}%`, aspectRatio: "1", background: "radial-gradient(circle, rgb(255 252 235 / 0.95) 0%, rgb(255 236 170 / 0.55) 40%, rgb(255 220 120 / 0) 72%)", boxShadow: "0 0 10px 3px rgb(255 232 150 / 0.4)", animation: `bq-mote ${m.rise}s linear ${m.delay}s infinite`, ["--sway" as string]: `${m.sway}px` }}
+        />
+      ))}
       {PHOTONS.map((m, i) => (
         <span
           key={i}
