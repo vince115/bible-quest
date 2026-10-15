@@ -100,20 +100,34 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
     g.arc(x, y, r, 0, Math.PI * 2);
     g.fill();
   }
-  // A rainbow strip down the centre (a stand-in for the type strip on a Pokémon pack's back)
-  const sw = W * 0.04, sx = W * 0.5 - sw / 2, sy = 0, sh = H;
-  const rainbow = g.createLinearGradient(0, sy, 0, sy + sh);
+  // A rainbow strip down the centre (a stand-in for the type strip on a Pokémon pack's back), faded out into the
+  // foil at its head and foot. It is drawn on its own layer so that the fade can be cut into it.
+  const strip = document.createElement("canvas");
+  strip.width = W;
+  strip.height = H;
+  const sg = strip.getContext("2d")!;
+  const sw = W * 0.04, sx = W * 0.5 - sw / 2;
+  const rainbow = sg.createLinearGradient(0, 0, 0, H);
   ["#ff4d6d", "#ff9f1c", "#ffe14d", "#4ade80", "#38bdf8", "#6366f1", "#c084fc"].forEach((col, i, all) => rainbow.addColorStop(i / (all.length - 1), col));
-  g.fillStyle = rainbow;
-  g.fillRect(sx, sy, sw, sh);
+  sg.fillStyle = rainbow;
+  sg.fillRect(sx, 0, sw, H);
   // Only a little shade at both edges of the strip, no light down its middle
-  const edge = g.createLinearGradient(sx, 0, sx + sw, 0);
+  const edge = sg.createLinearGradient(sx, 0, sx + sw, 0);
   edge.addColorStop(0, "rgba(0,0,0,0.28)");
   edge.addColorStop(0.2, "rgba(0,0,0,0)");
   edge.addColorStop(0.8, "rgba(0,0,0,0)");
   edge.addColorStop(1, "rgba(0,0,0,0.28)");
-  g.fillStyle = edge;
-  g.fillRect(sx, sy, sw, sh);
+  sg.fillStyle = edge;
+  sg.fillRect(sx, 0, sw, H);
+  sg.globalCompositeOperation = "destination-in";
+  const fade = sg.createLinearGradient(0, 0, 0, H);
+  fade.addColorStop(0, "rgba(0,0,0,0)");
+  fade.addColorStop(0.14, "rgba(0,0,0,1)");
+  fade.addColorStop(0.86, "rgba(0,0,0,1)");
+  fade.addColorStop(1, "rgba(0,0,0,0)");
+  sg.fillStyle = fade;
+  sg.fillRect(0, 0, W, H);
+  g.drawImage(strip, 0, 0);
   return c;
 }
 
