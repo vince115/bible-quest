@@ -150,6 +150,9 @@ const REVERSE_RAINBOW =
  */
 const GR_HOLO =
   "linear-gradient(115deg, rgb(255 90 150) 0%, rgb(255 190 70) 12%, rgb(245 245 80) 24%, rgb(80 235 140) 36%, rgb(70 215 255) 48%, rgb(100 120 255) 60%, rgb(205 100 255) 72%, rgb(255 90 170) 84%, rgb(255 190 70) 100%)";
+const GR_REFLECT =
+  "conic-gradient(from 20deg at var(--px) var(--py), rgb(255 70 120), rgb(255 170 60), rgb(250 245 80), rgb(70 235 130), rgb(60 215 255), rgb(100 110 255), rgb(205 90 255), rgb(255 70 120))";
+const GR_REFLECT_MASK = "radial-gradient(circle at var(--px) var(--py), rgb(0 0 0 / 0.25) 0%, #000 14%, rgb(0 0 0 / 0.7) 34%, rgb(0 0 0 / 0.18) 56%, transparent 74%)";
 const GR_HATCH = "repeating-linear-gradient(115deg, transparent 0 4px, rgb(255 255 255 / 0.9) 4px 5px)";
 const GR_HATCH_MASK = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.5) 38%, rgb(0 0 0 / 0.16) 75%)";
 
@@ -350,7 +353,9 @@ export function HoloCard({
             {/* The holo foil: a soft spectrum smear that drifts with the pointer, hatched with fine light lines, and a glint */}
             <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ backgroundImage: GR_HOLO, backgroundSize: "260% 260%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.3 + var(--o) * 0.5)" }} />
             <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: GR_HATCH, WebkitMaskImage: GR_HATCH_MASK, maskImage: GR_HATCH_MASK, opacity: "calc(0.25 + var(--o) * 0.6)" }} />
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: "radial-gradient(farthest-corner circle at var(--px) var(--py), rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 35%, transparent 70%)", opacity: "calc(var(--o) * 0.8)" }} />
+            {/* The reflection: where the light hits the card it splits into a rainbow, a soft ring of the spectrum around the pointer with a white hot spot at its heart */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_REFLECT, WebkitMaskImage: GR_REFLECT_MASK, maskImage: GR_REFLECT_MASK, opacity: "calc(0.08 + var(--o) * 0.6)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: "radial-gradient(circle at var(--px) var(--py), rgb(255 255 255 / 0.95) 0%, rgb(255 255 255 / 0.3) 18%, transparent 46%)", opacity: "calc(var(--o) * 0.9)" }} />
           </>
         )}
         {effects && glare && (
