@@ -10,6 +10,9 @@ export type Ornament = "dove" | "lily" | "ur" | "gr";
 
 /** The corner pieces are 34% of the ornament image; the middles repeat to fill each edge. (GR's image is 780 px wide with 250 px corners.) */
 const SLICE = 34;
+/** The GR frame picture is redrawn often: bump this so browsers fetch the new one instead of showing a cached copy. */
+const GR_FRAME_VERSION = 6;
+const frameSrc = (art: Ornament) => (art === "gr" ? `/cards/frame-gr.png?v=${GR_FRAME_VERSION}` : `/cards/frame-${art}.png`);
 const sliceOf = (art: Ornament) => (art === "gr" ? "250" : `${SLICE}%`);
 /** UR: all seven neon colours across the card at once; the hues then keep cycling (bq-prism). */
 const NEON = "linear-gradient(125deg, #ff2fd0 0%, #ff8a00 16%, #ffe600 32%, #2dff6a 48%, #00e5ff 64%, #6a5cff 80%, #ff2fd0 100%)";
@@ -142,7 +145,7 @@ export function CardFrame({
             borderColor: "transparent",
             borderWidth: cardW(look.ornamentSize),
             // The lily frame comes in gold, silver and bronze; the dove frame only in gold.
-            borderImage: `url(/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+            borderImage: `url(${art === "gr" ? frameSrc(art) : `/cards/frame-${art}${art === "lily" && look.ornamentMetal !== "gold" ? `-${look.ornamentMetal}` : ""}.png`}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
           }}
         />
       )}
@@ -161,7 +164,7 @@ export function CardFrame({
               backgroundSize: "300% 100%",
               backgroundPosition: "var(--px, 50%) 0",
               opacity: "calc(0.35 + var(--o, 0) * 0.65)",
-              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
             }}
           />
           <div
@@ -170,7 +173,7 @@ export function CardFrame({
               backgroundImage: "linear-gradient(115deg, transparent 40%, rgb(255 255 250 / 1) 50%, transparent 60%)",
               backgroundSize: "250% 100%",
               animation: "bq-sheen 3.6s ease-in-out infinite",
-              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
             }}
           />
         </div>
@@ -184,7 +187,7 @@ export function CardFrame({
             style={{
               backgroundImage: NEON,
               animation: "bq-prism 4s linear infinite",
-              WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
+              WebkitMaskBoxImage: `url(${frameSrc(art)}) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
             }}
           />
         </div>
