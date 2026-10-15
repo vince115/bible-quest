@@ -50,8 +50,11 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
   return c;
 }
 
-/** The plain back of a pack. */
-function paintBack(id: string): HTMLCanvasElement {
+/**
+ * The back of a pack: the same foil, a ghost of the wrapper picture, a quiet cross pattern, and a gilt panel that says
+ * what is inside (the pack's name, how many cards, the guarantee).
+ */
+function paintBack(id: string, title: string, art: HTMLImageElement | null, lines: [string, string]): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = W;
   c.height = H;
@@ -63,11 +66,75 @@ function paintBack(id: string): HTMLCanvasElement {
   grad.addColorStop(1, dark);
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
+  if (art) {
+    // A faint, flipped ghost of the front picture, so the back belongs to the same pack
+    const k = Math.max(W / art.width, H / art.height);
+    const w = art.width * k, h = art.height * k;
+    g.save();
+    g.globalAlpha = 0.32;
+    g.translate(W, 0);
+    g.scale(-1, 1);
+    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
+    g.restore();
+    const wash = g.createLinearGradient(0, 0, 0, H);
+    wash.addColorStop(0, `${mid}cc`);
+    wash.addColorStop(1, `${dark}dd`);
+    g.fillStyle = wash;
+    g.fillRect(0, 0, W, H);
+  }
+  // A lattice of small crosses
+  g.strokeStyle = "rgba(255,255,255,0.1)";
+  g.lineWidth = 1.2;
+  const step = 34;
+  for (let y = H * 0.09; y < H * 0.94; y += step) {
+    for (let x = step / 2; x < W; x += step) {
+      g.beginPath();
+      g.moveTo(x, y - 5);
+      g.lineTo(x, y + 5);
+      g.moveTo(x - 4, y - 1);
+      g.lineTo(x + 4, y - 1);
+      g.stroke();
+    }
+  }
   crimp(g);
-  g.fillStyle = "rgba(255,255,255,0.35)";
-  g.font = "300 120px sans-serif";
+  // The gilt panel
+  const px = W * 0.12, py = H * 0.2, pw = W * 0.76, ph = H * 0.6;
+  g.fillStyle = "rgba(10,8,6,0.55)";
+  g.fillRect(px, py, pw, ph);
+  const gold = g.createLinearGradient(0, py, 0, py + ph);
+  gold.addColorStop(0, "#fff3b8");
+  gold.addColorStop(0.5, "#d9a93a");
+  gold.addColorStop(1, "#fff0a8");
+  g.strokeStyle = gold;
+  g.lineWidth = 3;
+  g.strokeRect(px, py, pw, ph);
+  g.lineWidth = 1;
+  g.strokeRect(px + 7, py + 7, pw - 14, ph - 14);
+  // A cross in a ring
+  g.beginPath();
+  g.arc(W / 2, py + ph * 0.3, 44, 0, Math.PI * 2);
+  g.lineWidth = 2.5;
+  g.stroke();
+  g.fillStyle = gold;
+  g.fillRect(W / 2 - 4, py + ph * 0.3 - 28, 8, 56);
+  g.fillRect(W / 2 - 18, py + ph * 0.3 - 12, 36, 8);
   g.textAlign = "center";
-  g.fillText("✝", W / 2, H * 0.55);
+  g.lineJoin = "round";
+  g.fillStyle = "rgba(255,255,255,0.9)";
+  g.font = "bold 14px sans-serif";
+  g.fillText("B I B L E   Q U E S T", W / 2, py + ph * 0.58);
+  g.fillStyle = "#fff";
+  g.strokeStyle = "rgba(0,0,0,0.7)";
+  g.lineWidth = 6;
+  g.font = "900 38px sans-serif";
+  g.strokeText(title, W / 2, py + ph * 0.7);
+  g.fillText(title, W / 2, py + ph * 0.7);
+  g.fillStyle = "rgba(255,236,170,0.95)";
+  g.font = "bold 16px sans-serif";
+  g.fillText(lines[0], W / 2, py + ph * 0.82);
+  g.font = "13px sans-serif";
+  g.fillStyle = "rgba(255,255,255,0.8)";
+  g.fillText(lines[1], W / 2, py + ph * 0.9);
   return c;
 }
 
@@ -94,6 +161,8 @@ const loadImage = (src: string) =>
 export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackKind; count: number; canOpen?: boolean; onPick: (pack: PackKind) => void }) {
   const t = useT();
   const title = t(`v3.pack.${pack.id}.name`);
+  const backCards = t("v3.gacha.backCards");
+  const backGuarantee = t("v3.gacha.guarantee");
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<{ go: (d: number) => void } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -154,7 +223,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
-      const backTex = new THREE.CanvasTexture(paintBack(pack.id));
+      const backTex = new THREE.CanvasTexture(paintBack(pack.id, title, art, [backCards, backGuarantee]));
       for (const tex of [frontTex, backTex]) {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -308,7 +377,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       disposed = true;
       cleanup();
     };
-  }, [pack, count, title]);
+  }, [pack, count, title, backCards, backGuarantee]);
 
   const go = useCallback((d: number) => api.current?.go(d), []);
 
