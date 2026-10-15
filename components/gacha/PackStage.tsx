@@ -270,7 +270,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
             .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.x += sin(transformed.y * 16.0 + uTime * 2.2) * 0.012;\nvH = (modelMatrix * vec4(transformed, 1.0)).y;");
           shader.fragmentShader = shader.fragmentShader
             .replace("#include <common>", "#include <common>\nvarying float vH;")
-            .replace("#include <dithering_fragment>", `#include <dithering_fragment>\ngl_FragColor.a *= 0.3 * clamp(1.0 + (vH + ${HOVER.toFixed(3)}) / ${FADE.toFixed(3)}, 0.0, 1.0);`);
+            .replace("#include <dithering_fragment>", `#include <dithering_fragment>\ngl_FragColor.a *= 0.3 * pow(clamp(1.0 + (vH + ${HOVER.toFixed(3)}) / ${FADE.toFixed(3)}, 0.0, 1.0), 1.8);`);
         };
         return m;
       };
