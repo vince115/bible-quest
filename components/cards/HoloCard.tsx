@@ -3,7 +3,7 @@
 // A trading card that tilts toward the pointer, with a glare and an element foil that follow it.
 // Our own take on the technique popularised by pokemon-cards-css (no code or art copied):
 // pointer position → springs → CSS variables (--px, --py, --o) read by the foil and glare layers.
-import { motion, useMotionTemplate, useReducedMotion, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionTemplate, useReducedMotion, useSpring, useTransform, type MotionValue } from "framer-motion";
 import type { PointerEvent, ReactNode } from "react";
 import type { Element } from "@/game/v2/types";
 import { RARITY, type Rarity } from "./rarity";
@@ -187,16 +187,18 @@ export function Foil({ element, strength = 1, className = "" }: { element: Eleme
 const RAYS = "repeating-conic-gradient(from 0deg, transparent 0deg, rgb(255 246 214 / 0.34) 1.4deg, transparent 3.2deg, transparent 7deg)";
 const RAYS_FINE = "repeating-conic-gradient(from 3deg, transparent 0deg, rgb(255 240 190 / 0.22) 0.8deg, transparent 1.8deg, transparent 3.7deg)";
 const RAY_MASK = "radial-gradient(circle, #000 12%, rgb(0 0 0 / 0.45) 30%, rgb(0 0 0 / 0.12) 44%, transparent 56%)";
-function DivineAura() {
+function DivineAura({ o }: { o: MotionValue<number> }) {
+  // Nearly dark while the card lies still; it glows as the card is turned (like a foil card catching the light).
+  const opacity = useTransform(o, (v) => 0.12 + v * 0.88);
   return (
-    <div aria-hidden className="pointer-events-none absolute -inset-[22%]">
+    <motion.div aria-hidden className="pointer-events-none absolute -inset-[22%]" style={{ opacity }}>
       <div className="bq-animated absolute inset-0 rounded-full mix-blend-screen [filter:blur(2.6px)]" style={{ backgroundImage: RAYS, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 90s linear infinite" }} />
       <div className="bq-animated absolute inset-0 rounded-full opacity-80 mix-blend-screen [filter:blur(1.8px)]" style={{ backgroundImage: RAYS_FINE, WebkitMaskImage: RAY_MASK, maskImage: RAY_MASK, animation: "bq-rays 140s linear infinite reverse" }} />
       <div
         className="bq-animated absolute inset-[20%] rounded-full"
         style={{ background: "radial-gradient(circle, rgb(255 238 170 / 0.5) 0%, rgb(255 220 120 / 0.16) 45%, transparent 70%)", animation: "bq-breathe 5s ease-in-out infinite" }}
       />
-    </div>
+    </motion.div>
   );
 }
 
@@ -210,7 +212,7 @@ function DivineTexture() {
   const lit = "radial-gradient(circle at var(--px) var(--py), #000 0%, rgb(0 0 0 / 0.55) 30%, rgb(0 0 0 / 0.14) 62%)";
   return (
     <>
-      <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: 0.3 }} />
+      <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: CROSS_TEXTURE, backgroundSize: "7% auto", opacity: "calc(0.12 + var(--o) * 0.2)" }} />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 mix-blend-screen"
@@ -230,8 +232,8 @@ const PHOTONS = Array.from({ length: 34 }, (_, i) => ({
 }));
 function DivineLight() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-x-[18%] top-0 h-[70%] opacity-40 mix-blend-screen" style={{ background: "linear-gradient(to bottom, rgb(255 246 210 / 0.8), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)", maskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)" }} />
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity: "calc(0.2 + var(--o) * 0.8)" }}>
+      <div className="absolute inset-x-[18%] top-0 h-[70%] mix-blend-screen" style={{ opacity: "calc(var(--o) * 0.4)", background: "linear-gradient(to bottom, rgb(255 246 210 / 0.8), transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)", maskImage: "linear-gradient(to right, transparent, #000 35%, #000 65%, transparent)" }} />
       {PHOTONS.map((m, i) => (
         <span
           key={i}
@@ -297,7 +299,7 @@ export function HoloCard({
 
   return (
     <div className={`relative [perspective:900px] ${className}`}>
-      {effects && divine && <DivineAura />}
+      {effects && divine && <DivineAura o={o} />}
       <motion.div
         onPointerMove={move}
         onPointerDown={move}
@@ -314,7 +316,7 @@ export function HoloCard({
           "--bgx": bgx,
           "--bgy": bgy,
         } as never}
-        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${divine && effects ? "shadow-[0_0_14px_3px_rgb(255_236_170/0.55),0_0_40px_8px_rgb(255_220_120/0.3),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
+        className={`relative aspect-[63/88] w-full select-none ${touchTilt ? "touch-none" : ""} overflow-hidden rounded-xs ${divine && effects ? "[box-shadow:0_0_calc(4px+10px*var(--o))_calc(1px+2px*var(--o))_rgb(255_236_170/calc(0.1+0.45*var(--o))),0_0_calc(10px+30px*var(--o))_calc(2px+6px*var(--o))_rgb(255_220_120/calc(0.05+0.25*var(--o))),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : ur && effects ? "shadow-[-2px_-2px_3px_0_rgb(38_230_247/0.35),2px_2px_3px_0_rgb(247_89_228/0.35),0_0_5px_1px_rgb(255_231_89/0.25),0_20px_50px_-10px_rgb(0_0_0/0.8)]" : "shadow-[0_20px_50px_-10px_rgb(0_0_0/0.8)]"} [transform-style:preserve-3d]`}
       >
         {children}
         {effects && foilStrength > 0 && <Foil element={element} strength={foilStrength} />}
@@ -351,10 +353,10 @@ export function HoloCard({
             <DivineTexture />
             <DivineLight />
             {/* The holo foil: a soft spectrum smear that drifts with the pointer, hatched with fine light lines, and a glint */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ backgroundImage: GR_HOLO, backgroundSize: "260% 260%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.3 + var(--o) * 0.5)" }} />
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: GR_HATCH, WebkitMaskImage: GR_HATCH_MASK, maskImage: GR_HATCH_MASK, opacity: "calc(0.25 + var(--o) * 0.6)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ backgroundImage: GR_HOLO, backgroundSize: "260% 260%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(var(--o) * 0.55)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: GR_HATCH, WebkitMaskImage: GR_HATCH_MASK, maskImage: GR_HATCH_MASK, opacity: "calc(0.04 + var(--o) * 0.55)" }} />
             {/* The reflection: where the light hits the card it splits into a rainbow, a soft ring of the spectrum around the pointer with a white hot spot at its heart */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_REFLECT, WebkitMaskImage: GR_REFLECT_MASK, maskImage: GR_REFLECT_MASK, opacity: "calc(0.08 + var(--o) * 0.6)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_REFLECT, WebkitMaskImage: GR_REFLECT_MASK, maskImage: GR_REFLECT_MASK, opacity: "calc(var(--o) * 0.6)" }} />
             <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-soft-light" style={{ backgroundImage: "radial-gradient(circle at var(--px) var(--py), rgb(255 255 255 / 0.95) 0%, rgb(255 255 255 / 0.3) 18%, transparent 46%)", opacity: "calc(var(--o) * 0.9)" }} />
           </>
         )}
