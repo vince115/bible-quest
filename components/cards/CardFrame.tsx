@@ -65,7 +65,7 @@ export function CardFrame({
   const look = RARITY[rarity];
   const art = look.ornament ? (ornament ?? look.ornament) : null;
   return (
-    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#f9de83] via-[#d6a033] to-[#f6d577]" : frame}`} style={{ padding: `${INSET}%` }}>
+    <div className={`${fill ? "absolute inset-0" : "relative"} bg-gradient-to-br [container-type:inline-size] ${look.divine ? "from-[#8a5d12] via-[#5a3b0a] to-[#9a6c18]" : frame}`} style={{ padding: `${INSET}%` }}>
       {/* Metallic sheen */}
       <div
         aria-hidden
@@ -129,14 +129,17 @@ export function CardFrame({
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_1.2cqw_2cqw_rgb(0_0_0/0.55),inset_0_0_1cqw_rgb(0_0_0/0.4)]" />
       </div>
 
-      {/* GR: a solid yellow-gold ground behind the white-gold filigree (a ring just over the border band) */}
-      {look.divine && (
+      {/* GR: instead of a flat ground, the frame's own pattern glows: a blurred, brightened copy of it lights the gaps
+          between the filigree strands */}
+      {look.divine && art && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: "linear-gradient(135deg, #ffe7a0 0%, #e0aa3c 28%, #a8741a 52%, #ecc15a 78%, #fff0b8 100%)",
-            clipPath: `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cardW(INSET)} ${cardW(INSET)}, ${cardW(INSET)} calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) calc(100% - ${cardW(INSET)}), calc(100% - ${cardW(INSET)}) ${cardW(INSET)}, ${cardW(INSET)} ${cardW(INSET)})`,
+            backgroundImage: "linear-gradient(135deg, #fff1b8, #ffd466 50%, #fff1b8)",
+            filter: "blur(0.9cqw) brightness(1.15)",
+            opacity: "calc(0.8 + var(--o, 0) * 0.2)",
+            WebkitMaskBoxImage: `url(/cards/frame-${art}.png) ${sliceOf(art)} / ${cardW(look.ornamentSize)} round`,
           }}
         />
       )}
