@@ -5,11 +5,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useT } from "@/game/locale";
-import { PACK, PACKS, PACKS_ON_RING, currentPack, nextRotation, packCost, type PackKind } from "@/game/v3/gacha";
+import { PACK, PACKS, PACKS_ON_RING, packCost, type PackKind } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
+import { PackArt } from "./PackArt";
 import { PackStage } from "./PackStage";
 import { PackReveal, type Pulled } from "./PackReveal";
 import { PackTear } from "./PackTear";
+
+const CHOSEN_KEY = "bible-quest-gacha-pack";
 
 type Phase = { name: "choose" } | { name: "tear"; pack: PackKind } | { name: "reveal"; results: Pulled[] };
 
@@ -23,20 +26,21 @@ export function GachaScreen() {
     void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setReady(true));
   }, []);
   const [phase, setPhase] = useState<Phase>({ name: "choose" });
-  // One kind of pack is on offer at a time; the day (on the player's clock) decides which. Read after mount, so the prerendered page matches.
-  const [now, setNow] = useState<Date | null>(null);
+  // The player picks the kind of pack; the choice is remembered in this browser.
+  const [chosen, setChosen] = useState<string | null>(null);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read once on the client after mount
-    setNow(new Date());
-    const tick = window.setInterval(() => setNow(new Date()), 30000);
-    return () => window.clearInterval(tick);
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from this browser after mount, so the prerendered page matches
+      setChosen(window.localStorage.getItem(CHOSEN_KEY));
+    } catch {}
   }, []);
-  const debugAll = process.env.NEXT_PUBLIC_DEBUG_ALL_PACKS === "1";
-  const [forced, setForced] = useState<PackKind | null>(null);
-  const offer = forced ?? (now ? currentPack(now) : null);
-  const left = now ? Math.max(0, nextRotation(now).getTime() - now.getTime()) : 0;
-  const hours = Math.floor(left / 3600000);
-  const minutes = Math.floor((left % 3600000) / 60000);
+  const offer = PACKS.find((p) => p.id === chosen) ?? PACKS[0];
+  const choose = (pack: PackKind) => {
+    setChosen(pack.id);
+    try {
+      window.localStorage.setItem(CHOSEN_KEY, pack.id);
+    } catch {}
+  };
   const enough = ready && points >= packCost();
 
   // The pack is paid for when it is torn open, so choosing and backing out costs nothing.
@@ -60,12 +64,25 @@ export function GachaScreen() {
         </span>
       </div>
 
-      {phase.name === "choose" && offer && (
+      {phase.name === "choose" && (
         <>
-          <div className="text-center">
+          <div className="w-full max-w-3xl text-center">
             <div className="text-xs text-stone-400">{t("v3.gacha.onOffer")}</div>
-            <div className="text-2xl font-black text-amber-200">{t(`v3.pack.${offer.id}.name`)}</div>
-            {!forced && <div className="mt-1 text-xs text-stone-500">{t("v3.gacha.changesIn", { h: hours, m: minutes })}</div>}
+            <div className="mt-2 flex gap-2 overflow-x-auto px-2 py-1.5 sm:justify-center" role="radiogroup" aria-label={t("v3.gacha.onOffer")}>
+              {PACKS.map((p) => (
+                <button
+                  key={p.id}
+                  role="radio"
+                  aria-checked={offer.id === p.id}
+                  onClick={() => choose(p)}
+                  style={{ fontSize: "0.5rem" }}
+                  className={`w-[4.25rem] shrink-0 rounded-md p-0.5 transition ${offer.id === p.id ? "scale-105 ring-2 ring-amber-300" : "opacity-60 hover:opacity-100"}`}
+                >
+                  <PackArt pack={p} />
+                </button>
+              ))}
+            </div>
+            <div className="mt-1 text-2xl font-black text-amber-200">{t(`v3.pack.${offer.id}.name`)}</div>
           </div>
           {ready && !enough ? (
             <p className="text-sm text-amber-200">
@@ -78,15 +95,6 @@ export function GachaScreen() {
             <p className="max-w-sm text-center text-xs text-stone-400">{t("v3.gacha.pickHint")}</p>
           )}
           <PackStage pack={offer} count={PACKS_ON_RING} canOpen={enough} onPick={(pack) => setPhase({ name: "tear", pack })} />
-          {debugAll && (
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {PACKS.map((p) => (
-                <button key={p.id} onClick={() => setForced(p)} className={`rounded-full border px-2.5 py-0.5 text-xs ${offer.id === p.id ? "border-amber-300 text-amber-200" : "border-stone-600 text-stone-400"}`}>
-                  {t(`v3.pack.${p.id}.name`)}
-                </button>
-              ))}
-            </div>
-          )}
         </>
       )}
 

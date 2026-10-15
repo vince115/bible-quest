@@ -30,19 +30,8 @@ export const PACKS: PackKind[] = [
   { id: "church", eras: ["church", "revelation"], featured: "paul" },
 ];
 
-/** How many packs stand on the ring: all of the one kind that is on offer. */
+/** How many packs stand on the ring: all of the one kind the player has chosen. */
 export const PACKS_ON_RING = 12;
-
-/** Days since the epoch by the player's own calendar (a day turns over at their local midnight). */
-const localDay = (now: Date) => Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
-
-/** The kind of pack on offer today: one at a time, and each day the next kind in the list. */
-export function currentPack(now: Date = new Date()): PackKind {
-  return PACKS[((localDay(now) % PACKS.length) + PACKS.length) % PACKS.length];
-}
-
-/** When the offer changes: the next local midnight. */
-export const nextRotation = (now: Date = new Date()): Date => new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
 /** A booster pack: five cards, each position with its own rarity odds (percent). */
 export const PACK = {
