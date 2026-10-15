@@ -143,6 +143,15 @@ const REVERSE_RAINBOW =
   "linear-gradient(115deg, hsl(0 90% 70%), hsl(50 100% 70%), hsl(120 80% 70%), hsl(190 90% 70%), hsl(260 80% 75%), hsl(320 90% 72%), hsl(0 90% 70%))";
 
 /** SSR: a soft rainbow sheen that glides across the card as it turns. */
+/**
+ * GR: straight diagonal zones of rainbow light across the card, like light caught in a prism: one wide band of the seven
+ * colours (red to violet) with a thin echo beside it. They slide as the card turns, strongest under the pointer.
+ */
+const GR_BAND =
+  "linear-gradient(112deg, transparent 0%, transparent 46%, rgb(255 70 70 / 0.8) 46.8%, rgb(255 165 50 / 0.8) 47.7%, rgb(255 242 80 / 0.8) 48.6%, rgb(80 240 120 / 0.8) 49.5%, rgb(70 225 255 / 0.8) 50.4%, rgb(90 120 255 / 0.8) 51.3%, rgb(195 100 255 / 0.8) 52.2%, transparent 53.2%, transparent 100%)";
+const GR_BAND_ECHO =
+  "linear-gradient(112deg, transparent 0%, transparent 60%, rgb(255 130 205 / 0.55) 60.7%, rgb(125 235 255 / 0.55) 61.4%, rgb(255 242 160 / 0.55) 62.1%, transparent 63%, transparent 100%)";
+
 const SSR_RAINBOW =
   "linear-gradient(115deg, transparent 20%, hsl(0 90% 72% / 0.55) 32%, hsl(45 100% 70% / 0.6) 40%, hsl(120 80% 70% / 0.55) 48%, hsl(195 90% 70% / 0.6) 56%, hsl(270 80% 75% / 0.55) 64%, transparent 76%)";
 
@@ -337,6 +346,9 @@ export function HoloCard({
           <>
             <DivineTexture />
             <DivineLight />
+            {/* The prism bands: straight zones of the seven colours that slide with the pointer (and drift a little on their own) */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_BAND, backgroundSize: "300% 300%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.35 + var(--o) * 0.5)" }} />
+            <div aria-hidden className="pointer-events-none absolute inset-0 mix-blend-screen" style={{ backgroundImage: GR_BAND_ECHO, backgroundSize: "300% 300%", backgroundPosition: "var(--bgx) var(--bgy)", opacity: "calc(0.3 + var(--o) * 0.4)" }} />
           </>
         )}
         {effects && glare && (
