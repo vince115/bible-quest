@@ -131,65 +131,6 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   return c;
 }
 
-/**
- * The left and right edges of a pack (a thin strip, as tall as the pack): foil that is lit along the middle and shaded
- * toward the front and back, with the fine ridges of the crimped seals at the head and foot.
- */
-function paintSide(id: string): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = 48;
-  c.height = H;
-  const g = c.getContext("2d")!;
-  const [light, mid, dark] = foilOf(id);
-  const across = g.createLinearGradient(0, 0, 48, 0);
-  across.addColorStop(0, dark);
-  across.addColorStop(0.35, light);
-  across.addColorStop(0.65, mid);
-  across.addColorStop(1, dark);
-  g.fillStyle = across;
-  g.fillRect(0, 0, 48, H);
-  // Gloss down the length
-  const gloss = g.createLinearGradient(0, 0, 0, H);
-  gloss.addColorStop(0, "rgba(255,255,255,0.35)");
-  gloss.addColorStop(0.5, "rgba(255,255,255,0)");
-  gloss.addColorStop(1, "rgba(0,0,0,0.3)");
-  g.fillStyle = gloss;
-  g.fillRect(0, 0, 48, H);
-  // Crimp ridges at the head and foot
-  for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
-    g.fillStyle = "rgba(0,0,0,0.25)";
-    g.fillRect(0, y, 48, h);
-    g.fillStyle = "rgba(255,255,255,0.35)";
-    for (let yy = y; yy < y + h; yy += 5) g.fillRect(0, yy, 48, 1.6);
-  }
-  return c;
-}
-
-/** The top and bottom edges of a pack: the crimped seal seen end-on, a row of ridges in foil. */
-function paintEnd(id: string): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = 48;
-  const g = c.getContext("2d")!;
-  const [light, mid, dark] = foilOf(id);
-  const across = g.createLinearGradient(0, 0, 0, 48);
-  across.addColorStop(0, dark);
-  across.addColorStop(0.5, mid);
-  across.addColorStop(1, dark);
-  g.fillStyle = across;
-  g.fillRect(0, 0, W, 48);
-  for (let x = 0; x < W; x += 8) {
-    g.fillStyle = light;
-    g.globalAlpha = 0.7;
-    g.fillRect(x, 0, 3, 48);
-    g.fillStyle = "#000";
-    g.globalAlpha = 0.25;
-    g.fillRect(x + 4, 0, 2, 48);
-  }
-  g.globalAlpha = 1;
-  return c;
-}
-
 /** The crimped seals along the top and bottom edges. */
 function crimp(g: CanvasRenderingContext2D) {
   for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
@@ -274,31 +215,57 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
       const backTex = new THREE.CanvasTexture(paintBack(pack.id, art));
-      const sideTex = new THREE.CanvasTexture(paintSide(pack.id));
-      const endTex = new THREE.CanvasTexture(paintEnd(pack.id));
-      for (const tex of [frontTex, backTex, sideTex, endTex]) {
+      for (const tex of [frontTex, backTex]) {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
-      const PW = 1.05, PH = (PW * 14) / 9, PD = 0.1, R = 3.15;
-      const geometry = new THREE.BoxGeometry(PW, PH, PD);
+      const PW = 1.05, PH = (PW * 14) / 9, R = 3.15;
+      // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
+      // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
+      const BULGE = 0.065;
+      const smooth = (a: number, b: number, x: number) => {
+        const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      };
+      const bulge = (x: number, y: number) => {
+        const u = Math.abs(x) / (PW / 2);
+        const v = (y + PH / 2) / PH;
+        const across = 1 - Math.pow(u, 2.6); // full over the middle, dropping to the side seams
+        const along = smooth(0.05, 0.22, v) * (1 - smooth(0.8, 0.93, v)); // flat at the seals
+        const swell = 1 + 0.12 * Math.sin(v * Math.PI); // fullest around the middle
+        return BULGE * across * along * swell;
+      };
+      const faceGeometry = (sign: 1 | -1) => {
+        const geo = new THREE.PlaneGeometry(PW, PH, 30, 48);
+        const pos = geo.attributes.position;
+        for (let k = 0; k < pos.count; k++) pos.setZ(k, bulge(pos.getX(k), pos.getY(k)));
+        geo.computeVertexNormals();
+        if (sign < 0) {
+          // The back face looks the other way: turn it round (its picture then reads correctly from behind)
+          geo.rotateY(Math.PI);
+        }
+        return geo;
+      };
+      const geometries = [faceGeometry(1), faceGeometry(-1)];
       const ring = new THREE.Group();
       scene.add(ring);
       const step = (Math.PI * 2) / count;
       const materials: InstanceType<typeof THREE.MeshStandardMaterial>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
-        const side = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.45, metalness: 0.25 });
-        const end = new THREE.MeshStandardMaterial({ map: endTex, roughness: 0.45, metalness: 0.25 });
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.38, metalness: 0.15 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.4, metalness: 0.15 });
-        materials.push(side, end, front, back);
-        const mesh = new THREE.Mesh(geometry, [side, side, end, end, front, back]);
-        mesh.userData.index = i;
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
+        materials.push(front, back);
+        const frontFace = new THREE.Mesh(geometries[0], front);
+        const backFace = new THREE.Mesh(geometries[1], back);
+        frontFace.userData.index = i;
+        backFace.userData.index = i;
+        const mesh = new THREE.Group();
+        mesh.add(frontFace, backFace);
         const angle = i * step;
         mesh.position.set(Math.sin(angle) * R, PH / 2 + 0.03, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mats: [side, end, front, back], baseY: PH / 2 + 0.03 };
+        return { mesh, mats: [front, back], baseY: PH / 2 + 0.03 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
@@ -356,7 +323,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         const r = canvas.getBoundingClientRect();
         const pointer = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
         raycaster.setFromCamera(pointer, camera);
-        const hit = raycaster.intersectObjects(meshes.map((m) => m.mesh))[0];
+        const hit = raycaster.intersectObjects(meshes.map((m) => m.mesh), true)[0];
         if (!hit) return;
         const i = hit.object.userData.index as number;
         const front = frontIndex();
@@ -422,12 +389,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointerup", onUp);
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
-        geometry.dispose();
+        geometries.forEach((geo) => geo.dispose());
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
-        sideTex.dispose();
-        endTex.dispose();
         renderer.dispose();
         canvas.remove();
         api.current = null;
