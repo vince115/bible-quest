@@ -9,15 +9,18 @@ import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
 import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilOf, packPicture } from "./packStyle";
 
-const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
+const W = 360; // the size everything is drawn in (9 : 14, like the pack art on the page)
 const H = 560;
+/** The textures have this many pixels for each drawing unit, so the small things (the hang hole, the seal ridges) stay sharp. */
+const TEX = 3;
 
 /** The front of a pack, drawn on a canvas for the 3D model: the wrapper picture filling the pack, then the names. */
 function paintFront(id: string, title: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
+  c.width = W * TEX;
+  c.height = H * TEX;
   const g = c.getContext("2d")!;
+  g.scale(TEX, TEX);
   const [light, mid, dark] = foilOf(id);
   const grad = g.createLinearGradient(0, 0, W * 0.4, H);
   grad.addColorStop(0, light);
@@ -55,9 +58,10 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
  */
 function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
+  c.width = W * TEX;
+  c.height = H * TEX;
   const g = c.getContext("2d")!;
+  g.scale(TEX, TEX);
   const [light, mid, dark] = foilOf(id);
   const grad = g.createLinearGradient(W, 0, 0, H);
   grad.addColorStop(0, light);

@@ -28,7 +28,7 @@ export const packPicture = (pack: { id: string; featured: string }) => PACK_PICT
 // ---------- the crimped foil seals ----------
 
 /** The seals at the head and foot of a pack, as a share of the pack's height. */
-export const SEAL_TOP = 0.075; // the top seal is 1.5 times as tall as the bottom one
+export const SEAL_TOP = 0.1; // the top seal is twice as tall as the bottom one
 export const SEAL_BOTTOM = 0.05;
 
 /** A #rrggbb or rgb(r,g,b) colour as its three numbers. */
