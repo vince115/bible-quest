@@ -918,7 +918,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 70, lion: 100, lioness: 60, presidents: 100, princes: 40,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
