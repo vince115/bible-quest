@@ -20,7 +20,7 @@ function Seal({ id, top }: { id: string; top: boolean }) {
     const w = 540;
     canvas.width = w;
     canvas.height = Math.round(((w * 14) / 9) * share);
-    drawSeal(g, id, 0, 0, canvas.width, canvas.height, top, false);
+    drawSeal(g, id, 0, 0, canvas.width, canvas.height, top, false, "dark");
   }, [id, top, share]);
   return (
     <canvas

@@ -56,7 +56,7 @@ const seeded = (text: string) => {
  * across the seal whose spacing and strength wander a little, as if pressed by hand; and a plain hem on the picture
  * side with a bright lip and a soft shadow on the picture. Everything is scaled from a pack that is 360 px wide.
  */
-export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: number, w: number, h: number, top: boolean, shadow = true) {
+export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: number, w: number, h: number, top: boolean, shadow = true, hole: "punch" | "dark" | "none" = "none") {
   const [light, mid, dark] = FOIL[id] ?? FOIL.passion;
   const u = w / 360;
   const rnd = seeded(`${id}${top}`);
@@ -138,6 +138,37 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
   g.fillRect(0, h - 1.6 * u, w, 1.2 * u);
   g.fillStyle = "rgba(0,0,0,0.3)";
   g.fillRect(0, h - 0.5 * u, w, 0.5 * u);
+
+  // The hang hole of the top seal, a rounded slot in the middle (shops hang the pack on a peg by it)
+  if (top && hole !== "none") {
+    const hw = Math.min(h * 1.05, w * 0.12);
+    const hh = h * 0.36;
+    const cx2 = w / 2;
+    const cy = h * 0.5;
+    const slot = () => {
+      g.beginPath();
+      g.roundRect(cx2 - hw / 2, cy - hh / 2, hw, hh, hh / 2);
+    };
+    // The film around the hole is a little stiffer and catches the light
+    g.beginPath();
+    g.roundRect(cx2 - hw / 2 - 2 * u, cy - hh / 2 - 2 * u, hw + 4 * u, hh + 4 * u, hh / 2 + 2 * u);
+    g.fillStyle = "rgba(255,255,255,0.22)";
+    g.fill();
+    slot();
+    if (hole === "punch") {
+      g.globalCompositeOperation = "destination-out";
+      g.fillStyle = "#000";
+      g.fill();
+      g.globalCompositeOperation = "source-over";
+    } else {
+      g.fillStyle = "rgba(12,10,20,0.92)";
+      g.fill();
+    }
+    slot();
+    g.strokeStyle = "rgba(0,0,0,0.45)";
+    g.lineWidth = 1 * u;
+    g.stroke();
+  }
   g.restore();
 
   if (shadow) {

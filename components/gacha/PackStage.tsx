@@ -131,7 +131,7 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
 
 /** Both crimped foil seals, drawn over the picture (see drawSeal). */
 function seals(g: CanvasRenderingContext2D, id: string) {
-  drawSeal(g, id, 0, 0, W, H * SEAL_TOP, true);
+  drawSeal(g, id, 0, 0, W, H * SEAL_TOP, true, true, "punch");
   drawSeal(g, id, 0, H * (1 - SEAL_BOTTOM), W, H * SEAL_BOTTOM, false);
 }
 
@@ -198,11 +198,16 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       aim();
 
       // Light: neutral white all over and a soft key from above, so the pictures keep their own colours (no warm cast)
-      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-      const key = new THREE.DirectionalLight(0xffffff, 1.6);
+      // A neutral studio environment gives the glossy film something to reflect: soft highlights on the swollen body
+      const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = envTex;
+      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+      const key = new THREE.DirectionalLight(0xffffff, 1.0);
       key.position.set(2, 7, 6);
       scene.add(key);
-      const fill = new THREE.PointLight(0xffffff, 14, 14);
+      const fill = new THREE.PointLight(0xffffff, 6, 14);
       fill.position.set(0, 2.6, 5.6);
       scene.add(fill);
 
@@ -216,29 +221,26 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const PW = 1.05, PH = (PW * 14) / 9, R = 3.15;
       // A pack is about 6.5 cm wide, so one unit is about 6 cm: the packs hover about a centimetre above the water
       const HOVER = 0.14;
-      // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
-      // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
-      const BULGE = 0.1;
-      // The two faces stand THICK either side of the middle, so the edges have a little depth: strips of foil close them.
-      const THICK = 0.04;
+      // A foil pouch with the cards inside. The head and foot are pressed flat, just the thickness of the film, as are
+      // the side seams; only the body between them swells a little, fullest in the middle. Each face is a plane whose
+      // points are pushed out by `swell`; the two faces meet at the seams.
+      const EDGE = 0.004; // half the thickness of the pressed film
+      const BODY = 0.055; // how far the middle of the body stands out
       const smooth = (a: number, b: number, x: number) => {
         const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
         return t * t * (3 - 2 * t);
       };
-      const bulge = (x: number, y: number) => {
+      const depth = (x: number, y: number) => {
         const u = Math.abs(x) / (PW / 2);
         const v = (y + PH / 2) / PH;
-        const across = 1 - Math.pow(u, 2.2); // full over the middle, dropping to the side seams
-        const along = smooth(0.04, 0.2, v) * (1 - smooth(0.8, 0.94, v)); // flat at the seals
-        const swell = 1 + 0.15 * Math.sin(v * Math.PI); // fullest around the middle
-        // Foil gathers into fine puckers where the body meets a seal, strongest at the sides
-        const pucker = 0.011 * Math.sin(x * 46) * (1 - smooth(0.04, 0.2, v) * (v < 0.5 ? 1 : 0)) * (v < 0.5 ? 1 : 0) + 0.011 * Math.sin(x * 46 + 1.3) * (smooth(0.8, 0.94, v)) * (v >= 0.5 ? 1 : 0);
-        return BULGE * across * along * swell + pucker * (0.4 + 0.6 * u) * (smooth(0.0, 0.05, v) * (1 - smooth(0.95, 1, v)));
+        const across = 1 - Math.pow(u, 2.4); // full over the middle, gone at the side seams
+        const along = smooth(SEAL_BOTTOM, SEAL_BOTTOM + 0.1, v) * (1 - smooth(1 - SEAL_TOP - 0.1, 1 - SEAL_TOP, v)); // gone over the flat seals
+        return EDGE + BODY * across * along * (1 + 0.12 * Math.sin(v * Math.PI));
       };
       const faceGeometry = (sign: 1 | -1) => {
-        const geo = new THREE.PlaneGeometry(PW, PH, 72, 60);
+        const geo = new THREE.PlaneGeometry(PW, PH, 40, 70);
         const pos = geo.attributes.position;
-        for (let k = 0; k < pos.count; k++) pos.setZ(k, THICK + bulge(pos.getX(k), pos.getY(k)));
+        for (let k = 0; k < pos.count; k++) pos.setZ(k, depth(pos.getX(k), pos.getY(k)));
         geo.computeVertexNormals();
         if (sign < 0) {
           // The back face looks the other way: turn it round (its picture then reads correctly from behind)
@@ -274,8 +276,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       };
       const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.34, metalness: 0.12, envMapIntensity: 0.32, alphaTest: 0.5 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.36, metalness: 0.12, envMapIntensity: 0.32, alphaTest: 0.5 });
         materials.push(front, back);
         const frontFace = new THREE.Mesh(geometries[0], front);
         const backFace = new THREE.Mesh(geometries[1], back);
@@ -286,8 +288,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         // The closed edges: the pinched side seams and the flat head and foot, in the pack's foil
         const edge = new THREE.MeshStandardMaterial({ color: foilOf(pack.id)[1], roughness: 0.6, metalness: 0.1 });
         materials.push(edge);
-        for (const [w, h, ex, ey] of [[0.02, PH, PW / 2, 0], [0.02, PH, -PW / 2, 0], [PW, 0.02, 0, PH / 2], [PW, 0.02, 0, -PH / 2]] as const) {
-          const strip = new THREE.Mesh(new THREE.BoxGeometry(w, h, THICK * 2), edge);
+        for (const [w, h, ex, ey] of [[0.012, PH, PW / 2, 0], [0.012, PH, -PW / 2, 0], [PW, 0.012, 0, PH / 2], [PW, 0.012, 0, -PH / 2]] as const) {
+          const strip = new THREE.Mesh(new THREE.BoxGeometry(w, h, EDGE * 2), edge);
           strip.position.set(ex, ey, 0);
           strip.userData.index = i;
           edgeGeometries.push(strip.geometry);
@@ -433,6 +435,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointerup", onUp);
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
+        envTex.dispose();
+        pmrem.dispose();
         geometries.forEach((geo) => geo.dispose());
         edgeGeometries.forEach((geo) => geo.dispose());
         materials.forEach((m) => m.dispose());
