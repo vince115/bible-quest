@@ -1832,6 +1832,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           hint={interlude && b.result === "victory" ? t("v3.round.hint") : undefined}
           facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
           art={stage?.art ?? STAGE_ART[b.stage === "plot" ? "lions" : b.stage]}
+          sections={!!drop || newAchievements.length > 0}
           actions={
             <>
               {interlude && b.result === "victory" && (

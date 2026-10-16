@@ -35,6 +35,7 @@ export function ResultPanel({
   hint,
   facts,
   art,
+  sections = false,
   children,
   actions,
 }: {
@@ -48,6 +49,8 @@ export function ResultPanel({
   facts: string[];
   /** The stage's picture, faded into the ground. */
   art?: string;
+  /** Whether `children` holds sections (the dropped card, achievements), each with its own title line. */
+  sections?: boolean;
   children?: ReactNode;
   actions: ReactNode;
 }) {
@@ -72,31 +75,34 @@ export function ResultPanel({
           />
         </div>
         <OrnateFrame size={22} />
-
-        {eyebrow && <div className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-300/80">{eyebrow}</div>}
-        <h2
-          className={`mt-1 text-5xl font-black tracking-[0.12em] drop-shadow-[0_2px_10px_rgb(0_0_0/0.8)] ${
-            won ? "bg-gradient-to-b from-[#fffbe6] via-[#f4c850] to-[#b9821f] bg-clip-text text-transparent" : "text-red-200/90"
-          }`}
-        >
-          {title}
-        </h2>
-        {/* A small ornament under the title */}
-        <div aria-hidden className="mx-auto mt-3 flex w-3/4 items-center gap-3 opacity-90">
-          <span className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${won ? GOLD : "#a8584f"})` }} />
-          <span style={{ color: won ? GOLD : "#a8584f" }}>✦</span>
-          <span className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${won ? GOLD : "#a8584f"})` }} />
-        </div>
-        {hint && <p className="mt-3 text-sm leading-relaxed text-amber-100/90">{hint}</p>}
+        {/* The facts (the turns it took, a solo run) sit small in the top right corner, inside the frame */}
         {facts.length > 0 && (
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <div className="absolute right-[34px] top-[30px] flex flex-col items-end gap-1">
             {facts.map((f) => (
-              <span key={f} className="rounded-full bg-black/50 px-4 py-1 text-sm text-stone-100 ring-1 ring-[#f4c850]/50">
+              <span key={f} className="text-xs font-semibold tracking-wide text-amber-100/90 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
                 {f}
               </span>
             ))}
           </div>
         )}
+
+        {eyebrow && <div className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-300/80">{eyebrow}</div>}
+        <h2
+          className={`mt-3 text-5xl font-black tracking-[0.12em] drop-shadow-[0_2px_10px_rgb(0_0_0/0.8)] ${
+            won ? "bg-gradient-to-b from-[#fffbe6] via-[#f4c850] to-[#b9821f] bg-clip-text text-transparent" : "text-red-200/90"
+          }`}
+        >
+          {title}
+        </h2>
+        {/* A small ornament under the title, unless a section follows: that has its own line, and the two would pile up */}
+        {!sections && (
+          <div aria-hidden className="mx-auto mt-3 flex w-3/4 items-center gap-3 opacity-90">
+            <span className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${won ? GOLD : "#a8584f"})` }} />
+            <span style={{ color: won ? GOLD : "#a8584f" }}>✦</span>
+            <span className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${won ? GOLD : "#a8584f"})` }} />
+          </div>
+        )}
+        {hint && <p className="mt-3 text-sm leading-relaxed text-amber-100/90">{hint}</p>}
         {children}
         <div className="mt-6 flex flex-wrap justify-center gap-2">{actions}</div>
       </div>
