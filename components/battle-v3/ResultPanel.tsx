@@ -1,0 +1,101 @@
+"use client";
+
+// The panel shown when a battle ends (or a round of a two-round stage): dressed like the campaign list, with the
+// ornate gold frame, the stage's picture fading into a dark ground, a gold title and pill buttons.
+import type { ReactNode } from "react";
+import { OrnateFrame } from "@/components/cards/viewer";
+import { asset } from "@/game/assets";
+
+const GOLD = "#f4c850";
+
+/** A button of the panel: the main one is filled gold, the others are dark pills with a gold ring. */
+export const resultButton = (primary: boolean) =>
+  `rounded-full px-5 py-2 text-sm font-bold tracking-wide transition ${
+    primary ? "bg-[#f4c850] text-stone-950 ring-1 ring-[#fff3b8] hover:bg-[#ffd96a]" : "bg-black/50 text-amber-100 ring-1 ring-[#f4c850]/70 hover:bg-black/70"
+  }`;
+
+/** A boxed note inside the panel (the dropped card, an achievement). */
+export function ResultNote({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl bg-black/45 p-3 ring-1 ring-[#f4c850]/60">
+      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300/90">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+export function ResultPanel({
+  won,
+  title,
+  eyebrow,
+  hint,
+  facts,
+  art,
+  children,
+  actions,
+}: {
+  /** A win (or a round won) is gold; a defeat is ash and dark red. */
+  won: boolean;
+  title: string;
+  /** The stage's name, small above the title. */
+  eyebrow?: string;
+  hint?: string;
+  /** Short facts in pills: the turns it took, a solo run. */
+  facts: string[];
+  /** The stage's picture, faded into the ground. */
+  art?: string;
+  children?: ReactNode;
+  actions: ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex overflow-y-auto bg-black/75 p-4 backdrop-blur-sm">
+      <div className="relative isolate m-auto w-full max-w-md px-[34px] py-[38px] text-center">
+        {/* The ground inside the frame's line: the picture at the top melts into the dark */}
+        <div aria-hidden className="absolute inset-[1px] -z-10 overflow-hidden rounded-[26px] bg-[#0b0810]">
+          {art && (
+            <div className="absolute inset-x-0 top-0 h-[60%]" style={{ WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%)", maskImage: "linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
+              <img src={asset(art)} alt="" className={`h-full w-full object-cover ${won ? "opacity-55" : "opacity-35 grayscale"}`} />
+            </div>
+          )}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: won
+                ? "radial-gradient(ellipse at 50% 0%, rgb(244 200 80 / 0.28), transparent 60%), linear-gradient(to bottom, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0.72) 45%, rgb(0 0 0 / 0.86))"
+                : "radial-gradient(ellipse at 50% 0%, rgb(140 30 30 / 0.28), transparent 60%), linear-gradient(to bottom, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.78) 45%, rgb(0 0 0 / 0.9))",
+            }}
+          />
+        </div>
+        <OrnateFrame size={22} />
+
+        {eyebrow && <div className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-300/80">{eyebrow}</div>}
+        <h2
+          className={`mt-1 text-5xl font-black tracking-[0.12em] drop-shadow-[0_2px_10px_rgb(0_0_0/0.8)] ${
+            won ? "bg-gradient-to-b from-[#fffbe6] via-[#f4c850] to-[#b9821f] bg-clip-text text-transparent" : "text-red-200/90"
+          }`}
+        >
+          {title}
+        </h2>
+        {/* A small ornament under the title */}
+        <div aria-hidden className="mx-auto mt-3 flex w-3/4 items-center gap-3 opacity-90">
+          <span className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${won ? GOLD : "#a8584f"})` }} />
+          <span style={{ color: won ? GOLD : "#a8584f" }}>✦</span>
+          <span className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${won ? GOLD : "#a8584f"})` }} />
+        </div>
+        {hint && <p className="mt-3 text-sm leading-relaxed text-amber-100/90">{hint}</p>}
+        {facts.length > 0 && (
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {facts.map((f) => (
+              <span key={f} className="rounded-full bg-black/50 px-4 py-1 text-sm text-stone-100 ring-1 ring-[#f4c850]/50">
+                {f}
+              </span>
+            ))}
+          </div>
+        )}
+        {children}
+        <div className="mt-6 flex flex-wrap justify-center gap-2">{actions}</div>
+      </div>
+    </div>
+  );
+}
