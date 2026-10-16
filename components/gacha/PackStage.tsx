@@ -8,6 +8,7 @@ import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
 import { foilOf, packPicture } from "./packStyle";
+import { SEAL_BOTTOM, SEAL_TOP } from "./PackArt";
 
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
@@ -30,9 +31,8 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
     const k = Math.max(W / art.width, H / art.height);
     const w = art.width * k, h = art.height * k;
     g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
-  } else {
-    crimp(g);
   }
+  seals(g, id);
   g.textAlign = "center";
   g.lineJoin = "round";
   g.fillStyle = "rgba(255,255,255,0.92)";
@@ -74,8 +74,6 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
     g.scale(-1, 1);
     g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
     g.restore();
-  } else {
-    crimp(g);
   }
   // The middle sinks into a dark field; the foil seals above and below stay as on the front
   const wash = g.createLinearGradient(0, 0, 0, H);
@@ -128,16 +126,40 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   sg.fillStyle = fade;
   sg.fillRect(0, 0, W, H);
   g.drawImage(strip, 0, 0);
+  seals(g, id);
   return c;
 }
 
-/** The crimped seals along the top and bottom edges. */
-function crimp(g: CanvasRenderingContext2D) {
-  for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
-    g.fillStyle = "rgba(0,0,0,0.2)";
+/**
+ * The crimped foil seals along the top and bottom edges, drawn over the picture: a band of the pack's foil, finely
+ * ridged by the crimping jaws, with a bright lip along the picture side and a short shadow it casts on the picture.
+ * (PackArt draws the same seals in CSS; SEAL_TOP and SEAL_BOTTOM are shared.)
+ */
+function seals(g: CanvasRenderingContext2D, id: string) {
+  const [light, mid, dark] = foilOf(id);
+  for (const [y, h, top] of [[0, H * SEAL_TOP, true], [H * (1 - SEAL_BOTTOM), H * SEAL_BOTTOM, false]] as const) {
+    const foil = g.createLinearGradient(0, y, 0, y + h);
+    foil.addColorStop(0, top ? light : mid);
+    foil.addColorStop(0.5, top ? mid : light);
+    foil.addColorStop(1, dark);
+    g.fillStyle = foil;
     g.fillRect(0, y, W, h);
-    g.fillStyle = "rgba(255,255,255,0.28)";
-    for (let x = 0; x < W; x += 8) g.fillRect(x, y, 2.5, h);
+    // The ridges
+    for (let x = 0; x < W; x += 4) {
+      g.fillStyle = "rgba(255,255,255,0.5)";
+      g.fillRect(x, y, 1.2, h);
+      g.fillStyle = "rgba(0,0,0,0.28)";
+      g.fillRect(x + 2, y, 1.2, h);
+    }
+    // The lip on the picture side, and the shadow it throws
+    const lip = top ? y + h - 2 : y;
+    g.fillStyle = "rgba(255,255,255,0.8)";
+    g.fillRect(0, lip, W, 2);
+    const shadow = g.createLinearGradient(0, top ? y + h : y, 0, top ? y + h + 8 : y - 8);
+    shadow.addColorStop(0, "rgba(0,0,0,0.4)");
+    shadow.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = shadow;
+    g.fillRect(0, top ? y + h : y - 8, W, 8);
   }
 }
 
