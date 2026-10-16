@@ -76,7 +76,7 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
   for (let i = 0; i <= stops; i++) {
     const t = i / stops;
     const shine = 0.5 + 0.5 * Math.sin(t * Math.PI * 3.3 + rnd() * 2);
-    body.addColorStop(t, mix(dark, mix(light, "#ffffff", 0.55), 0.15 + 0.8 * shine * (0.6 + rnd() * 0.4)));
+    body.addColorStop(t, mix(dark, mix(light, "#ffffff", 0.3), 0.2 + 0.6 * shine * (0.6 + rnd() * 0.4)));
   }
   g.fillStyle = body;
   g.fillRect(0, 0, w, h);
@@ -139,21 +139,28 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
   g.fillStyle = "rgba(0,0,0,0.3)";
   g.fillRect(0, h - 0.5 * u, w, 0.5 * u);
 
-  // The round hang hole of the top seal, in the middle (shops hang the pack on a peg by it)
+  // The hang hole of the top seal, in the middle of it: a wide rounded slot with a round bump above its centre
+  // (shops hang the pack on a peg by it)
   if (top && hole !== "none") {
-    const r = h * 0.21; // a round hole
+    const pw = 28 * u; // the slot
+    const ph = 7.2 * u;
+    const r = 5.4 * u; // the bump
     const cx2 = w / 2;
-    const cy = h * 0.5;
-    const slot = () => {
+    const top0 = h / 2 - (ph + r) / 2; // the whole shape sits in the middle of the seal
+    const slotTop = top0 + r;
+    const shape = () => {
       g.beginPath();
-      g.arc(cx2, cy, r, 0, Math.PI * 2);
+      g.roundRect(cx2 - pw / 2, slotTop, pw, ph, ph / 2);
+      g.moveTo(cx2 + r, slotTop);
+      g.arc(cx2, slotTop, r, 0, Math.PI * 2);
     };
     // The film around the hole is a little stiffer and catches the light
-    g.beginPath();
-    g.arc(cx2, cy, r + 2.2 * u, 0, Math.PI * 2);
-    g.fillStyle = "rgba(255,255,255,0.22)";
-    g.fill();
-    slot();
+    shape();
+    g.lineJoin = "round";
+    g.lineWidth = 4 * u;
+    g.strokeStyle = "rgba(255,255,255,0.2)";
+    g.stroke();
+    shape();
     if (hole === "punch") {
       g.globalCompositeOperation = "destination-out";
       g.fillStyle = "#000";
@@ -163,7 +170,7 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
       g.fillStyle = "rgba(12,10,20,0.92)";
       g.fill();
     }
-    slot();
+    shape();
     g.strokeStyle = "rgba(0,0,0,0.45)";
     g.lineWidth = 1 * u;
     g.stroke();

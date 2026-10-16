@@ -209,11 +209,11 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       scene.environment = envTex;
-      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-      const key = new THREE.DirectionalLight(0xffffff, 1.0);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+      const key = new THREE.DirectionalLight(0xffffff, 0.55);
       key.position.set(2, 7, 6);
       scene.add(key);
-      const fill = new THREE.PointLight(0xffffff, 6, 14);
+      const fill = new THREE.PointLight(0xffffff, 2.5, 14);
       fill.position.set(0, 2.6, 5.6);
       scene.add(fill);
 
@@ -282,8 +282,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       };
       const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.55, metalness: 0.05, envMapIntensity: 0.1, alphaTest: 0.5 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.57, metalness: 0.05, envMapIntensity: 0.1, alphaTest: 0.5 });
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.8, metalness: 0, envMapIntensity: 0.04, alphaTest: 0.5 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.82, metalness: 0, envMapIntensity: 0.04, alphaTest: 0.5 });
         materials.push(front, back);
         const frontFace = new THREE.Mesh(geometries[0], front);
         const backFace = new THREE.Mesh(geometries[1], back);
