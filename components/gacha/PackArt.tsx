@@ -1,13 +1,36 @@
 "use client";
 
 // A booster pack: crimped foil wrapper, the pack's featured card in a window, its name below.
+import { useEffect, useRef } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilCss, packPicture } from "./packStyle";
+import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilCss, packPicture } from "./packStyle";
 
 /** Pack proportions, width : height. */
 export const PACK_RATIO = "aspect-[9/14]";
+/** One crimped seal, drawn on a canvas as wide as the pack is on screen (see drawSeal in packStyle). */
+function Seal({ id, top }: { id: string; top: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const share = top ? SEAL_TOP : SEAL_BOTTOM;
+  useEffect(() => {
+    const canvas = ref.current;
+    const g = canvas?.getContext("2d");
+    if (!canvas || !g) return;
+    const w = 540;
+    canvas.width = w;
+    canvas.height = Math.round(((w * 14) / 9) * share);
+    drawSeal(g, id, 0, 0, canvas.width, canvas.height, top, false, "dark");
+  }, [id, top, share]);
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 w-full"
+      style={{ [top ? "top" : "bottom"]: 0, height: `${share * 100}%`, boxShadow: `0 ${top ? 3 : -3}px 5px rgb(0 0 0 / 0.4)` }}
+    />
+  );
+}
 
 export function PackArt({ pack, className = "" }: { pack: PackKind; className?: string }) {
   const t = useT();
@@ -15,14 +38,16 @@ export function PackArt({ pack, className = "" }: { pack: PackKind; className?: 
     <div className={`relative w-full ${PACK_RATIO} overflow-hidden rounded-md shadow-[0_8px_24px_rgb(0_0_0/0.6)] ring-1 ring-black/50 ${className}`} style={{ background: foilCss(pack.id) }}>
       {/* The wrapper picture fills the whole pack, its crimped foil seals included */}
       {/* eslint-disable-next-line @next/next/no-img-element -- pack art is a plain file */}
-      <img src={asset(packPicture(pack))} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+      <img src={asset(packPicture(pack))} alt="" crossOrigin="anonymous" draggable={false} className="absolute inset-x-0 w-full object-cover object-top" style={{ top: `${SEAL_TOP * 100}%`, height: `${(1 - SEAL_TOP) * 100}%` }} />
+      <Seal id={pack.id} top />
+      <Seal id={pack.id} top={false} />
       <div className="absolute inset-x-0 bottom-[9%] flex flex-col items-center gap-[2%] text-center text-white">
         <span className="text-[0.55em] font-bold uppercase tracking-[0.3em] opacity-90 [-webkit-text-stroke:2px_rgb(0_0_0/0.7)] [paint-order:stroke_fill]">Bible Quest</span>
         <span className="px-2 text-[1.5em] font-black leading-tight [-webkit-text-stroke:4px_rgb(0_0_0/0.75)] [paint-order:stroke_fill]">{t(`v3.pack.${pack.id}.name`)}</span>
       </div>
       {/* A shine that sweeps across the foil now and then */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" style={{ animation: "bq-pack-shine 3.6s ease-in-out infinite" }} />
+        <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent" style={{ animation: "bq-pack-shine 3.6s ease-in-out infinite" }} />
       </div>
     </div>
   );

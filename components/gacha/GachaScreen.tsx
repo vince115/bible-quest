@@ -3,7 +3,7 @@
 // /gacha: pick a booster pack from the ring, tear it open, turn the five cards over. Blessing points (earned by
 // clearing stages) pay for it; free play, no money involved.
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { PACK, PACKS, PACKS_ON_RING, packCost, type PackKind } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
@@ -35,6 +35,14 @@ export function GachaScreen() {
     } catch {}
   }, []);
   const offer = PACKS.find((p) => p.id === chosen) ?? PACKS[0];
+  // The row of packs slides so the chosen one stands right above the big pack on the stage, in the middle of the page.
+  const rowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = rowRef.current;
+    const mine = row?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!row || !mine) return;
+    row.scrollTo({ left: mine.offsetLeft + mine.offsetWidth / 2 - row.clientWidth / 2, behavior: "smooth" });
+  }, [offer.id, phase.name]);
   const choose = (pack: PackKind) => {
     setChosen(pack.id);
     try {
@@ -68,7 +76,7 @@ export function GachaScreen() {
         <>
           <div className="w-full max-w-3xl text-center">
             <div className="text-xs text-stone-400">{t("v3.gacha.onOffer")}</div>
-            <div className="mt-2 flex gap-2 overflow-x-auto px-2 py-1.5 sm:justify-center" role="radiogroup" aria-label={t("v3.gacha.onOffer")}>
+            <div ref={rowRef} className="relative mt-2 flex gap-2 overflow-x-auto py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ paddingInline: "calc(50% - 2.125rem)" }} role="radiogroup" aria-label={t("v3.gacha.onOffer")}>
               {PACKS.map((p) => (
                 <button
                   key={p.id}

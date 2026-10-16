@@ -7,17 +7,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilOf, packPicture } from "./packStyle";
+import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilOf, packPicture } from "./packStyle";
 
-const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
+const W = 360; // the size everything is drawn in (9 : 14, like the pack art on the page)
 const H = 560;
+/** The textures have this many pixels for each drawing unit, so the small things (the hang hole, the seal ridges) stay sharp. */
+const TEX = 3;
 
 /** The front of a pack, drawn on a canvas for the 3D model: the wrapper picture filling the pack, then the names. */
 function paintFront(id: string, title: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
+  c.width = W * TEX;
+  c.height = H * TEX;
   const g = c.getContext("2d")!;
+  g.scale(TEX, TEX);
   const [light, mid, dark] = foilOf(id);
   const grad = g.createLinearGradient(0, 0, W * 0.4, H);
   grad.addColorStop(0, light);
@@ -26,13 +29,14 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   if (art) {
-    // Like object-fit: cover, so the picture fills the pack
-    const k = Math.max(W / art.width, H / art.height);
+    // Like object-fit: cover, but only over what lies below the top seal, and kept at the top: the picture starts right
+    // under the seal, so nobody's head is hidden by it (the foot of the picture is calm ground, and can be cut)
+    const top = H * SEAL_TOP;
+    const k = Math.max(W / art.width, (H - top) / art.height);
     const w = art.width * k, h = art.height * k;
-    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
-  } else {
-    crimp(g);
+    g.drawImage(art, (W - w) / 2, top, w, h);
   }
+  seals(g, id);
   g.textAlign = "center";
   g.lineJoin = "round";
   g.fillStyle = "rgba(255,255,255,0.92)";
@@ -56,9 +60,10 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
  */
 function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
+  c.width = W * TEX;
+  c.height = H * TEX;
   const g = c.getContext("2d")!;
+  g.scale(TEX, TEX);
   const [light, mid, dark] = foilOf(id);
   const grad = g.createLinearGradient(W, 0, 0, H);
   grad.addColorStop(0, light);
@@ -67,15 +72,15 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   if (art) {
-    const k = Math.max(W / art.width, H / art.height);
+    // The same placement as the front (under the top seal), turned round
+    const top = H * SEAL_TOP;
+    const k = Math.max(W / art.width, (H - top) / art.height);
     const w = art.width * k, h = art.height * k;
     g.save();
     g.translate(W, 0);
     g.scale(-1, 1);
-    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
+    g.drawImage(art, (W - w) / 2, top, w, h);
     g.restore();
-  } else {
-    crimp(g);
   }
   // The middle sinks into a dark field; the foil seals above and below stay as on the front
   const wash = g.createLinearGradient(0, 0, 0, H);
@@ -128,17 +133,14 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   sg.fillStyle = fade;
   sg.fillRect(0, 0, W, H);
   g.drawImage(strip, 0, 0);
+  seals(g, id);
   return c;
 }
 
-/** The crimped seals along the top and bottom edges. */
-function crimp(g: CanvasRenderingContext2D) {
-  for (const [y, h] of [[0, H * 0.07], [H * 0.95, H * 0.05]] as const) {
-    g.fillStyle = "rgba(0,0,0,0.2)";
-    g.fillRect(0, y, W, h);
-    g.fillStyle = "rgba(255,255,255,0.28)";
-    for (let x = 0; x < W; x += 8) g.fillRect(x, y, 2.5, h);
-  }
+/** Both crimped foil seals, drawn over the picture (see drawSeal). */
+function seals(g: CanvasRenderingContext2D, id: string) {
+  drawSeal(g, id, 0, 0, W, H * SEAL_TOP, true, true, "punch");
+  drawSeal(g, id, 0, H * (1 - SEAL_BOTTOM), W, H * SEAL_BOTTOM, false);
 }
 
 const loadImage = (src: string) =>
@@ -173,7 +175,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
     (async () => {
       const THREE = await import("three");
+      const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
       const art = await loadImage(asset(packPicture(pack)));
+      // Everything that waits is done before the canvas is made: after this point the setup runs straight through,
+      // so a stage that was switched away meanwhile never leaves a second canvas behind.
       if (disposed) return;
 
       let renderer: InstanceType<typeof THREE.WebGLRenderer>;
@@ -203,14 +208,15 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       };
       aim();
 
-      // Light: soft all over, a key light from above and a warm one on the pack in front
-      scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      // Light: neutral white all over and a soft key from above, so the pictures keep their own colours (no warm cast)
+      // A neutral studio environment gives the glossy film something to reflect: soft highlights on the swollen body
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = envTex;
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const key = new THREE.DirectionalLight(0xffffff, 0.8);
       key.position.set(2, 7, 6);
       scene.add(key);
-      const warm = new THREE.PointLight(0xffd9a0, 40, 14);
-      warm.position.set(0, 2.6, 5.6);
-      scene.add(warm);
 
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
@@ -222,25 +228,26 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const PW = 1.05, PH = (PW * 14) / 9, R = 3.15;
       // A pack is about 6.5 cm wide, so one unit is about 6 cm: the packs hover about a centimetre above the water
       const HOVER = 0.14;
-      // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
-      // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
-      const BULGE = 0.065;
+      // A foil pouch with the cards inside. The head and foot are pressed flat, just the thickness of the film, as are
+      // the side seams; only the body between them swells a little, fullest in the middle. Each face is a plane whose
+      // points are pushed out by `swell`; the two faces meet at the seams.
+      const EDGE = 0.004; // half the thickness of the pressed film
+      const BODY = 0.055; // how far the middle of the body stands out
       const smooth = (a: number, b: number, x: number) => {
         const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
         return t * t * (3 - 2 * t);
       };
-      const bulge = (x: number, y: number) => {
+      const depth = (x: number, y: number) => {
         const u = Math.abs(x) / (PW / 2);
         const v = (y + PH / 2) / PH;
-        const across = 1 - Math.pow(u, 2.6); // full over the middle, dropping to the side seams
-        const along = smooth(0.05, 0.22, v) * (1 - smooth(0.8, 0.93, v)); // flat at the seals
-        const swell = 1 + 0.12 * Math.sin(v * Math.PI); // fullest around the middle
-        return BULGE * across * along * swell;
+        const across = 1 - Math.pow(u, 2.4); // full over the middle, gone at the side seams
+        const along = smooth(SEAL_BOTTOM, SEAL_BOTTOM + 0.1, v) * (1 - smooth(1 - SEAL_TOP - 0.1, 1 - SEAL_TOP, v)); // gone over the flat seals
+        return EDGE + BODY * across * along * (1 + 0.12 * Math.sin(v * Math.PI));
       };
       const faceGeometry = (sign: 1 | -1) => {
-        const geo = new THREE.PlaneGeometry(PW, PH, 30, 48);
+        const geo = new THREE.PlaneGeometry(PW, PH, 40, 70);
         const pos = geo.attributes.position;
-        for (let k = 0; k < pos.count; k++) pos.setZ(k, bulge(pos.getX(k), pos.getY(k)));
+        for (let k = 0; k < pos.count; k++) pos.setZ(k, depth(pos.getX(k), pos.getY(k)));
         geo.computeVertexNormals();
         if (sign < 0) {
           // The back face looks the other way: turn it round (its picture then reads correctly from behind)
@@ -274,9 +281,14 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         };
         return m;
       };
+      const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
+      const PICTURE = 0.8; // how much of the painting shows by itself
+      const SHADED = 0.25; // and how much of it the lights shape
       const meshes = Array.from({ length: count }, (_, i) => {
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
+        // The picture shows through its own emissive map, so its colours are the painting's own; the lights (a quarter of the
+        // surface colour) only add a little shading to give the pack its volume
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, emissiveMap: frontTex, emissive: 0xffffff, emissiveIntensity: PICTURE, color: SHADED, roughness: 0.85, metalness: 0, envMapIntensity: 0.02, alphaTest: 0.5 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, emissiveMap: backTex, emissive: 0xffffff, emissiveIntensity: PICTURE, color: SHADED, roughness: 0.85, metalness: 0, envMapIntensity: 0.02, alphaTest: 0.5 });
         materials.push(front, back);
         const frontFace = new THREE.Mesh(geometries[0], front);
         const backFace = new THREE.Mesh(geometries[1], back);
@@ -284,6 +296,16 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         backFace.userData.index = i;
         const mesh = new THREE.Group();
         mesh.add(frontFace, backFace);
+        // The closed edges: the pinched side seams and the flat head and foot, in the pack's foil
+        const edge = new THREE.MeshStandardMaterial({ color: foilOf(pack.id)[1], roughness: 0.6, metalness: 0.1 });
+        materials.push(edge);
+        for (const [w, h, ex, ey] of [[0.012, PH, PW / 2, 0], [0.012, PH, -PW / 2, 0], [PW, 0.012, 0, PH / 2], [PW, 0.012, 0, -PH / 2]] as const) {
+          const strip = new THREE.Mesh(new THREE.BoxGeometry(w, h, EDGE * 2), edge);
+          strip.position.set(ex, ey, 0);
+          strip.userData.index = i;
+          edgeGeometries.push(strip.geometry);
+          mesh.add(strip);
+        }
         const mirrorFront = mirrorMaterial(frontTex);
         const mirrorBack = mirrorMaterial(backTex);
         materials.push(mirrorFront, mirrorBack);
@@ -294,7 +316,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         mesh.position.set(Math.sin(angle) * R, HOVER + PH / 2, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], baseY: HOVER + PH / 2 };
+        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], edge, baseY: HOVER + PH / 2 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
@@ -395,13 +417,19 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         ring.rotation.y = -current * step;
         mirrorRing.rotation.y = ring.rotation.y;
         uTime.value = time;
-        meshes.forEach(({ mesh, mirror, mats, baseY }, i) => {
+        meshes.forEach(({ mesh, mirror, mats, edge, baseY }, i) => {
           let off = (((i - current) % count) + count) % count;
           if (off > count / 2) off -= count;
           const away = Math.abs(off);
           const near = Math.max(0, 1 - away);
-          const shade = Math.max(0.4, 1 - away * 0.1);
-          for (const m of mats) m.color.setScalar(shade);
+          const shade = Math.max(0.72, 1 - away * 0.05);
+          mats.forEach((m, k) => {
+            if (k < 2) {
+              m.color.setScalar(SHADED * shade);
+              m.emissiveIntensity = PICTURE * shade;
+            } else m.color.setScalar(shade);
+          });
+          edge.color.set(foilOf(pack.id)[1]).multiplyScalar(shade * 0.7);
           const flip = flips[i];
           flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
           mesh.rotation.y = i * step + Math.PI * flip.cur;
@@ -423,7 +451,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointerup", onUp);
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
+        envTex.dispose();
+        pmrem.dispose();
         geometries.forEach((geo) => geo.dispose());
+        edgeGeometries.forEach((geo) => geo.dispose());
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
