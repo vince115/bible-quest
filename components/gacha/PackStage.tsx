@@ -218,9 +218,9 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const HOVER = 0.14;
       // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
       // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
-      const BULGE = 0.065;
+      const BULGE = 0.1;
       // The two faces stand THICK either side of the middle, so the edges have a little depth: strips of foil close them.
-      const THICK = 0.03;
+      const THICK = 0.04;
       const smooth = (a: number, b: number, x: number) => {
         const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
         return t * t * (3 - 2 * t);
@@ -228,13 +228,15 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const bulge = (x: number, y: number) => {
         const u = Math.abs(x) / (PW / 2);
         const v = (y + PH / 2) / PH;
-        const across = 1 - Math.pow(u, 2.6); // full over the middle, dropping to the side seams
-        const along = smooth(0.05, 0.22, v) * (1 - smooth(0.8, 0.93, v)); // flat at the seals
-        const swell = 1 + 0.12 * Math.sin(v * Math.PI); // fullest around the middle
-        return BULGE * across * along * swell;
+        const across = 1 - Math.pow(u, 2.2); // full over the middle, dropping to the side seams
+        const along = smooth(0.04, 0.2, v) * (1 - smooth(0.8, 0.94, v)); // flat at the seals
+        const swell = 1 + 0.15 * Math.sin(v * Math.PI); // fullest around the middle
+        // Foil gathers into fine puckers where the body meets a seal, strongest at the sides
+        const pucker = 0.011 * Math.sin(x * 46) * (1 - smooth(0.04, 0.2, v) * (v < 0.5 ? 1 : 0)) * (v < 0.5 ? 1 : 0) + 0.011 * Math.sin(x * 46 + 1.3) * (smooth(0.8, 0.94, v)) * (v >= 0.5 ? 1 : 0);
+        return BULGE * across * along * swell + pucker * (0.4 + 0.6 * u) * (smooth(0.0, 0.05, v) * (1 - smooth(0.95, 1, v)));
       };
       const faceGeometry = (sign: 1 | -1) => {
-        const geo = new THREE.PlaneGeometry(PW, PH, 30, 48);
+        const geo = new THREE.PlaneGeometry(PW, PH, 72, 60);
         const pos = geo.attributes.position;
         for (let k = 0; k < pos.count; k++) pos.setZ(k, THICK + bulge(pos.getX(k), pos.getY(k)));
         geo.computeVertexNormals();
