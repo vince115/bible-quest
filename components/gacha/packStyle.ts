@@ -59,7 +59,7 @@ const seeded = (text: string) => {
  * side with a bright lip and a soft shadow on the picture. Everything is scaled from a pack that is 360 px wide.
  */
 export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: number, w: number, h: number, top: boolean, shadow = true, hole: "punch" | "dark" | "none" = "none") {
-  const [light, mid, dark] = FOIL[id] ?? FOIL.passion;
+  const [light, , dark] = FOIL[id] ?? FOIL.passion;
   const u = w / 360;
   const rnd = seeded(`${id}${top}`);
   g.save();

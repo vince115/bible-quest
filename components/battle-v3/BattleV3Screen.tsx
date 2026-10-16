@@ -42,6 +42,7 @@ import { CARD_RARITY, USED_TIERS, lookOf, type Rarity } from "@/components/cards
 import { EnemyCardFace } from "@/components/cards/EnemyCardFace";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { ENERGY_ELEMENT, ScriptureCardBack, ScriptureCardFace } from "@/components/cards/ScriptureCardFace";
+import { ResultNote, ResultPanel, resultButton } from "./ResultPanel";
 import { BATTLE_STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
 import { asset } from "@/game/assets";
 import { characterSearchText } from "@/components/cards/CardDemo";
@@ -1824,43 +1825,29 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       )}
 
       {b.result !== "ongoing" && showResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className={`w-full max-w-sm rounded-2xl border-2 bg-stone-900 p-6 text-center ${b.result === "victory" ? "border-amber-400" : "border-red-700"}`}>
-            <div className="text-5xl">{interlude && b.result === "victory" ? "⚔️" : b.result === "victory" ? "👑" : "💀"}</div>
-            <h2 className="mt-2 text-3xl font-bold">{interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}</h2>
-            {interlude && b.result === "victory" && <p className="mt-2 text-sm text-amber-200">{t("v3.round.hint")}</p>}
-            <p className="mt-2 text-stone-300">{t("v2.ui.resultTurns", { n: b.turn })}</p>
-            {board.lineup.length === 1 && <p className="mt-1 text-sm text-amber-200">{t("v3.lineup.solo")}</p>}
-            {drop && (
-              <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-amber-300 bg-amber-500/15 p-3">
-                <div className="text-xs font-bold text-amber-300">{t("v3.campaign.drop")}</div>
-                <HoloCard element={CHARACTER_ELEMENT[drop]} rarity={CARD_RARITY[drop]} touchTilt={false} figure={figureArea(drop)} className="w-[160px] text-[7.5px]">
-                  <CharacterCardFace id={drop} />
-                </HoloCard>
-                <div className="text-lg font-bold">{t(`char.${drop}.name`)}</div>
-              </div>
-            )}
-            {newAchievements.map((id) => (
-              <div key={id} className="mt-3 rounded-xl border border-amber-300 bg-amber-500/15 p-3">
-                <div className="text-xs font-bold text-amber-300">{t("v3.ach.unlocked")}</div>
-                <div className="text-lg font-bold">🏆 {t(`v3.ach.${id}.name`)}</div>
-                <div className="text-xs text-stone-300">{t(`v3.ach.${id}.desc`)}</div>
-              </div>
-            ))}
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <ResultPanel
+          won={b.result === "victory"}
+          title={interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}
+          eyebrow={stage ? t(`v3.campaign.${stage.id}.name`) : t(`v3.stage.${b.stage === "plot" ? "lions" : b.stage}`)}
+          hint={interlude && b.result === "victory" ? t("v3.round.hint") : undefined}
+          facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
+          art={stage?.art ?? STAGE_ART[b.stage === "plot" ? "lions" : b.stage]}
+          sections={!!drop || newAchievements.length > 0}
+          actions={
+            <>
               {interlude && b.result === "victory" && (
                 <button
                   onClick={() => {
                     setPending(null);
                     nextRound();
                   }}
-                  className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400"
+                  className={resultButton(true)}
                 >
                   {t("v3.round.go")} →
                 </button>
               )}
               {campaign && b.result === "victory" && !interlude && next && (
-                <Link href={`/campaign/${next}`} className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+                <Link href={`/campaign/${next}`} className={resultButton(true)}>
                   {t("v3.campaign.next")} →
                 </Link>
               )}
@@ -1869,7 +1856,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   setPending(null);
                   restart();
                 }}
-                className={`rounded-xl px-4 py-2 font-semibold ${(campaign && b.result === "victory") || interlude ? "border border-amber-500 text-amber-100 hover:bg-stone-800" : "bg-amber-500 text-stone-950 hover:bg-amber-400"}`}
+                className={resultButton(!((campaign && b.result === "victory") || interlude))}
               >
                 {t("v2.ui.playAgain")}
               </button>
@@ -1879,19 +1866,41 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   setShowResult(true);
                   pickLineup();
                 }}
-                className="rounded-xl border border-amber-500 px-4 py-2 text-amber-100 hover:bg-stone-800"
+                className={resultButton(false)}
               >
                 {t("v3.lineup.change")}
               </button>
-              <button onClick={() => setShowResult(false)} className="rounded-xl border border-stone-600 px-4 py-2 text-stone-200 hover:bg-stone-800">
+              <button onClick={() => setShowResult(false)} className={resultButton(false)}>
                 {t("v2.ui.viewBattlefield")}
               </button>
-              <Link href={campaign ? "/campaign" : "/"} className="rounded-xl border border-stone-600 px-4 py-2 text-stone-200 hover:bg-stone-800">
+              <Link href={campaign ? "/campaign" : "/"} className={resultButton(false)}>
                 {campaign ? t("v3.campaign.list") : t("v2.ui.backHome")}
               </Link>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          {drop && (
+            <ResultNote label={t("v3.campaign.drop")}>
+              {/* The card stands in a soft pool of light, with no box around it; its name and tier are written under it */}
+              <div className="relative mt-1 flex flex-col items-center gap-2">
+                <div aria-hidden className="absolute -inset-x-6 top-2 bottom-8 -z-10 rounded-full blur-2xl" style={{ background: "radial-gradient(ellipse at center, rgb(244 200 80 / 0.4), transparent 70%)" }} />
+                <HoloCard element={CHARACTER_ELEMENT[drop]} rarity={CARD_RARITY[drop]} touchTilt={false} figure={figureArea(drop)} className="w-[176px] text-[8.2px] shadow-[0_10px_30px_rgb(0_0_0/0.6)]">
+                  <CharacterCardFace id={drop} />
+                </HoloCard>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[#f4c850] px-2.5 py-0.5 text-xs font-black tracking-wider text-stone-950">{CARD_RARITY[drop]}</span>
+                  <span className="text-xl font-black tracking-wide text-amber-50">{t(`char.${drop}.name`)}</span>
+                </div>
+              </div>
+            </ResultNote>
+          )}
+          {newAchievements.map((id) => (
+            <ResultNote key={id} label={t("v3.ach.unlocked")}>
+              <div className="text-lg font-black tracking-wide text-amber-50">🏆 {t(`v3.ach.${id}.name`)}</div>
+              <div className="-mt-1 text-xs text-stone-300">{t(`v3.ach.${id}.desc`)}</div>
+            </ResultNote>
+          ))}
+        </ResultPanel>
       )}
       {b.result !== "ongoing" && !showResult && (
         <button onClick={() => setShowResult(true)} className="fixed bottom-14 right-3 z-40 rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950">
