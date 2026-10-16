@@ -842,7 +842,7 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lion: "wood", presidents: "earth", princes: "earth",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -885,7 +885,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "pharaohHost", "chariots", "chariotCaptain",
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
-  "presidents", "lion", "princes",
+  "lionRest", "lion", "lioness", "presidents", "princes",
   "uncleanSpirits", "legion", "swine",
 ];
 
@@ -898,13 +898,13 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
 export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion" };
-export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "presidents", gerasa: "uncleanSpirits" };
-export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "princes", gerasa: "swine" };
+export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
+export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine" };
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
   (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [STAGE_GUARD[st], STAGE_BOSS[st], STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
 ) as Record<StageId, EnemyId[]>;
 /** What each shooter's hit on the front line does. */
-export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, princes: 20, swine: 20 };
+export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, lioness: 30, princes: 20, swine: 20 };
 /** The stages in the campaign's (Bible) order. */
 export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
 
@@ -915,7 +915,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lion: 160, presidents: 50, princes: 40,
+  lionRest: 80, lion: 110, lioness: 60, presidents: 50, princes: 40,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 

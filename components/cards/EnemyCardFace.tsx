@@ -23,7 +23,9 @@ const PORTRAIT: Record<EnemyId, string> = {
   chariots: "🐎",
   walls: "🧱",
   baalProphets: "🔥",
+  lionRest: "🦁",
   lion: "🦁",
+  lioness: "🦁",
   legion: "👥",
   fountains: "🌀",
   windows: "🌧️",
@@ -61,6 +63,8 @@ const CARD_NO: Record<EnemyId, string> = {
   princes: "E20",
   uncleanSpirits: "E21",
   swine: "E22",
+  lionRest: "E23",
+  lioness: "E24",
 };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
 const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
@@ -81,8 +85,10 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   // Daniel's rivals: the presidents go through the scrolls, the princes petition the king (the speaker stands left of centre).
   presidents: { src: "/cards/presidents.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
   princes: { src: "/cards/princes.jpg", figure: { cx: 0.4, head: 0.02, feet: 0.98 } },
-  // The lions in the den: the great lion stands left of centre.
-  lion: { src: "/cards/lion.jpg", figure: { cx: 0.38, head: 0.02, feet: 0.98 } },
+  // The three lions of the den: a painting each, the whole picture is the frame.
+  lion: { src: "/cards/lion.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  lionRest: { src: "/cards/lionRest.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  lioness: { src: "/cards/lioness.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   // The prophets of Baal crying out around the altar: the whole scene is the frame.
   baalProphets: { src: "/cards/baalProphets.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   // The king sits at the left of a throne-room scene.
@@ -126,6 +132,8 @@ const MOVES: Record<
   ahabKing: guardMoves(),
   jezebelQueen: shooterMoves("jezebelQueen"),
   presidents: guardMoves(),
+  lionRest: guardMoves(),
+  lioness: shooterMoves("lioness"),
   princes: shooterMoves("princes"),
   uncleanSpirits: guardMoves(),
   swine: shooterMoves("swine"),

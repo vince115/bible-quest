@@ -47,7 +47,7 @@ export type EnemyId =
   | "chariots" | "pharaohHost" | "chariotCaptain"
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
-  | "lion" | "presidents" | "princes"
+  | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
   | "legion" | "uncleanSpirits" | "swine";
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
