@@ -1,33 +1,33 @@
 "use client";
 
 // A booster pack: crimped foil wrapper, the pack's featured card in a window, its name below.
+import { useEffect, useRef } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilCss, foilOf, packPicture } from "./packStyle";
+import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilCss, packPicture } from "./packStyle";
 
 /** Pack proportions, width : height. */
 export const PACK_RATIO = "aspect-[9/14]";
-/** The crimped foil seals at the head and foot, as a share of the pack's height (the 3D stage draws the same ones). */
-export const SEAL_TOP = 0.07;
-export const SEAL_BOTTOM = 0.05;
-
-/** One crimped seal: the foil, finely ridged, with a bright lip along the picture side and the shadow it throws. */
+/** One crimped seal, drawn on a canvas as wide as the pack is on screen (see drawSeal in packStyle). */
 function Seal({ id, top }: { id: string; top: boolean }) {
-  const [light, mid, dark] = foilOf(id);
-  const size = `${(top ? SEAL_TOP : SEAL_BOTTOM) * 100}%`;
+  const ref = useRef<HTMLCanvasElement>(null);
+  const share = top ? SEAL_TOP : SEAL_BOTTOM;
+  useEffect(() => {
+    const canvas = ref.current;
+    const g = canvas?.getContext("2d");
+    if (!canvas || !g) return;
+    const w = 540;
+    canvas.width = w;
+    canvas.height = Math.round(((w * 14) / 9) * share);
+    drawSeal(g, id, 0, 0, canvas.width, canvas.height, top, false);
+  }, [id, top, share]);
   return (
-    <div
+    <canvas
+      ref={ref}
       aria-hidden
-      className="pointer-events-none absolute inset-x-0"
-      style={{
-        [top ? "top" : "bottom"]: 0,
-        height: size,
-        backgroundImage: `repeating-linear-gradient(90deg, rgb(255 255 255 / 0.5) 0 1.2px, transparent 1.2px 2px, rgb(0 0 0 / 0.28) 2px 3.2px, transparent 3.2px 4px), linear-gradient(${top ? "180deg" : "0deg"}, ${dark}, ${top ? mid : light} 50%, ${top ? light : mid})`,
-        boxShadow: `0 ${top ? 3 : -3}px 4px rgb(0 0 0 / 0.35)`,
-        borderBottom: top ? "2px solid rgb(255 255 255 / 0.8)" : undefined,
-        borderTop: top ? undefined : "2px solid rgb(255 255 255 / 0.8)",
-      }}
+      className="pointer-events-none absolute inset-x-0 w-full"
+      style={{ [top ? "top" : "bottom"]: 0, height: `${share * 100}%`, boxShadow: `0 ${top ? 3 : -3}px 5px rgb(0 0 0 / 0.4)` }}
     />
   );
 }

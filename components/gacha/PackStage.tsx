@@ -7,8 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { foilOf, packPicture } from "./packStyle";
-import { SEAL_BOTTOM, SEAL_TOP } from "./PackArt";
+import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilOf, packPicture } from "./packStyle";
 
 const W = 360; // texture size in pixels (9 : 14, like the pack art on the page)
 const H = 560;
@@ -130,37 +129,10 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   return c;
 }
 
-/**
- * The crimped foil seals along the top and bottom edges, drawn over the picture: a band of the pack's foil, finely
- * ridged by the crimping jaws, with a bright lip along the picture side and a short shadow it casts on the picture.
- * (PackArt draws the same seals in CSS; SEAL_TOP and SEAL_BOTTOM are shared.)
- */
+/** Both crimped foil seals, drawn over the picture (see drawSeal). */
 function seals(g: CanvasRenderingContext2D, id: string) {
-  const [light, mid, dark] = foilOf(id);
-  for (const [y, h, top] of [[0, H * SEAL_TOP, true], [H * (1 - SEAL_BOTTOM), H * SEAL_BOTTOM, false]] as const) {
-    const foil = g.createLinearGradient(0, y, 0, y + h);
-    foil.addColorStop(0, top ? light : mid);
-    foil.addColorStop(0.5, top ? mid : light);
-    foil.addColorStop(1, dark);
-    g.fillStyle = foil;
-    g.fillRect(0, y, W, h);
-    // The ridges
-    for (let x = 0; x < W; x += 4) {
-      g.fillStyle = "rgba(255,255,255,0.5)";
-      g.fillRect(x, y, 1.2, h);
-      g.fillStyle = "rgba(0,0,0,0.28)";
-      g.fillRect(x + 2, y, 1.2, h);
-    }
-    // The lip on the picture side, and the shadow it throws
-    const lip = top ? y + h - 2 : y;
-    g.fillStyle = "rgba(255,255,255,0.8)";
-    g.fillRect(0, lip, W, 2);
-    const shadow = g.createLinearGradient(0, top ? y + h : y, 0, top ? y + h + 8 : y - 8);
-    shadow.addColorStop(0, "rgba(0,0,0,0.4)");
-    shadow.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = shadow;
-    g.fillRect(0, top ? y + h : y - 8, W, 8);
-  }
+  drawSeal(g, id, 0, 0, W, H * SEAL_TOP, true);
+  drawSeal(g, id, 0, H * (1 - SEAL_BOTTOM), W, H * SEAL_BOTTOM, false);
 }
 
 const loadImage = (src: string) =>
@@ -225,14 +197,14 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       };
       aim();
 
-      // Light: soft all over, a key light from above and a warm one on the pack in front
-      scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      // Light: neutral white all over and a soft key from above, so the pictures keep their own colours (no warm cast)
+      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+      const key = new THREE.DirectionalLight(0xffffff, 1.6);
       key.position.set(2, 7, 6);
       scene.add(key);
-      const warm = new THREE.PointLight(0xffd9a0, 40, 14);
-      warm.position.set(0, 2.6, 5.6);
-      scene.add(warm);
+      const fill = new THREE.PointLight(0xffffff, 14, 14);
+      fill.position.set(0, 2.6, 5.6);
+      scene.add(fill);
 
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
@@ -422,7 +394,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           if (off > count / 2) off -= count;
           const away = Math.abs(off);
           const near = Math.max(0, 1 - away);
-          const shade = Math.max(0.4, 1 - away * 0.1);
+          const shade = Math.max(0.72, 1 - away * 0.05);
           for (const m of mats) m.color.setScalar(shade);
           const flip = flips[i];
           flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
