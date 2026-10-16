@@ -28,7 +28,7 @@ export const packPicture = (pack: { id: string; featured: string }) => PACK_PICT
 // ---------- the crimped foil seals ----------
 
 /** The seals at the head and foot of a pack, as a share of the pack's height. */
-export const SEAL_TOP = 0.15; // the top seal is three times as tall as the bottom one
+export const SEAL_TOP = 0.11; // the top seal is 2.2 times as tall as the bottom one
 export const SEAL_BOTTOM = 0.05;
 
 /** A #rrggbb or rgb(r,g,b) colour as its three numbers. */
@@ -142,11 +142,11 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
   // The hang hole of the top seal, in the middle of it: a wide rounded slot with a round bump above its centre
   // (shops hang the pack on a peg by it)
   if (top && hole !== "none") {
-    const pw = 28 * u; // the slot
-    const ph = 7.2 * u;
-    const r = 5.4 * u; // the bump
+    const pw = 42 * u; // the slot
+    const ph = 10.8 * u;
+    const r = 8.1 * u; // the bump
     const cx2 = w / 2;
-    const top0 = h / 2 - (ph + r) / 2; // the whole shape sits in the middle of the seal
+    const top0 = h / 2 - (ph + r) / 2 + 2 * u; // the whole shape sits in the middle of the seal, 2 px lower
     const slotTop = top0 + r;
     const shape = () => {
       g.beginPath();
