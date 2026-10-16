@@ -219,6 +219,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       // An inflated foil pouch with the cards inside: flat crimped seals at the head and foot, pinched side seams, and a
       // plump body between. Each face is a plane whose points are pushed out by `bulge`; the two faces meet at the seams.
       const BULGE = 0.065;
+      // The two faces stand THICK either side of the middle, so the edges have a little depth: strips of foil close them.
+      const THICK = 0.03;
       const smooth = (a: number, b: number, x: number) => {
         const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
         return t * t * (3 - 2 * t);
@@ -234,7 +236,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const faceGeometry = (sign: 1 | -1) => {
         const geo = new THREE.PlaneGeometry(PW, PH, 30, 48);
         const pos = geo.attributes.position;
-        for (let k = 0; k < pos.count; k++) pos.setZ(k, bulge(pos.getX(k), pos.getY(k)));
+        for (let k = 0; k < pos.count; k++) pos.setZ(k, THICK + bulge(pos.getX(k), pos.getY(k)));
         geo.computeVertexNormals();
         if (sign < 0) {
           // The back face looks the other way: turn it round (its picture then reads correctly from behind)
@@ -268,6 +270,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         };
         return m;
       };
+      const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
         const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.46, metalness: 0.1 });
         const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.48, metalness: 0.1 });
@@ -278,6 +281,16 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         backFace.userData.index = i;
         const mesh = new THREE.Group();
         mesh.add(frontFace, backFace);
+        // The closed edges: the pinched side seams and the flat head and foot, in the pack's foil
+        const edge = new THREE.MeshStandardMaterial({ color: foilOf(pack.id)[1], roughness: 0.6, metalness: 0.1 });
+        materials.push(edge);
+        for (const [w, h, ex, ey] of [[0.02, PH, PW / 2, 0], [0.02, PH, -PW / 2, 0], [PW, 0.02, 0, PH / 2], [PW, 0.02, 0, -PH / 2]] as const) {
+          const strip = new THREE.Mesh(new THREE.BoxGeometry(w, h, THICK * 2), edge);
+          strip.position.set(ex, ey, 0);
+          strip.userData.index = i;
+          edgeGeometries.push(strip.geometry);
+          mesh.add(strip);
+        }
         const mirrorFront = mirrorMaterial(frontTex);
         const mirrorBack = mirrorMaterial(backTex);
         materials.push(mirrorFront, mirrorBack);
@@ -288,7 +301,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         mesh.position.set(Math.sin(angle) * R, HOVER + PH / 2, Math.cos(angle) * R);
         mesh.rotation.y = angle;
         ring.add(mesh);
-        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], baseY: HOVER + PH / 2 };
+        return { mesh, mirror, mats: [front, back, mirrorFront, mirrorBack], edge, baseY: HOVER + PH / 2 };
       });
 
       // Flipping: each pack can be turned over to show its back (0 = front, 1 = back)
@@ -389,13 +402,14 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         ring.rotation.y = -current * step;
         mirrorRing.rotation.y = ring.rotation.y;
         uTime.value = time;
-        meshes.forEach(({ mesh, mirror, mats, baseY }, i) => {
+        meshes.forEach(({ mesh, mirror, mats, edge, baseY }, i) => {
           let off = (((i - current) % count) + count) % count;
           if (off > count / 2) off -= count;
           const away = Math.abs(off);
           const near = Math.max(0, 1 - away);
           const shade = Math.max(0.72, 1 - away * 0.05);
           for (const m of mats) m.color.setScalar(shade);
+          edge.color.set(foilOf(pack.id)[1]).multiplyScalar(shade * 0.7);
           const flip = flips[i];
           flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
           mesh.rotation.y = i * step + Math.PI * flip.cur;
@@ -418,6 +432,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         canvas.removeEventListener("pointercancel", onUp);
         canvas.removeEventListener("pointerleave", onLeave);
         geometries.forEach((geo) => geo.dispose());
+        edgeGeometries.forEach((geo) => geo.dispose());
         materials.forEach((m) => m.dispose());
         frontTex.dispose();
         backTex.dispose();
