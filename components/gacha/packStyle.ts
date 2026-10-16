@@ -146,7 +146,7 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
     const ph = 10.8 * u;
     const r = 8.1 * u; // the bump
     const cx2 = w / 2;
-    const top0 = h / 2 - (ph + r) / 2 + 2 * u; // the whole shape sits in the middle of the seal, 2 px lower
+    const top0 = h / 2 - (ph + r) / 2 + 5 * u; // the whole shape sits in the middle of the seal, 5 px lower
     const slotTop = top0 + r;
     const shape = () => {
       g.beginPath();
