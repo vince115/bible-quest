@@ -33,7 +33,7 @@ import { MAGIC_VERSION_ENABLED, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } 
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
-import { useBattleV3Store } from "@/game/v3/store";
+import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
@@ -1250,7 +1250,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
 export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, swap, endTurn, newAchievements, drop, enter, interlude, nextRound } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, swap, endTurn, newAchievements, drop, enter, interlude, nextRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
@@ -1268,6 +1268,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [viewingScripture, setViewingScripture] = useState<{ uid?: number; card: CardId } | null>(null);
   const [scale] = useState(savedScale);
   const [showLog, setShowLog] = useState(false);
+  useEffect(() => setAutoSpeed(savedSpeed()), [setAutoSpeed]);
   const [showResult, setShowResult] = useState(true);
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
@@ -1536,6 +1537,14 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           }`}
         >
           {auto ? t("v2.ui.autoOn") : t("v2.ui.autoOff")}
+        </button>
+        <button
+          onClick={() => setAutoSpeed(autoSpeed === 1 ? 2 : 1)}
+          aria-label={t("v3.ui.autoSpeed")}
+          title={t("v3.ui.autoSpeed")}
+          className="shrink-0 whitespace-nowrap rounded-full border-2 border-sky-300 px-2.5 py-1.5 text-xs font-black tabular-nums text-sky-100 hover:bg-sky-900/60 sm:text-sm"
+        >
+          {autoSpeed}x
         </button>
         <button
           onClick={() => {
