@@ -213,13 +213,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       scene.environment = envTex;
-      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-      const key = new THREE.DirectionalLight(0xffffff, 0.55);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const key = new THREE.DirectionalLight(0xffffff, 0.8);
       key.position.set(2, 7, 6);
       scene.add(key);
-      const fill = new THREE.PointLight(0xffffff, 2.5, 14);
-      fill.position.set(0, 2.6, 5.6);
-      scene.add(fill);
 
       // The packs
       const frontTex = new THREE.CanvasTexture(paintFront(pack.id, title, art));
@@ -285,9 +282,13 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         return m;
       };
       const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
+      const PICTURE = 0.8; // how much of the painting shows by itself
+      const SHADED = 0.25; // and how much of it the lights shape
       const meshes = Array.from({ length: count }, (_, i) => {
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.8, metalness: 0, envMapIntensity: 0.04, alphaTest: 0.5 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.82, metalness: 0, envMapIntensity: 0.04, alphaTest: 0.5 });
+        // The picture shows through its own emissive map, so its colours are the painting's own; the lights (a quarter of the
+        // surface colour) only add a little shading to give the pack its volume
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, emissiveMap: frontTex, emissive: 0xffffff, emissiveIntensity: PICTURE, color: SHADED, roughness: 0.85, metalness: 0, envMapIntensity: 0.02, alphaTest: 0.5 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, emissiveMap: backTex, emissive: 0xffffff, emissiveIntensity: PICTURE, color: SHADED, roughness: 0.85, metalness: 0, envMapIntensity: 0.02, alphaTest: 0.5 });
         materials.push(front, back);
         const frontFace = new THREE.Mesh(geometries[0], front);
         const backFace = new THREE.Mesh(geometries[1], back);
@@ -422,7 +423,12 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
           const away = Math.abs(off);
           const near = Math.max(0, 1 - away);
           const shade = Math.max(0.72, 1 - away * 0.05);
-          for (const m of mats) m.color.setScalar(shade);
+          mats.forEach((m, k) => {
+            if (k < 2) {
+              m.color.setScalar(SHADED * shade);
+              m.emissiveIntensity = PICTURE * shade;
+            } else m.color.setScalar(shade);
+          });
           edge.color.set(foilOf(pack.id)[1]).multiplyScalar(shade * 0.7);
           const flip = flips[i];
           flip.cur += (flip.target - flip.cur) * Math.min(1, dt * 8);
