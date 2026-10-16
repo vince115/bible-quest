@@ -55,6 +55,9 @@ export const RULES_V2 = {
   roarTargets: 2,
   pounce: 70,
   maul: 50,
+  /** The presidents and princes who plot against Daniel (the first round of the lions' stage): Accuse shakes allies; the Decree hits the front line. */
+  accuseTargets: 2,
+  decree: 40,
   /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
   many: 20,
   manyTargets: 2,
@@ -842,7 +845,7 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lion: "wood", presidents: "earth", princes: "earth",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -885,7 +888,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "pharaohHost", "chariots", "chariotCaptain",
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
-  "presidents", "lion", "princes",
+  "lionRest", "lion", "lioness", "presidents", "princes",
   "uncleanSpirits", "legion", "swine",
 ];
 
@@ -897,14 +900,14 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * Who fights in each stage: the boss, and (except in Eden) a guard who protects the boss while standing and a shooter
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
-export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion" };
-export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "presidents", gerasa: "uncleanSpirits" };
-export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "princes", gerasa: "swine" };
+export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents" };
+export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
+export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" };
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
   (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [STAGE_GUARD[st], STAGE_BOSS[st], STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
 ) as Record<StageId, EnemyId[]>;
 /** What each shooter's hit on the front line does. */
-export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, princes: 20, swine: 20 };
+export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, lioness: 30, princes: 20, swine: 20 };
 /** The stages in the campaign's (Bible) order. */
 export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
 
@@ -915,7 +918,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lion: 160, presidents: 50, princes: 40,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
@@ -1557,16 +1560,18 @@ export const WALLS_CRACKED_CYCLE: GoliathActionId[] = ["boulder", "stones", "arr
 export const BAAL_CYCLE: GoliathActionId[] = ["cry", "leap", "cut", "leap"];
 /** The lions keep one cycle; Maul hunts the weakest ally wherever they stand. */
 export const LIONS_CYCLE: GoliathActionId[] = ["roar", "pounce", "maul", "pounce"];
+/** The presidents keep one cycle: the Decree falls on the front line, Accuse shakes two allies. */
+export const PLOT_CYCLE: GoliathActionId[] = ["decree", "accuse", "decree", "decree"];
 /** Legion keeps one cycle; once unleashed (half HP) We Are Many hits every ally. */
 export const LEGION_CYCLE: GoliathActionId[] = ["many", "chains", "torment", "many"];
 
 /** Actions aimed at one ally (the front line on the v3 board). */
-export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains"];
+export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains", "decree"];
 /** Actions aimed at several allies at once, and how many. */
-export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
+export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, accuse: RULES_V2.accuseTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
 /** Actions that hunt the weakest ally (lowest HP), ignoring the front line. */
 export const HUNT_WEAKEST: GoliathActionId[] = ["maul"];
 /** Actions that hit every ally (We Are Many only once Legion is unleashed). */
 export const HITS_ALL: GoliathActionId[] = ["swing", "coil", "rain", "deluge", "arrows", "leap"];
 /** Actions that only shake (no damage). */
-export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment"];
+export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment", "accuse"];

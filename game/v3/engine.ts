@@ -69,6 +69,22 @@ export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0
   return aim(board, rng);
 }
 
+/**
+ * The next round of a stage fought in two rounds: a new battle against the next enemies, with the same party. Everyone
+ * keeps the HP they have left (a fallen ally stays down), the deck, hand and discard carry on, and the rest of the
+ * battle starts fresh (Shields, energy stuck under a character, once-a-battle skills and the turn count).
+ */
+export function nextRoundBoard(prev: Board, stage: StageId, rng: Rng = Math.random): Board {
+  const next = createBoard(prev.lineup, prev.front, rng, stage, prev.battle.pools);
+  for (const id of prev.lineup) next.battle.party[id].hp = prev.battle.party[id].hp;
+  next.battle.deck = prev.battle.deck;
+  next.battle.hand = prev.battle.hand;
+  next.battle.discard = prev.battle.discard;
+  const front = isAlive(next.battle, prev.front) ? prev.front : (standing(next)[0] ?? prev.front);
+  next.front = front;
+  return aim(next, rng);
+}
+
 /** Can `id` be moved to the front line right now? (A fallen front line is replaced for free.) */
 export function canSwap(b: Board, id: CharacterId): boolean {
   if (b.battle.result !== "ongoing" || id === b.front || !b.lineup.includes(id) || !isAlive(b.battle, id)) return false;

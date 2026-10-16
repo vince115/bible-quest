@@ -1249,7 +1249,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
 export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, swap, endTurn, newAchievements, drop, enter } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, swap, endTurn, newAchievements, drop, enter, interlude, nextRound } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
@@ -1421,14 +1421,19 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       {/* ---------- Board: enemies, message, our characters, hand ---------- */}
       <main className="relative z-10 flex min-w-0 flex-1 flex-col">
 
-        <section className="flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
+        <section className="relative flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
+          {(b.stage === "plot" || (b.stage === "lions" && campaign && campaignStage(campaign).before)) && (
+            <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
+              {b.stage === "plot" ? t("v3.round.first") : t("v3.round.second")}
+            </div>
+          )}
           <div className="flex items-start justify-center gap-2 sm:gap-5">
             {/* The stage's shooter and guard flank the boss; in a duel they stand aside (Eden has only the Serpent). */}
-            {!isDuel(board) && STAGE_SHOOTER[b.stage] && STAGE_GUARD[b.stage] && (
-              <>
-                <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
-                <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
-              </>
+            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
+              <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
+            )}
+            {!isDuel(board) && STAGE_GUARD[b.stage] && (
+              <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
             )}
             <EnemyCard b={b} front={board.front} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
           </div>
@@ -1821,8 +1826,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       {b.result !== "ongoing" && showResult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className={`w-full max-w-sm rounded-2xl border-2 bg-stone-900 p-6 text-center ${b.result === "victory" ? "border-amber-400" : "border-red-700"}`}>
-            <div className="text-5xl">{b.result === "victory" ? "👑" : "💀"}</div>
-            <h2 className="mt-2 text-3xl font-bold">{b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}</h2>
+            <div className="text-5xl">{interlude && b.result === "victory" ? "⚔️" : b.result === "victory" ? "👑" : "💀"}</div>
+            <h2 className="mt-2 text-3xl font-bold">{interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}</h2>
+            {interlude && b.result === "victory" && <p className="mt-2 text-sm text-amber-200">{t("v3.round.hint")}</p>}
             <p className="mt-2 text-stone-300">{t("v2.ui.resultTurns", { n: b.turn })}</p>
             {board.lineup.length === 1 && <p className="mt-1 text-sm text-amber-200">{t("v3.lineup.solo")}</p>}
             {drop && (
@@ -1842,7 +1848,18 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
               </div>
             ))}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {campaign && b.result === "victory" && next && (
+              {interlude && b.result === "victory" && (
+                <button
+                  onClick={() => {
+                    setPending(null);
+                    nextRound();
+                  }}
+                  className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400"
+                >
+                  {t("v3.round.go")} →
+                </button>
+              )}
+              {campaign && b.result === "victory" && !interlude && next && (
                 <Link href={`/campaign/${next}`} className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
                   {t("v3.campaign.next")} →
                 </Link>
@@ -1852,7 +1869,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   setPending(null);
                   restart();
                 }}
-                className={`rounded-xl px-4 py-2 font-semibold ${campaign && b.result === "victory" ? "border border-amber-500 text-amber-100 hover:bg-stone-800" : "bg-amber-500 text-stone-950 hover:bg-amber-400"}`}
+                className={`rounded-xl px-4 py-2 font-semibold ${(campaign && b.result === "victory") || interlude ? "border border-amber-500 text-amber-100 hover:bg-stone-800" : "bg-amber-500 text-stone-950 hover:bg-amber-400"}`}
               >
                 {t("v2.ui.playAgain")}
               </button>
