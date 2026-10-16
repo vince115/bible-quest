@@ -13,9 +13,10 @@ export function PackArt({ pack, className = "" }: { pack: PackKind; className?: 
   const t = useT();
   return (
     <div className={`relative w-full ${PACK_RATIO} overflow-hidden rounded-md shadow-[0_8px_24px_rgb(0_0_0/0.6)] ring-1 ring-black/50 ${className}`} style={{ background: foilCss(pack.id) }}>
-      {/* The wrapper picture fills the whole pack, its crimped foil seals included */}
+      {/* The wrapper picture fills the whole pack, its crimped foil seals included. crossOrigin: the 3D stage fetches the same file as a texture
+          with CORS, and a copy cached from a plain <img> request has no CORS header (the stage would then draw plain foil). */}
       {/* eslint-disable-next-line @next/next/no-img-element -- pack art is a plain file */}
-      <img src={asset(packPicture(pack))} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+      <img src={asset(packPicture(pack))} alt="" crossOrigin="anonymous" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-x-0 bottom-[9%] flex flex-col items-center gap-[2%] text-center text-white">
         <span className="text-[0.55em] font-bold uppercase tracking-[0.3em] opacity-90 [-webkit-text-stroke:2px_rgb(0_0_0/0.7)] [paint-order:stroke_fill]">Bible Quest</span>
         <span className="px-2 text-[1.5em] font-black leading-tight [-webkit-text-stroke:4px_rgb(0_0_0/0.75)] [paint-order:stroke_fill]">{t(`v3.pack.${pack.id}.name`)}</span>
