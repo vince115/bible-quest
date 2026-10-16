@@ -1,0 +1,91 @@
+import { describe, expect, it } from "vitest";
+import { STAGE_ENEMIES } from "../v2/data";
+import { isAlive } from "../v2/engine";
+import { campaignStage, stageBgm, stageOfBattle } from "./campaign";
+import { createBoard, nextRoundBoard } from "./engine";
+import { useProgressStore } from "./progress";
+import { useBattleV3Store } from "./store";
+
+const PARTY = ["daniel", "esther", "nehemiah"] as const;
+
+describe("the lions' den in two rounds", () => {
+  it("has the plot round first, then three lions", () => {
+    expect(STAGE_ENEMIES.plot.sort()).toEqual(["presidents", "princes"]);
+    expect(STAGE_ENEMIES.lions.sort()).toEqual(["lion", "lionRest", "lioness"]);
+    const stage = campaignStage("lions");
+    expect(stage.before).toBe("plot");
+    expect(stage.battle).toBe("lions");
+    expect(stageOfBattle("plot")).toBe(stage);
+    expect(stageBgm("plot")).toBe(stageBgm("lions"));
+  });
+
+  it("the second round keeps each ally's HP, a fallen ally stays down, and the deck carries on", () => {
+    const first = createBoard([...PARTY], "daniel", () => 0.5, "plot", "table");
+    first.battle.party.daniel.hp = 90;
+    first.battle.party.esther.hp = 0;
+    first.battle.party.daniel.shield = 30;
+    const second = nextRoundBoard(first, "lions", () => 0.5);
+    expect(second.battle.stage).toBe("lions");
+    expect(second.battle.party.daniel.hp).toBe(90);
+    expect(second.battle.party.daniel.shield).toBe(0);
+    expect(isAlive(second.battle, "esther")).toBe(false);
+    expect(isAlive(second.battle, "nehemiah")).toBe(true);
+    expect(second.battle.deck).toBe(first.battle.deck);
+    expect(second.battle.pools).toBe("table");
+    expect(second.battle.turn).toBe(1);
+    expect(Object.entries(second.battle.enemies).filter(([, e]) => e.hp > 0).map(([id]) => id).sort()).toEqual(["lion", "lionRest", "lioness"]);
+  });
+
+  it("a fallen front line is replaced when the second round starts", () => {
+    const first = createBoard([...PARTY], "daniel", () => 0.5, "plot", "table");
+    first.battle.party.daniel.hp = 0;
+    const second = nextRoundBoard(first, "lions", () => 0.5);
+    expect(second.front).not.toBe("daniel");
+    expect(isAlive(second.battle, second.front)).toBe(true);
+  });
+
+  it("winning round 1 only opens round 2; clearing the stage takes both", () => {
+    const store = useBattleV3Store.getState();
+    store.enter("lions");
+    store.start([...PARTY], "daniel", "lions", "table");
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("plot");
+
+    // Round 1: the accusers fall.
+    const round1 = useBattleV3Store.getState().board!;
+    round1.battle.enemies.princes.hp = 0;
+    round1.battle.enemies.presidents.hp = 1;
+    useBattleV3Store.getState().basic("daniel", "presidents");
+    let now = useBattleV3Store.getState();
+    expect(now.board!.battle.result).toBe("victory");
+    expect(now.interlude).toBe("lions");
+    expect(useProgressStore.getState().cleared.lions).toBeUndefined();
+    expect(now.drop).toBeNull();
+
+    // Round 2 starts from the interlude.
+    now.nextRound();
+    now = useBattleV3Store.getState();
+    expect(now.interlude).toBeNull();
+    expect(now.board!.battle.stage).toBe("lions");
+    expect(now.board!.battle.result).toBe("ongoing");
+
+    // Round 2: the lions fall, and now the stage is cleared.
+    const round2 = now.board!;
+    round2.battle.enemies.lionRest.hp = 0;
+    round2.battle.enemies.lioness.hp = 0;
+    round2.battle.enemies.lion.hp = 1;
+    now.basic("daniel", "lion");
+    now = useBattleV3Store.getState();
+    expect(now.board!.battle.result).toBe("victory");
+    expect(now.interlude).toBeNull();
+    expect(useProgressStore.getState().cleared.lions).toBe(1);
+    expect(now.drop).not.toBeNull();
+  });
+
+  it("playing again after round 2 starts over from round 1", () => {
+    const store = useBattleV3Store.getState();
+    store.enter("lions");
+    store.start([...PARTY], "daniel", "lions", "table");
+    useBattleV3Store.getState().restart();
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("plot");
+  });
+});

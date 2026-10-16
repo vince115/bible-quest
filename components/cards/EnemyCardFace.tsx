@@ -131,7 +131,10 @@ const MOVES: Record<
   wallGuard: shooterMoves("wallGuard"),
   ahabKing: guardMoves(),
   jezebelQueen: shooterMoves("jezebelQueen"),
-  presidents: guardMoves(),
+  presidents: [
+    { action: "decree", key: "v2.action.decree.name", amount: String(R.decree) },
+    { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
+  ],
   lionRest: guardMoves(),
   lioness: shooterMoves("lioness"),
   princes: shooterMoves("princes"),

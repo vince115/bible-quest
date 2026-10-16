@@ -5,10 +5,10 @@ import { MAGIC_VERSION_ENABLED, RULES_V2 } from "../v2/data";
 import type { Target } from "../v2/engine";
 import type { CharacterId, EnemyId, PoolMode, SkillId, StageId } from "../v2/types";
 import { earnedBy, useAchievementStore, type AchievementId } from "./achievements";
-import type { CampaignStageId } from "./campaign";
+import { campaignStage, type CampaignStageId } from "./campaign";
 import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
-import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
+import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
 
 /** Pause between auto-battle steps so the player can follow along (ms). */
 const AUTO_STEP_DELAY = 450;
@@ -27,6 +27,10 @@ interface BattleV3Store {
   campaign: CampaignStageId | null;
   /** The card the campaign stage just dropped. */
   drop: CharacterId | null;
+  /** Between the two rounds of a stage: the battle the second round plays (the first round is won, the stage not yet). */
+  interlude: StageId | null;
+  /** Starts the second round of the stage with the same party. */
+  nextRound: () => void;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
   enter: (campaign: CampaignStageId | null) => void;
   start: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode?: PoolMode) => void;
@@ -53,6 +57,11 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     set({ board });
     if (was === "ongoing" && board.battle.result !== "ongoing") {
       const { campaign } = get();
+      const stage = campaign ? campaignStage(campaign) : null;
+      if (stage?.before && stage.battle && board.battle.stage === stage.before && board.battle.result === "victory") {
+        set({ interlude: stage.battle, newAchievements: [], drop: null });
+        return;
+      }
       set({
         newAchievements: useAchievementStore.getState().unlock(earnedBy(board)),
         drop: campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null,
@@ -96,22 +105,34 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     newAchievements: [],
     campaign: null,
     drop: null,
+    interlude: null,
     enter: (campaign) => {
       if (get().campaign === campaign) return;
-      set((st) => ({ campaign, board: null, drop: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
+      set((st) => ({ campaign, board: null, drop: null, interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
     },
     start: (lineup, front, stage, mode) =>
-      set((st) => ({
-        board: createBoard(lineup, front, Math.random, stage, mode ?? st.lastLineup.mode),
-        lastLineup: { lineup, front, stage, mode: mode ?? st.lastLineup.mode },
-        resolving: false,
-        auto: false,
-        runId: st.runId + 1,
-        newAchievements: [],
-        drop: null,
-      })),
+      set((st) => {
+        // A stage with a first round starts there; `stage` stays the last battle, so playing again starts over from the first round.
+        const entry = st.campaign ? campaignStage(st.campaign) : null;
+        const first = entry?.before && entry.battle === stage ? entry.before : stage;
+        return {
+          board: createBoard(lineup, front, Math.random, first, mode ?? st.lastLineup.mode),
+          lastLineup: { lineup, front, stage, mode: mode ?? st.lastLineup.mode },
+          resolving: false,
+          auto: false,
+          runId: st.runId + 1,
+          newAchievements: [],
+          drop: null,
+          interlude: null,
+        };
+      }),
+    nextRound: () => {
+      const { board, interlude } = get();
+      if (!board || !interlude || board.battle.result !== "victory") return;
+      set((st) => ({ board: nextRoundBoard(board, interlude), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
+    },
     restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage, get().lastLineup.mode),
-    pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null })),
+    pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null, interlude: null })),
     play: (uid, target) => act((b) => playCardOnBoard(b, uid, target)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),
     draw: () => act((b) => drawOnBoard(b)),
