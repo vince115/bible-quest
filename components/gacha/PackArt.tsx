@@ -38,7 +38,7 @@ export function PackArt({ pack, className = "" }: { pack: PackKind; className?: 
     <div className={`relative w-full ${PACK_RATIO} overflow-hidden rounded-md shadow-[0_8px_24px_rgb(0_0_0/0.6)] ring-1 ring-black/50 ${className}`} style={{ background: foilCss(pack.id) }}>
       {/* The wrapper picture fills the whole pack, its crimped foil seals included */}
       {/* eslint-disable-next-line @next/next/no-img-element -- pack art is a plain file */}
-      <img src={asset(packPicture(pack))} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+      <img src={asset(packPicture(pack))} alt="" crossOrigin="anonymous" draggable={false} className="absolute inset-x-0 w-full object-cover object-top" style={{ top: `${SEAL_TOP * 100}%`, height: `${(1 - SEAL_TOP) * 100}%` }} />
       <Seal id={pack.id} top />
       <Seal id={pack.id} top={false} />
       <div className="absolute inset-x-0 bottom-[9%] flex flex-col items-center gap-[2%] text-center text-white">

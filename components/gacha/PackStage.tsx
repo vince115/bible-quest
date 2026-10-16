@@ -29,10 +29,12 @@ function paintFront(id: string, title: string, art: HTMLImageElement | null): HT
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   if (art) {
-    // Like object-fit: cover, so the picture fills the pack
-    const k = Math.max(W / art.width, H / art.height);
+    // Like object-fit: cover, but only over what lies below the top seal, and kept at the top: the picture starts right
+    // under the seal, so nobody's head is hidden by it (the foot of the picture is calm ground, and can be cut)
+    const top = H * SEAL_TOP;
+    const k = Math.max(W / art.width, (H - top) / art.height);
     const w = art.width * k, h = art.height * k;
-    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
+    g.drawImage(art, (W - w) / 2, top, w, h);
   }
   seals(g, id);
   g.textAlign = "center";
@@ -70,12 +72,14 @@ function paintBack(id: string, art: HTMLImageElement | null): HTMLCanvasElement 
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   if (art) {
-    const k = Math.max(W / art.width, H / art.height);
+    // The same placement as the front (under the top seal), turned round
+    const top = H * SEAL_TOP;
+    const k = Math.max(W / art.width, (H - top) / art.height);
     const w = art.width * k, h = art.height * k;
     g.save();
     g.translate(W, 0);
     g.scale(-1, 1);
-    g.drawImage(art, (W - w) / 2, (H - h) / 2, w, h);
+    g.drawImage(art, (W - w) / 2, top, w, h);
     g.restore();
   }
   // The middle sinks into a dark field; the foil seals above and below stay as on the front
