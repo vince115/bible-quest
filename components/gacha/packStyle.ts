@@ -22,7 +22,9 @@ export const foilCss = (id: string) => {
  * The picture printed on each kind of pack, one scene for each period of the Bible (public/packs/<id>.jpg).
  * A pack without a picture shows its featured card instead.
  */
-const PACK_PICTURES: Record<string, string> = Object.fromEntries(Object.keys(FOIL).map((id) => [id, `/packs/${id}.jpg`]));
+// The ?v= number changes whenever the pictures are redrawn. It also steps around browser copies fetched before the
+// pictures were asked for with CORS (those have no CORS header and break the 3D stage), which stay cached for a day.
+const PACK_PICTURES: Record<string, string> = Object.fromEntries(Object.keys(FOIL).map((id) => [id, `/packs/${id}.jpg?v=2`]));
 export const packPicture = (pack: { id: string; featured: string }) => PACK_PICTURES[pack.id] ?? `/cards/${pack.featured}.jpg`;
 
 // ---------- the crimped foil seals ----------
