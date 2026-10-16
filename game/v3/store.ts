@@ -10,8 +10,19 @@ import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
 import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
 
-/** Pause between auto-battle steps so the player can follow along (ms). */
-const AUTO_STEP_DELAY = 450;
+/** Auto battle's pauses at 1x (ms): between plays, and after the end of a turn while the enemy acts. 2x halves them. */
+const AUTO_STEP_DELAY = 1500;
+const AUTO_TURN_DELAY = 2200;
+export type AutoSpeed = 1 | 2;
+const SPEED_KEY = "bible-quest-auto-speed";
+/** The speed this browser last chose (read after mount, so the prerendered page matches). */
+export const savedSpeed = (): AutoSpeed => {
+  try {
+    return window.localStorage.getItem(SPEED_KEY) === "2" ? 2 : 1;
+  } catch {
+    return 1;
+  }
+};
 
 interface BattleV3Store {
   /** null while the player picks a line-up. */
@@ -20,6 +31,9 @@ interface BattleV3Store {
   lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId; mode: PoolMode };
   resolving: boolean;
   auto: boolean;
+  /** How fast auto battle plays: 1x (a readable pace) or 2x. */
+  autoSpeed: AutoSpeed;
+  setAutoSpeed: (speed: AutoSpeed) => void;
   runId: number;
   /** Achievements unlocked by the battle that just ended. */
   newAchievements: AchievementId[];
@@ -93,7 +107,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
             ? basicAttackOnBoard(b, action.who, action.target)
             : castOnBoard(b, action.skill, action.target),
     );
-    setTimeout(() => autoStep(runId), AUTO_STEP_DELAY);
+    setTimeout(() => autoStep(runId), AUTO_STEP_DELAY / get().autoSpeed);
   };
 
   return {
@@ -101,6 +115,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
     resolving: false,
     auto: false,
+    autoSpeed: 1,
+    setAutoSpeed: (speed) => {
+      set({ autoSpeed: speed });
+      try {
+        window.localStorage.setItem(SPEED_KEY, String(speed));
+      } catch {}
+    },
     runId: 0,
     newAchievements: [],
     campaign: null,
@@ -155,8 +176,8 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       setTimeout(() => {
         if (get().runId !== runId) return;
         set({ board: startNextBoardTurn(get().board!), resolving: false });
-        if (get().auto) setTimeout(() => autoStep(runId), AUTO_STEP_DELAY);
-      }, RULES_V2.stepDelay);
+        if (get().auto) setTimeout(() => autoStep(runId), AUTO_STEP_DELAY / get().autoSpeed);
+      }, get().auto ? AUTO_TURN_DELAY / get().autoSpeed : RULES_V2.stepDelay);
     },
     setAuto: (on) => {
       set({ auto: on });
