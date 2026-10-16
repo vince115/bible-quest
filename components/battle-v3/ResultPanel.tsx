@@ -14,13 +14,17 @@ export const resultButton = (primary: boolean) =>
     primary ? "bg-[#f4c850] text-stone-950 ring-1 ring-[#fff3b8] hover:bg-[#ffd96a]" : "bg-black/50 text-amber-100 ring-1 ring-[#f4c850]/70 hover:bg-black/70"
   }`;
 
-/** A boxed note inside the panel (the dropped card, an achievement). */
+/** A section of the panel with no box of its own (the panel is already framed): a small gold title between two hairlines. */
 export function ResultNote({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl bg-black/45 p-3 ring-1 ring-[#f4c850]/60">
-      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300/90">{label}</div>
+    <section className="mt-5 flex flex-col items-center gap-2">
+      <div className="flex w-full items-center gap-3">
+        <span className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${GOLD}aa)` }} />
+        <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-300/90">{label}</span>
+        <span className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${GOLD}aa)` }} />
+      </div>
       {children}
-    </div>
+    </section>
   );
 }
 

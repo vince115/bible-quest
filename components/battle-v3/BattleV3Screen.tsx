@@ -1880,16 +1880,23 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         >
           {drop && (
             <ResultNote label={t("v3.campaign.drop")}>
-              <HoloCard element={CHARACTER_ELEMENT[drop]} rarity={CARD_RARITY[drop]} touchTilt={false} figure={figureArea(drop)} className="w-[160px] text-[7.5px]">
-                <CharacterCardFace id={drop} />
-              </HoloCard>
-              <div className="text-lg font-bold text-amber-50">{t(`char.${drop}.name`)}</div>
+              {/* The card stands in a soft pool of light, with no box around it; its name and tier are written under it */}
+              <div className="relative mt-1 flex flex-col items-center gap-2">
+                <div aria-hidden className="absolute -inset-x-6 top-2 bottom-8 -z-10 rounded-full blur-2xl" style={{ background: "radial-gradient(ellipse at center, rgb(244 200 80 / 0.4), transparent 70%)" }} />
+                <HoloCard element={CHARACTER_ELEMENT[drop]} rarity={CARD_RARITY[drop]} touchTilt={false} figure={figureArea(drop)} className="w-[176px] text-[8.2px] shadow-[0_10px_30px_rgb(0_0_0/0.6)]">
+                  <CharacterCardFace id={drop} />
+                </HoloCard>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[#f4c850] px-2.5 py-0.5 text-xs font-black tracking-wider text-stone-950">{CARD_RARITY[drop]}</span>
+                  <span className="text-xl font-black tracking-wide text-amber-50">{t(`char.${drop}.name`)}</span>
+                </div>
+              </div>
             </ResultNote>
           )}
           {newAchievements.map((id) => (
             <ResultNote key={id} label={t("v3.ach.unlocked")}>
-              <div className="text-lg font-bold text-amber-50">🏆 {t(`v3.ach.${id}.name`)}</div>
-              <div className="text-xs text-stone-300">{t(`v3.ach.${id}.desc`)}</div>
+              <div className="text-lg font-black tracking-wide text-amber-50">🏆 {t(`v3.ach.${id}.name`)}</div>
+              <div className="-mt-1 text-xs text-stone-300">{t(`v3.ach.${id}.desc`)}</div>
             </ResultNote>
           ))}
         </ResultPanel>
