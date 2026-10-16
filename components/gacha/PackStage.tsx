@@ -276,8 +276,8 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       };
       const edgeGeometries: InstanceType<typeof THREE.BoxGeometry>[] = [];
       const meshes = Array.from({ length: count }, (_, i) => {
-        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.34, metalness: 0.12, envMapIntensity: 0.32, alphaTest: 0.5 });
-        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.36, metalness: 0.12, envMapIntensity: 0.32, alphaTest: 0.5 });
+        const front = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.55, metalness: 0.05, envMapIntensity: 0.1, alphaTest: 0.5 });
+        const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.57, metalness: 0.05, envMapIntensity: 0.1, alphaTest: 0.5 });
         materials.push(front, back);
         const frontFace = new THREE.Mesh(geometries[0], front);
         const backFace = new THREE.Mesh(geometries[1], back);

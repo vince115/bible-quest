@@ -28,7 +28,7 @@ export const packPicture = (pack: { id: string; featured: string }) => PACK_PICT
 // ---------- the crimped foil seals ----------
 
 /** The seals at the head and foot of a pack, as a share of the pack's height. */
-export const SEAL_TOP = 0.07;
+export const SEAL_TOP = 0.075; // the top seal is 1.5 times as tall as the bottom one
 export const SEAL_BOTTOM = 0.05;
 
 /** A #rrggbb or rgb(r,g,b) colour as its three numbers. */
@@ -139,19 +139,18 @@ export function drawSeal(g: CanvasRenderingContext2D, id: string, x: number, y: 
   g.fillStyle = "rgba(0,0,0,0.3)";
   g.fillRect(0, h - 0.5 * u, w, 0.5 * u);
 
-  // The hang hole of the top seal, a rounded slot in the middle (shops hang the pack on a peg by it)
+  // The round hang hole of the top seal, in the middle (shops hang the pack on a peg by it)
   if (top && hole !== "none") {
-    const hw = Math.min(h * 1.05, w * 0.12);
-    const hh = h * 0.36;
+    const r = h * 0.21; // a round hole
     const cx2 = w / 2;
     const cy = h * 0.5;
     const slot = () => {
       g.beginPath();
-      g.roundRect(cx2 - hw / 2, cy - hh / 2, hw, hh, hh / 2);
+      g.arc(cx2, cy, r, 0, Math.PI * 2);
     };
     // The film around the hole is a little stiffer and catches the light
     g.beginPath();
-    g.roundRect(cx2 - hw / 2 - 2 * u, cy - hh / 2 - 2 * u, hw + 4 * u, hh + 4 * u, hh / 2 + 2 * u);
+    g.arc(cx2, cy, r + 2.2 * u, 0, Math.PI * 2);
     g.fillStyle = "rgba(255,255,255,0.22)";
     g.fill();
     slot();
