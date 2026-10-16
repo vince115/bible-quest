@@ -171,7 +171,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
     (async () => {
       const THREE = await import("three");
+      const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
       const art = await loadImage(asset(packPicture(pack)));
+      // Everything that waits is done before the canvas is made: after this point the setup runs straight through,
+      // so a stage that was switched away meanwhile never leaves a second canvas behind.
       if (disposed) return;
 
       let renderer: InstanceType<typeof THREE.WebGLRenderer>;
@@ -203,7 +206,6 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
       // Light: neutral white all over and a soft key from above, so the pictures keep their own colours (no warm cast)
       // A neutral studio environment gives the glossy film something to reflect: soft highlights on the swollen body
-      const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       scene.environment = envTex;
