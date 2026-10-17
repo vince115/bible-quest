@@ -195,6 +195,8 @@ export interface BattleState {
   coiled: CharacterId | null;
   /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
   rows?: boolean;
+  /** How much harder the boss hits (0.2 = +20%): the v3 board, against a big party. */
+  bossBoost?: number;
   /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
   aideTargets?: Partial<Record<EnemyId, CharacterId>>;
   /** Goliath's [current intent, next intent]; both are always shown. */

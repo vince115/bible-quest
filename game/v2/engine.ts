@@ -204,7 +204,13 @@ function makeIntent(s: BattleState, action: GoliathActionId, rng: Rng): Intent {
  * The damage an action deals per hit in the boss's current phase, before elements and defences
  * (Crushing Blow and Deluge as if charged). 0 for actions that don't deal damage.
  */
+/** What a boss action deals before elements and Shields: its printed amount, more against a big party (see bossBoost). */
 export function actionBase(s: BattleState, action: GoliathActionId): number {
+  const n = printedBase(s, action);
+  return s.bossBoost ? Math.round((n * (1 + s.bossBoost)) / 10) * 10 : n;
+}
+
+function printedBase(s: BattleState, action: GoliathActionId): number {
   const { enraged } = s.goliath;
   switch (action) {
     case "spear": return R.spear;

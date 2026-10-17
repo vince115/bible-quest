@@ -89,7 +89,7 @@ const ART: Partial<Record<BaseEnemyId, { src: string; figure: Figure }>> = {
   roaringLion: { src: "/cards/lion.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fieryDarts: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   satanMan: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
-  satanFoe: { src: "/cards/satan.jpg?v=2", figure: { cx: 0.46, head: 0.12, feet: 0.92 } },
+  satanFoe: { src: "/cards/satanRevealed.jpg", figure: { cx: 0.46, head: 0.12, feet: 0.92 } },
   serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   // Scenes with no figure (the sky, the flood): the whole picture is the frame.
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },

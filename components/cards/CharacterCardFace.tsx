@@ -216,7 +216,7 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   gabriel: { src: "/cards/gabriel.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.93 } },
   michael: { src: "/cards/michael.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
   satanDisguised: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
-  satan: { src: "/cards/satan.jpg?v=2", figure: { cx: 0.46, head: 0.12, feet: 0.92 } },
+  satan: { src: "/cards/satanVeiled.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
 };
 
 /** Card colours per element: outer frame (deep, so the gold ornaments stand out), inner panel, art backdrop. */

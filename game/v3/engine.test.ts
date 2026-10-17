@@ -221,7 +221,7 @@ describe("formation", () => {
     expect(createBoard(six.slice(0, 4), undefined, seeded()).aides).toEqual(["bearer#1"]);
     const b = createBoard(six, undefined, seeded());
     expect(b.aides).toEqual(["bearer#1", "bearer#2"]);
-    expect(b.battle.enemies["bearer#2"].hp).toBe(b.battle.enemies.bearer.hp);
+    expect(b.battle.enemies["bearer#2"].hp).toBe(b.battle.enemies.bearer.hp * R.aideHpMult);
     // While any of them stands, the back row can't be hit.
     b.battle.enemies.bearer.hp = 0;
     expect(attackableEnemies(b.battle).sort()).toEqual(["bearer#1", "bearer#2"]);

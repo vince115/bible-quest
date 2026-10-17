@@ -8,7 +8,8 @@
 //   all, reach the back row too.
 // - The enemy stands in two rows too: the guard in front, the boss and the shooter behind, and nothing behind can be hit
 //   while anyone stands in front. Against more than three allies the stage sends more of its guards (one for each ally
-//   past three, up to two); each strikes one member of the front row a turn (telegraphed like the arrow).
+//   past three, up to two, at three times their HP); each strikes one member of the front row a turn (telegraphed like
+//   the arrow). The boss hits 20% harder for each ally past three.
 // - Once per turn one character may move to another place for free (swapping with whoever stands there).
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
@@ -128,6 +129,8 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
   // A big party meets reinforcements in the enemy's front row (not where the guard is summoned, nor where there is none).
   const aides = SUMMONED.has(stage) || !STAGE_GUARD[stage] ? [] : aidesOf(stage).slice(0, aideCount(chosen.length));
   for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
+  // ...and a boss who hits harder for each ally past three.
+  battle.bossBoost = R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
   const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides };
   return aim(board, rng);
 }
