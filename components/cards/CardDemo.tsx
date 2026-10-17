@@ -1,11 +1,12 @@
 "use client";
 
-// /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size.
+// /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size. The Bible timeline
+// layout groups the same cards by the period of the story they belong to.
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
+import { APOSTLES, CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
 import { translate } from "@/game/i18n";
-import type { CardId, CharacterId, EnemyId } from "@/game/v2/types";
+import type { BaseEnemyId as EnemyId, CardId, CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
@@ -13,16 +14,39 @@ import { FlipCard } from "./FlipCard";
 import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
-import { TIMELINE } from "./timeline";
+import { TIMELINE, TIMELINE_ERAS } from "./timeline";
+import { samePersonAs, sectionOf, stackOf } from "./samePerson";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
+/**
+ * All the cards in one grid, grouped along the Bible timeline, or one section: the Trinity, Jesus' disciples, or Satan;
+ * remembered in this browser.
+ */
+type Section = "trinity" | "disciples" | "satan";
+type Layout = "grid" | "timeline" | Section;
+const LAYOUTS: Layout[] = ["grid", "timeline", "trinity", "disciples", "satan"];
+/** Each section's cards, in parts that may carry a heading of their own (the Father, the Son and the Spirit). */
+const SECTIONS: Record<Section, { part?: string; cards: string[] }[]> = {
+  // One God in three persons (Matthew 28:19): the Father, the Son (Jesus' cards in story order) and the Holy Spirit.
+  trinity: [
+    { part: "v3.demo.father", cards: ["father"] },
+    { part: "v3.demo.son", cards: TIMELINE.filter((id) => (sectionOf("jesus") as string[]).includes(id)) },
+    { part: "v3.demo.spirit", cards: ["holySpirit"] },
+  ],
+  // The twelve in the order Matthew 10:2–4 names them (both of John's cards together), then Matthias, chosen in Judas' place (Acts 1:26).
+  disciples: [{ cards: [...APOSTLES] }],
+  // Every form of Satan, the old serpent first, in story order.
+  satan: [{ cards: TIMELINE.filter((id) => (sectionOf("satan") as string[]).includes(id)) }],
+};
+const isSection = (l: Layout): l is Section => l in SECTIONS;
+const LAYOUT_KEY = "bq-card-demo-layout";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
-const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id, enemy: true } : { id }));
+const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id: id as EnemyId, enemy: true } : { id: id as CharacterId }));
 
 type Viewed = { id: CharacterId | EnemyId | CardId; enemy?: boolean; scripture?: boolean; rarity?: Rarity };
 
@@ -208,6 +232,16 @@ export function CardDemo() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
     if (saved && (RARITY_TABS as string[]).includes(saved)) setFilter(saved as Rarity);
   }, []);
+  const [layout, setLayout] = useState<Layout>("grid");
+  useEffect(() => {
+    const saved = safeStorage.getItem(LAYOUT_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
+    if (saved && (LAYOUTS as string[]).includes(saved)) setLayout(saved as Layout);
+  }, []);
+  const arrange = (l: Layout) => {
+    setLayout(l);
+    safeStorage.setItem(LAYOUT_KEY, l);
+  };
   const choose = (f: Rarity | "all") => {
     setFilter(f);
     safeStorage.setItem(FILTER_KEY, f);
@@ -232,12 +266,96 @@ export function CardDemo() {
       return clamped;
     });
 
+  // The cards on screen, period by period (the timeline keeps the story order, so it matches `shown`).
+  const eras = TIMELINE_ERAS.map(({ era, cards }) => ({ era, cards: shown.filter((c) => (cards as string[]).includes(c.id)) })).filter((e) => e.cards.length > 0);
+  /** Which card of each pile is in front (by the pile's place in the list and its first card); the first card when unset. */
+  const [fronts, setFronts] = useState<Record<string, string>>({});
+  /**
+   * One place in a list: a card, or a pile of the same person's cards (see samePerson.ts) in the place of the first one,
+   * the cards behind showing their edge up and to the right. A tap on a card behind brings it to the front; a tap on the
+   * front card views it.
+   */
+  const pileTiles = (cards: (typeof CARDS)[number][], where: string) => {
+    const piles: (typeof CARDS)[number][][] = [];
+    const byPerson = new Map<string, (typeof CARDS)[number][]>();
+    for (const card of cards) {
+      const key = stackOf(card.id);
+      const pile = key ? byPerson.get(key) : undefined;
+      if (pile) pile.push(card);
+      else {
+        piles.push([card]);
+        if (key) byPerson.set(key, piles[piles.length - 1]);
+      }
+    }
+    return piles.map((pile) => {
+      if (pile.length === 1) return cardTile(pile[0]);
+      const key = `${where}:${pile[0].id}`;
+      const front = pile.find((c) => c.id === fronts[key]) ?? pile[0];
+      const order = [front, ...pile.filter((c) => c !== front)];
+      // The front card sits at the bottom left and each card behind steps up and to the right. A pair keeps the front card at
+      // full size, the one behind showing past its top and right edge; a bigger pile shrinks to fit one card's place, so it
+      // never spills into the cards beside it.
+      const pair = order.length === 2;
+      const step = pair ? 10 : Math.min(18, 40 / (order.length - 1));
+      const width = pair ? 220 : 220 - step * (order.length - 1);
+      const face = (card: (typeof CARDS)[number], fx: boolean) => (
+        <HoloCard element={elementOf(card)} effects={fx} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-full">
+          <CardFace {...card} />
+        </HoloCard>
+      );
+      const at = (k: number) => ({ left: step * k, bottom: step * k, width, fontSize: `${(10.3 * width) / 220}px` });
+      return (
+        <div key={key} className="flex flex-col items-center gap-2">
+          <div className="relative aspect-[63/88] w-[220px]" style={pair ? { marginRight: step } : undefined}>
+            {order
+              .slice(1)
+              .reverse()
+              .map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setFronts((f) => ({ ...f, [key]: card.id }))}
+                  aria-label={t(card.enemy ? `v2.enemy.${card.id}.name` : `char.${card.id}.name`)}
+                  className="absolute brightness-75 transition hover:brightness-100"
+                  style={at(order.indexOf(card))}
+                >
+                  {face(card, false)}
+                </button>
+              ))}
+            <button type="button" onClick={() => setViewing(front)} aria-label={t("v3.demo.view")} className="absolute cursor-zoom-in" style={at(0)}>
+              {face(front, effects)}
+            </button>
+          </div>
+          <span className="text-sm font-black tracking-widest text-amber-200">
+            {CARD_RARITY[front.id]} <span className="text-xs font-bold tracking-normal text-stone-400">{t("v3.demo.pile", { n: order.length })}</span>
+          </span>
+        </div>
+      );
+    });
+  };
+  const cardTile = (card: (typeof CARDS)[number]) => (
+    <div key={card.id} className="flex flex-col items-center gap-2">
+      <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
+        <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-[220px] text-[10.3px]">
+          <CardFace {...card} />
+        </HoloCard>
+      </button>
+      <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[card.id]}</span>
+    </div>
+  );
+
+  // A section's cards, part by part in its order (search and the rarity tab still apply).
+  const parts = isSection(layout)
+    ? SECTIONS[layout].map(({ part, cards }) => ({ part, cards: cards.map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c) })).filter((p) => p.cards.length > 0)
+    : [];
+  const onScreen = isSection(layout) ? parts.flatMap((p) => p.cards) : shown;
+
   // Flip through the cards on screen (the current search and rarity tab), wrapping at either end.
-  const at = viewing ? shown.findIndex((c) => c.id === viewing.id) : -1;
+  const at = viewing ? onScreen.findIndex((c) => c.id === viewing.id) : -1;
   const step = (d: number) =>
     setViewing((cur) => {
-      const i = cur ? shown.findIndex((c) => c.id === cur.id) : -1;
-      return i < 0 || shown.length < 2 ? cur : shown[(i + d + shown.length) % shown.length];
+      const i = cur ? onScreen.findIndex((c) => c.id === cur.id) : -1;
+      return i < 0 || onScreen.length < 2 ? cur : onScreen[(i + d + onScreen.length) % onScreen.length];
     });
   const swipeFrom = useRef<number | null>(null);
 
@@ -282,19 +400,61 @@ export function CardDemo() {
           );
         })}
       </div>
-      <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-        {shown.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
-        {shown.map((card) => (
-          <div key={card.id} className="flex flex-col items-center gap-2">
-            <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
-              <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-[220px] text-[10.3px]">
-                <CardFace {...card} />
-              </HoloCard>
-            </button>
-            <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[card.id]}</span>
-          </div>
+      <div role="radiogroup" aria-label={t("v3.demo.layout")} className="flex flex-wrap justify-center gap-2">
+        {LAYOUTS.map((l) => (
+          <button
+            key={l}
+            role="radio"
+            aria-checked={layout === l}
+            onClick={() => arrange(l)}
+            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${layout === l ? "border-sky-300 bg-sky-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+          >
+            {t(`v3.demo.${l}`)}
+          </button>
         ))}
       </div>
+      {onScreen.length === 0 && <p className="py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
+      {isSection(layout) ? (
+        onScreen.length > 0 && (
+          <section className="w-full max-w-7xl overflow-x-clip px-2">
+            <h2 className="text-lg font-black text-amber-100">{t(`v3.demo.${layout}`)}</h2>
+            <p className="text-sm text-stone-400">{t(`v3.demo.${layout}Hint`)}</p>
+            {parts.map(({ part, cards }) => (
+              <div key={part ?? layout}>
+                {part && <h3 className="mt-3 text-base font-bold text-amber-200">{t(part)}</h3>}
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(cards, `${layout}:${part ?? ""}`)}</div>
+              </div>
+            ))}
+          </section>
+        )
+      ) : layout === "grid" ? (
+        <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 overflow-x-clip px-2 py-4">
+          {pileTiles(shown, "grid")}
+        </div>
+      ) : (
+        <>
+          {/* The periods in story order: a tap jumps to one (periods with no card under the current search are skipped). One row that
+              scrolls sideways on a phone; on wider screens the chips wrap onto as many lines as they need. */}
+          <nav aria-label={t("v3.demo.timeline")} className="flex w-full max-w-7xl gap-2 overflow-x-auto px-2 py-2 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible">
+            {eras.map(({ era, cards }, i) => (
+              <a key={era} href={`#era-${era}`} className="shrink-0 rounded-full border border-stone-500 px-3 py-1 text-xs font-bold text-stone-200 hover:bg-white/10">
+                {i + 1}. {t(`v3.era.${era}.name`)} <span className="opacity-60">{cards.length}</span>
+              </a>
+            ))}
+          </nav>
+          {eras.map(({ era, cards }, i) => (
+            <section key={era} id={`era-${era}`} className="w-full max-w-7xl scroll-mt-28 overflow-x-clip px-2">
+              <h2 className="text-lg font-black text-amber-100">
+                {i + 1}. {t(`v3.era.${era}.name`)}
+              </h2>
+              <p className="text-sm text-stone-400">
+                {t(`v3.era.${era}.books`)} · {t(`v3.era.${era}.date`)}
+              </p>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(cards, era)}</div>
+            </section>
+          ))}
+        </>
+      )}
       {/* Scripture (energy) cards, printed at the same size */}
       <section className="w-full max-w-7xl px-2">
         <h2 className="text-center text-lg font-bold">{t("v3.scripture.title")}</h2>
@@ -343,7 +503,7 @@ export function CardDemo() {
           }}
           className="fixed inset-0 z-[60] flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4"
         >
-          {shown.length > 1 && (
+          {onScreen.length > 1 && (
             <>
               <button
                 onClick={(e) => {
@@ -390,8 +550,31 @@ export function CardDemo() {
           </motion.div>
           {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>
+          {/* The same person on other cards (another period of their life, or the other side of the table): a tap shows that card. */}
+          {!viewing.scripture && samePersonAs(viewing.id as CharacterId | EnemyId).length > 0 && (
+            <div onClick={(e) => e.stopPropagation()} className="flex max-w-xl flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
+              <span className="text-stone-400">{t("v3.demo.samePerson")}</span>
+              {samePersonAs(viewing.id as CharacterId | EnemyId).map(({ card, via }) => {
+                const other = CARDS.find((c) => c.id === card)!;
+                return (
+                  <button key={card} onClick={() => setViewing(other)} className="rounded-full border border-amber-300/70 px-3 py-1 text-xs font-bold text-amber-100 hover:bg-white/10">
+                    {t(other.enemy ? `v2.enemy.${card}.name` : `char.${card}.name`)}
+                    {/* Some people have a card on each side under the same name: say which is the enemy's. */}
+                    {other.enemy && <span className="ml-1 font-normal text-stone-400">{t("v3.demo.enemyCard")}</span>}
+                    {via && <span className="ml-0.5 font-normal text-stone-400">*</span>}
+                  </button>
+                );
+              })}
+              {/* The verse behind a link that is not plain, written once */}
+              {[...new Set(samePersonAs(viewing.id as CharacterId | EnemyId).flatMap(({ via }) => (via ? [via] : [])))].map((via) => (
+                <span key={via} className="text-xs text-stone-400">
+                  * {t(via)}
+                </span>
+              ))}
+            </div>
+          )}
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
-            {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
+            {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {onScreen.length}</span>}
             {!viewing.scripture && !viewing.enemy && CARD_RARITY[viewing.id as CharacterId] === "GR" && (
               <button onClick={() => setCeremony(viewing.id as CharacterId)} className="rounded-full border border-amber-200 bg-amber-100/90 px-3 py-1 text-xs font-bold text-stone-900 hover:bg-white">
                 ✦ {t("v3.demo.ceremony")}

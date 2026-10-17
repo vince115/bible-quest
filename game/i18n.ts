@@ -429,11 +429,15 @@ const NAMED: Record<string, (id: string) => string> = {
   card: (id) => `v2.card.${id}.name`,
   skill: (id) => `v2.skill.${id}.name`,
   energy: (id) => `v2.energy.${id}.name`,
-  enemy: (id) => `v2.enemy.${id}.name`,
+  // A reinforcement (`bearer#1`) is named after its base card.
+  enemy: (id) => `v2.enemy.${id.split("#")[0]}.name`,
 };
 
 /** Looks up a message and fills {placeholders}; id params (see NAMED) become localized names. */
 export function translate(locale: Locale, key: string, params: Params = {}): string {
+  // Another copy of a card in the line-up is named after it, with its number: 大衛 #2.
+  const copy = /^char\.([A-Za-z]+)#(\d)\.name$/.exec(key);
+  if (copy) return `${translate(locale, `char.${copy[1]}.name`)} #${copy[2]}`;
   const raw = DICTS[locale][key] ?? DICTS.en[key] ?? key;
   return raw.replace(/\{(\w+)\}/g, (match, name: string) => {
     const v = params[name];

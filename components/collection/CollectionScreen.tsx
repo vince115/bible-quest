@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
+import { COPY_LIMIT } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
 import { characterSearchText } from "@/components/cards/CardDemo";
 import { FlipCard } from "@/components/cards/FlipCard";
@@ -137,7 +138,11 @@ export function CollectionScreen() {
                   <CharacterCardFace id={id} />
                 </HoloCard>
               </button>
-              {n > 1 && <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">×{n}</span>}
+              {n > 1 && (
+                <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">
+                  ×{n}/{COPY_LIMIT}
+                </span>
+              )}
             </div>
           ) : (
             <div key={id} aria-label={t("v3.collection.locked")} className="flex aspect-[63/88] w-[120px] flex-col items-center justify-center gap-1.5 rounded-md border border-stone-700 bg-stone-900/80 text-stone-500">

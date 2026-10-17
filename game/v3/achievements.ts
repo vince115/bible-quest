@@ -6,13 +6,16 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { safeStorage } from "../locale";
 import type { Board } from "./engine";
 
-export type AchievementId = "solo-david";
+export type AchievementId = "solo-david" | "hell-revealed";
 
-export const ACHIEVEMENTS: AchievementId[] = ["solo-david"];
+export const ACHIEVEMENTS: AchievementId[] = ["solo-david", "hell-revealed"];
 
-/** Achievements a finished battle earns: David's duel with Goliath. */
+/** Achievements a finished battle earns: David's duel with Goliath, and the hell level of the wilderness. */
 export function earnedBy(b: Board): AchievementId[] {
-  return b.battle.result === "victory" && b.battle.stage === "goliath" && b.lineup.length === 1 && b.lineup[0] === "david" ? ["solo-david"] : [];
+  if (b.battle.result !== "victory") return [];
+  if (b.battle.stage === "goliath" && b.lineup.length === 1 && b.lineup[0] === "david") return ["solo-david"];
+  if (b.battle.stage === "revealed") return ["hell-revealed"];
+  return [];
 }
 
 interface AchievementStore {

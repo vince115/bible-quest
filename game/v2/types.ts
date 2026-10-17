@@ -2,8 +2,13 @@
 // Scripture cards are energy; characters act through skills paid with that energy.
 
 /** Playable characters. The *P ids are the enemy cards' playable versions (a card can be drawn and fielded by the player). */
-export type CharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "seth" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "elizabeth" | "mordecai" | "sarah" | "rebekah" | "rachel" | "barak" | "jael" | "josephArimathea" | "ananias" | "threeFriends" | "job" | "enoch" | "melchizedek" | "caleb" | "jeremiah" | "ezekiel" | "ezra" | "nathan" | "hezekiah" | "josiah" | "magi" | "shepherds" | "bartimaeus" | "centurion" | "jairus" | "simonCyrene" | "thief" | "jamesJust" | "mockingThief" | "jesusCross" | "widow" | "fisherman" | "fourFriends" | "goodSamaritan" | "zarephath" | "shunammite" | "naaman" | "maid" | "bathsheba" | "mephibosheth" | "sheba" | "leah" | "esau" | "hagar" | "lot" | "jochebed" | "pharaohDaughter" | "jethro" | "zipporah" | "loisEunice" | "balaam" | "pharaoh" | "charioteer" | "jezebel" | "baalProphet" | "haman" | "delilah" | "nebuchadnezzar" | "ahab" | "absalom" | "sapphira" | "pilate" | "caiaphas" | "herod" | "barabbas" | "herodias" | "romanSoldier" | "romanSpearman" | "romanArcher" | "romanCavalry" | "romanCenturion" | "sennacherib" | "belshazzar" | "korah" | "achan" | "sisera" | "herodGreat" | "legionFreed" | "prodigal" | "ethiopian" | "johnPatmos" | "ehud" | "jephthah" | "joab" | "uriah" | "cyrus" | "zerubbabel" | "vashti" | "michal" | "gehazi" | "jehu" | "canaanite" | "richRuler" | "cleopas" | "malchus" | "jailer" | "rhoda" | "simonMagus" | "herodAgrippa" | "archerP" | "bearerP" | "goliathP" | "serpentP"
+/** A card a character is printed on. */
+export type BaseCharacterId = "david" | "samuel" | "jonathan" | "adam" | "eve" | "cain" | "abel" | "seth" | "noah" | "abraham" | "isaac" | "jacob" | "joseph" | "moses" | "aaron" | "miriam" | "mosesSinai" | "joshua" | "rahab" | "deborah" | "gideon" | "samson" | "ruth" | "naomi" | "boaz" | "hannah" | "saul" | "abigail" | "solomon" | "elijah" | "elisha" | "jonah" | "isaiah" | "esther" | "daniel" | "nehemiah" | "zechariah" | "mary" | "josephNaz" | "johnBaptist" | "jesus" | "jesusUR" | "peter" | "andrew" | "johnApostle" | "matthew" | "jamesZeb" | "thomas" | "maryMagdalene" | "martha" | "zacchaeus" | "maryBethany" | "lazarus" | "stephen" | "philip" | "paul" | "barnabas" | "silas" | "timothy" | "lydia" | "priscilla" | "eli" | "aquila" | "dorcas" | "cornelius" | "apollos" | "phoebe" | "luke" | "johnMark" | "titus" | "philemon" | "onesimus" | "nicodemus" | "samaritan" | "simeon" | "anna" | "loavesBoy" | "judas" | "philipApostle" | "nathanael" | "jamesAlph" | "thaddaeus" | "simonZealot" | "matthias" | "elizabeth" | "mordecai" | "sarah" | "rebekah" | "rachel" | "barak" | "jael" | "josephArimathea" | "ananias" | "threeFriends" | "job" | "enoch" | "melchizedek" | "caleb" | "jeremiah" | "ezekiel" | "ezra" | "nathan" | "hezekiah" | "josiah" | "magi" | "shepherds" | "bartimaeus" | "centurion" | "jairus" | "simonCyrene" | "thief" | "jamesJust" | "mockingThief" | "jesusCross" | "widow" | "fisherman" | "fourFriends" | "goodSamaritan" | "zarephath" | "shunammite" | "naaman" | "maid" | "bathsheba" | "mephibosheth" | "sheba" | "leah" | "esau" | "hagar" | "lot" | "jochebed" | "pharaohDaughter" | "jethro" | "zipporah" | "loisEunice" | "balaam" | "pharaoh" | "charioteer" | "jezebel" | "baalProphet" | "haman" | "delilah" | "nebuchadnezzar" | "ahab" | "absalom" | "sapphira" | "pilate" | "caiaphas" | "herod" | "barabbas" | "herodias" | "romanSoldier" | "romanSpearman" | "romanArcher" | "romanCavalry" | "romanCenturion" | "sennacherib" | "belshazzar" | "korah" | "achan" | "sisera" | "herodGreat" | "legionFreed" | "prodigal" | "ethiopian" | "johnPatmos" | "ehud" | "jephthah" | "joab" | "uriah" | "cyrus" | "zerubbabel" | "vashti" | "michal" | "gehazi" | "jehu" | "canaanite" | "richRuler" | "cleopas" | "malchus" | "jailer" | "rhoda" | "simonMagus" | "herodAgrippa" | "archerP" | "bearerP" | "goliathP" | "serpentP"
   | "father" | "holySpirit" | "gabriel" | "michael" | "satanDisguised" | "satan";
+/** Another copy of the same card in one line-up (free mode, from the copies the player owns): `david#2` … `david#6`. */
+export type CopyId = `${BaseCharacterId}#${2 | 3 | 4 | 5 | 6}`;
+/** A character in battle: a card, or another copy of it. */
+export type CharacterId = BaseCharacterId | CopyId;
 
 /** ✨ Faith can stand in for Attack or Guard; Faith and 🕊️ Guard carry over, 🗡️ Attack resets each turn. */
 export type EnergyKind = "faith" | "attack" | "guard";
@@ -50,16 +55,25 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter" | "satanMan" | "satanFoe" | "roaringLion" | "fieryDarts"
-  | "legion" | "uncleanSpirits" | "swine";
+  | "serpentTempter" | "satanMan" | "satanVeiled" | "satanFoe" | "roaringLion" | "fieryDarts"
+  | "legion" | "uncleanSpirits" | "swine"
+  | AideId;
+
+/** The front-row enemies a stage sends more of when a big party comes (see AIDE_BASE). */
+export type AideBase = "bearer" | "fountains" | "pharaohHost" | "wallGuard" | "ahabKing" | "lionRest" | "uncleanSpirits";
+/** A reinforcement: another of the stage's front-row enemies, `base#1` or `base#2` (same card, HP and element as the base). */
+export type AideId = `${AideBase}#${1 | 2}`;
+/** An enemy card of its own (not a reinforcement). */
+export type BaseEnemyId = Exclude<EnemyId, AideId>;
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
 /**
  * "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel) and "tempter" the first
  * round of Eden (the cunning serpent tempts Eve); "disguise" is the first round of the temptation in the wilderness (Satan
- * looks like a man) and "temptation" its second (he shows what he is). None of them is a stage of its own.
+ * looks like a man), "temptation" its second (Satan, his wings half seen) and "revealed" an optional third, the hell level
+ * (Satan in his true form). None of them is a stage of its own.
  */
-export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise";
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise" | "revealed";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
@@ -188,8 +202,16 @@ export interface BattleState {
    * the stage's. Left out, the stage's own stand.
    */
   foes?: { guard: EnemyId | null; shooter: EnemyId | null };
-  /** The ally the Serpent coiled around: they can't be swapped out of the front line this turn. */
+  /** The ally the Serpent coiled around: they can't move to another place this turn. */
   coiled: CharacterId | null;
+  /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
+  rows?: boolean;
+  /** How much harder the boss hits (0.2 = +20%): the v3 board, against a big party. */
+  bossBoost?: number;
+  /** The reinforcements standing in the enemy's front row beside the guard (the v3 board, against a big party). */
+  aides?: EnemyId[];
+  /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
+  aideTargets?: Partial<Record<EnemyId, CharacterId>>;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
   /** Who the stage's shooter (the archer, the captain of the chariots, ...) will hit this turn. */

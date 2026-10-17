@@ -30,6 +30,7 @@ import {
   TEMPTER_CYCLE,
   DISGUISE_CYCLE,
   TEMPTATION_CYCLE,
+  REVEALED_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -44,7 +45,9 @@ import {
   SKILLS,
   tableKind,
 } from "./data";
+import { baseCharacter, copyNumber } from "./copies";
 import type {
+  BaseCharacterId,
   CardId,
   BattleState,
   CardInstance,
@@ -62,6 +65,10 @@ import type {
 } from "./types";
 
 export type Rng = () => number;
+
+/** A line-up in print order, each card's copies right after it (david, david#2, samuel, ...). */
+export const inPartyOrder = (lineup: CharacterId[]): CharacterId[] =>
+  [...new Set(lineup)].sort((a, b) => PARTY_ORDER.indexOf(baseCharacter(a)) - PARTY_ORDER.indexOf(baseCharacter(b)) || copyNumber(a) - copyNumber(b));
 
 /** A skill target: an ally (Heal, Arise) or an enemy (attacks). */
 export type Target = CharacterId | EnemyId;
@@ -112,6 +119,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return DISGUISE_CYCLE;
     case "temptation":
       return TEMPTATION_CYCLE;
+    case "revealed":
+      return REVEALED_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -119,8 +128,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", revealed: "v2.log.startRevealed", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", revealed: "v2.log.victoryRevealed", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -136,10 +145,16 @@ const randomAlly = (s: BattleState, rng: Rng) => {
   return alive.length ? alive[Math.floor(rng() * alive.length)] : null;
 };
 
-/** Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. */
+/**
+ * Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. On
+ * the v3 board the enemy stands in two rows, the guard in front and the boss and the shooter behind, and the guard
+ * shields the whole back row.
+ */
 export function attackableEnemies(s: BattleState): EnemyId[] {
-  const guard = guardOf(s);
-  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(id === bossOf(s) && guard && enemyAlive(s, guard)));
+  // Reinforcements stand in the front row beside the guard.
+  const front = [guardOf(s), ...(s.rows ? (s.aides ?? []) : [])];
+  const shielded = front.some((e) => !!e && enemyAlive(s, e));
+  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(shielded && (id === bossOf(s) || (s.rows && id === shooterOf(s)))));
 }
 
 /** A standing, un-Shaken character who hasn't used a skill yet this turn. */
@@ -197,7 +212,13 @@ function makeIntent(s: BattleState, action: GoliathActionId, rng: Rng): Intent {
  * The damage an action deals per hit in the boss's current phase, before elements and defences
  * (Crushing Blow and Deluge as if charged). 0 for actions that don't deal damage.
  */
+/** What a boss action deals before elements and Shields: its printed amount, more against a big party (see bossBoost). */
 export function actionBase(s: BattleState, action: GoliathActionId): number {
+  const n = printedBase(s, action);
+  return s.bossBoost ? Math.round((n * (1 + s.bossBoost)) / 10) * 10 : n;
+}
+
+function printedBase(s: BattleState, action: GoliathActionId): number {
   const { enraged } = s.goliath;
   switch (action) {
     case "spear": return R.spear;
@@ -414,70 +435,73 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
 /** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" ? "temptation" : s.stage) && s.lineup.includes(id);
+export const inStory = (s: BattleState, id: CharacterId) => STORY[baseCharacter(id)] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" || s.stage === "revealed" ? "temptation" : s.stage) && s.lineup.includes(id);
 
-export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
+export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId, who?: CharacterId): number {
   const def = SKILLS[skill];
+  // The copy that uses it (see casterFor): its own Faith, HP and so on count.
+  const caster = casterFor(s, skill, who);
+  const self = (id: BaseCharacterId): CharacterId => (baseCharacter(caster) === id ? caster : id);
   // Sling Stone is fixed: 140 against Goliath, an ordinary 80 anywhere else.
   if (skill === "slingStone") return s.stage === "goliath" ? (def.damage ?? 0) : R.slingStoneElsewhere;
   // The other heroes' climaxes in their own stories are fixed numbers too (no elements, no bonuses).
-  if (skill === "sea" && inStory(s, "moses")) return R.redSeaStoryDamage;
-  if (skill === "jericho" && inStory(s, "joshua")) return R.jerichoStoryDamage;
-  if (skill === "carmel" && inStory(s, "elijah")) return R.carmelStoryDamage;
+  if (skill === "sea" && inStory(s, self("moses"))) return R.redSeaStoryDamage;
+  if (skill === "jericho" && inStory(s, self("joshua"))) return R.jerichoStoryDamage;
+  if (skill === "carmel" && inStory(s, self("elijah"))) return R.carmelStoryDamage;
   // Jesus at Gerasa: the wind ceases, and the unclean spirits are rebuked (Mark 5:8).
-  if (skill === "walkOnWater") return inStory(s, "jesusUR") ? R.gerasaStoryDamage : 0;
+  if (skill === "walkOnWater") return inStory(s, self("jesusUR")) ? R.gerasaStoryDamage : 0;
   // A stone cut out without hands (Daniel 2:34): in the den, Daniel's stone strikes harder.
-  const stone = skill === "stoneCut" && inStory(s, "daniel") ? R.lionsStoryBonus : 0;
-  const giant = def.owner === "david" && inStory(s, "david") && faithOf(s, "david") >= R.giantFaith ? R.giantBonus : 0;
-  const till = skill === "till" && inStory(s, "adam") ? R.edenTillBonus : 0;
+  const stone = skill === "stoneCut" && inStory(s, self("daniel")) ? R.lionsStoryBonus : 0;
+  const giant = def.owner === "david" && inStory(s, self("david")) && faithOf(s, self("david")) >= R.giantFaith ? R.giantBonus : 0;
+  const till = skill === "till" && inStory(s, self("adam")) ? R.edenTillBonus : 0;
   // Eve in Eden: her seed shall bruise the serpent's head — every attack on the Serpent +20.
-  const seed = (target === "serpent" || target === "serpentTempter") && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
+  const seed = (target === "serpent" || target === "serpentTempter") && inStory(s, self("eve")) && isAlive(s, self("eve")) ? R.edenSeedBonus : 0;
   // Isaac sowed and reaped a hundredfold, for the LORD blessed him (Genesis 26:12): more with his father beside him.
-  const blessing = skill === "harvest" && isAlive(s, "abraham") ? R.harvestBlessing : 0;
+  const blessing = skill === "harvest" && isAlive(s, self("abraham")) ? R.harvestBlessing : 0;
   // While Moses held up his hand, Israel prevailed (Exodus 17:11).
   const hands = s.handsUp ? R.handsBonus : 0;
   // Lord, if it be thou, bid me come (Matthew 14:28): Peter is bolder with Jesus beside him.
   const withJesus = def.owner === "peter" && jesusHere(s) ? R.peterWithJesus : 0;
   // The sons of thunder (Mark 3:17); and after James has drunk the cup, everyone fights on harder (Mark 10:39).
-  const brothers = skill === "boanerges" && isAlive(s, "johnApostle") ? R.boanergesWithJohn : 0;
+  const brothers = skill === "boanerges" && isAlive(s, self("johnApostle")) ? R.boanergesWithJohn : 0;
   const cup = s.cupDrunk ? R.cupBonus : 0;
   // When I am weak, then am I strong (2 Corinthians 12:10).
-  const weak = def.owner === "paul" && s.party.paul.hp <= MAX_HP.paul / 2 ? R.strongWhenWeak : 0;
+  const weak = def.owner === "paul" && s.party[self("paul")].hp <= MAX_HP.paul / 2 ? R.strongWhenWeak : 0;
   // Be thou an example of the believers (1 Timothy 4:12); stir up the gift... by the putting on of my hands (2 Timothy 1:6).
   const example = s.example ? R.exampleBonus : 0;
-  const stir = skill === "stirUpGift" && isAlive(s, "paul") ? R.stirWithPaul : 0;
+  const stir = skill === "stirUpGift" && isAlive(s, self("paul")) ? R.stirWithPaul : 0;
   // They expounded unto him the way of God more perfectly (Acts 18:26).
-  const taught = s.taught === def.owner ? R.expoundBonus : 0;
+  const taught = s.taught === caster ? R.expoundBonus : 0;
   // An eloquent man, and mighty in the scriptures — taught the way more perfectly by Priscilla and Aquila (Acts 18:24, 26).
   // Take Mark, and bring him with thee: for he is profitable to me for the ministry (2 Timothy 4:11).
-  const restored = skill === "profitable" && (isAlive(s, "barnabas") || isAlive(s, "paul")) ? R.profitableWith : 0;
-  const mighty = skill === "mightyScriptures" && (isAlive(s, "priscilla") || isAlive(s, "aquila")) ? R.scripturesWithTeachers : 0;
-  const base = (def.damage ?? 0) + giant + till + seed + stone + blessing + hands + withJesus + brothers + cup + weak + example + stir + taught + mighty + restored + (skill === "nowProfitable" && (isAlive(s, "philemon") || isAlive(s, "paul")) ? SKILLS.nowProfitable.damage! : 0)
+  const restored = skill === "profitable" && (isAlive(s, self("barnabas")) || isAlive(s, self("paul"))) ? R.profitableWith : 0;
+  const mighty = skill === "mightyScriptures" && (isAlive(s, self("priscilla")) || isAlive(s, self("aquila"))) ? R.scripturesWithTeachers : 0;
+  const base = (def.damage ?? 0) + giant + till + seed + stone + blessing + hands + withJesus + brothers + cup + weak + example + stir + taught + mighty + restored + (skill === "nowProfitable" && (isAlive(s, self("philemon")) || isAlive(s, self("paul"))) ? SKILLS.nowProfitable.damage! : 0)
     // Philip findeth Nathanael (John 1:45).
-    + (skill === "noGuile" && isAlive(s, "philipApostle") ? 20 : 0)
-    + (skill === "downTabor" && isAlive(s, "deborah") ? 20 : 0)
+    + (skill === "noGuile" && isAlive(s, self("philipApostle")) ? 20 : 0)
+    + (skill === "downTabor" && isAlive(s, self("deborah")) ? 20 : 0)
     // As yet I am as strong this day as I was in the day that Moses sent me (Joshua 14:11).
-    + (skill === "thisMountain" && s.party.caleb.hp === MAX_HP.caleb ? R.stillStrong : 0)
+    + (skill === "thisMountain" && s.party[self("caleb")].hp === MAX_HP.caleb ? R.stillStrong : 0)
     // His word was in mine heart as a burning fire shut up in my bones (Jeremiah 20:9).
     // And Nathan said to David, Thou art the man (2 Samuel 12:7): the word cuts deepest at the one in power.
     // He, casting away his garment, rose, and came to Jesus (Mark 10:50).
     // I will shew thee my faith by my works (James 2:18).
-    + (skill === "faithWorks" ? Math.min(R.worksMax, R.worksPerFaith * faithOf(s, def.owner)) : 0)
+    + (skill === "faithWorks" ? Math.min(R.worksMax, R.worksPerFaith * faithOf(s, caster)) : 0)
     // Nevertheless at thy word I will let down the net (Luke 5:5).
-    + (skill === "atThyWord" && (jesusHere(s) || isAlive(s, "peter")) ? 20 : 0)
+    + (skill === "atThyWord" && (jesusHere(s) || isAlive(s, self("peter"))) ? 20 : 0)
     // All the horses and chariots of Pharaoh pursued after them (Exodus 14:9).
-    + (skill === "pursued" && isAlive(s, "pharaoh") ? 20 : 0)
+    + (skill === "pursued" && isAlive(s, self("pharaoh")) ? 20 : 0)
     // Absalom prepared him chariots and horses, and fifty men to run before him (2 Samuel 15:1).
     + (skill === "fiftyMen" && target === bossOf(s) ? 20 : 0)
     // I am a man under authority, having soldiers under me (Matthew 8:9).
-    + (skill === "gladius" && (isAlive(s, "centurion") || isAlive(s, "cornelius") || isAlive(s, "romanCenturion")) ? R.underCenturion : 0)
+    + (skill === "gladius" && (isAlive(s, self("centurion")) || isAlive(s, self("cornelius")) || isAlive(s, self("romanCenturion"))) ? R.underCenturion : 0)
     // Isaac loved Esau, because he did eat of his venison (Genesis 25:28).
-    + (skill === "cunningHunter" && isAlive(s, "isaac") ? R.hunterWithIsaac : 0)
+    + (skill === "cunningHunter" && isAlive(s, self("isaac")) ? R.hunterWithIsaac : 0)
     // From morning even until noon, O Baal, hear us (1 Kings 18:26): they cry louder each turn.
     + (skill === "callOnBaal" ? Math.min(R.baalMax, R.baalPerTurn * (s.turn - 1)) : 0)
     + (skill === "castGarment" && jesusHere(s) ? R.garmentWithJesus : 0)
     + (skill === "thouArtTheMan" && target === bossOf(s) ? R.manBonus : 0)
-    + (skill === "fireInBones" && s.party.jeremiah.hp <= MAX_HP.jeremiah / 2 ? R.bonesBonus : 0)
+    + (skill === "fireInBones" && s.party[self("jeremiah")].hp <= MAX_HP.jeremiah / 2 ? R.bonesBonus : 0)
     // Jael took a nail of the tent... and smote the nail into his temples (Judges 4:21).
     + (skill === "tentPeg" && target && s.enemies[target].hp <= ENEMY_HP[target] / 2 ? R.pegFinish : 0)
     + (skill === "leftHanded" && target && s.enemies[target].hp >= ENEMY_HP[target] ? R.ehudSurprise : 0)
@@ -856,7 +880,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     pools,
     attached: 0,
     party: Object.fromEntries(
-      PARTY_ORDER.map((id) => [
+      // Every card, and the copies that came (a copy fights as its own character).
+      [...PARTY_ORDER, ...lineup.filter((id) => copyNumber(id) > 1)].map((id) => [
         id,
         {
           hp: lineup.includes(id) ? MAX_HP[id] : 0,
@@ -869,7 +894,7 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
         },
       ]),
     ) as BattleState["party"],
-    lineup: PARTY_ORDER.filter((id) => lineup.includes(id)),
+    lineup: inPartyOrder(lineup),
     helperUsed: false,
     beguileUsed: false,
     markUsed: false,
@@ -962,6 +987,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     coiled: null,
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },
     archerTarget: null,
+    // Satan in his true form hits harder than in round 2.
+    bossBoost: stage === "revealed" ? R.revealedBoost : 0,
     intents: [
       { action: "defy", targets: [] },
       { action: "defy", targets: [] },
@@ -1135,8 +1162,27 @@ export function drainFaith(s: BattleState, who: CharacterId | null, n: number): 
 }
 
 /** How a skill would be paid from the pool: matching energy first, then Faith. null if unaffordable. */
-export function payment(s: BattleState, skill: SkillId): EnergyPool | null {
-  const { kind, cost, owner } = SKILLS[skill];
+/**
+ * Which character uses a skill: `who` when it is a copy of the skill's owner (the card itself or another copy in the
+ * line-up); otherwise the first copy of the owner who can use it now (standing, not Shaken, not yet acted, able to pay),
+ * else the first one standing, else the card itself. With one copy of each card, that is always the owner.
+ */
+export function casterFor(s: BattleState, skill: SkillId, who?: CharacterId): CharacterId {
+  const owner = SKILLS[skill].owner;
+  if (who && baseCharacter(who) === owner) return who;
+  const mine = s.lineup.filter((id) => baseCharacter(id) === owner);
+  if (mine.length <= 1) return mine[0] ?? owner;
+  const ready = (id: CharacterId) => isAlive(s, id) && !s.party[id].shaken && !s.party[id].acted;
+  return mine.find((id) => ready(id) && paymentAs(s, skill, id)) ?? mine.find(ready) ?? mine.find((id) => isAlive(s, id)) ?? mine[0];
+}
+
+export function payment(s: BattleState, skill: SkillId, who?: CharacterId): EnergyPool | null {
+  return paymentAs(s, skill, casterFor(s, skill, who));
+}
+
+/** What `owner` (a copy of the skill's owner) would pay for a skill, or null when they cannot. */
+function paymentAs(s: BattleState, skill: SkillId, owner: CharacterId): EnergyPool | null {
+  const { kind, cost } = SKILLS[skill];
   // The tabletop rules: the owner discards their cards of the skill's colour, worth at least the cost (no change given).
   if (table(s)) return pickCards(cardsOf(s, owner)[energyColor(tableKind(skill))], cost) ? { faith: 0, attack: 0, guard: 0 } : null;
   // Personal pools: strikes are paid with the owner's SP, everything else with the owner's MP (nothing comes from a team pool).
@@ -1152,9 +1198,10 @@ export function payment(s: BattleState, skill: SkillId): EnergyPool | null {
  * The tabletop rules: which of the owner's cards would be spent on a skill and how much of their value is wasted
  * (no change is given), or null when they cannot pay. `spent` are the values of the cards discarded.
  */
-export function paymentPreview(s: BattleState, skill: SkillId): { spent: number[]; waste: number } | null {
+export function paymentPreview(s: BattleState, skill: SkillId, who?: CharacterId): { spent: number[]; waste: number } | null {
   if (!table(s)) return null;
-  const { cost, owner } = SKILLS[skill];
+  const { cost } = SKILLS[skill];
+  const owner = casterFor(s, skill, who);
   const arr = cardsOf(s, owner)[energyColor(tableKind(skill))];
   const pick = pickCards(arr, cost);
   if (!pick) return null;
@@ -1255,27 +1302,28 @@ export function skillTargetKind(skill: SkillId): TargetKind {
   return "none";
 }
 
-export function skillTargets(s: BattleState, skill: SkillId): Target[] {
+export function skillTargets(s: BattleState, skill: SkillId, who?: CharacterId): Target[] {
   const kind = skillTargetKind(skill);
   if (kind === "enemy") return attackableEnemies(s);
   if (kind === "anyEnemy") return ENEMY_ORDER.filter((id) => enemyAlive(s, id));
   if (kind === "ally") return living(s);
-  if (kind === "otherAlly") return living(s).filter((id) => id !== SKILLS[skill].owner);
+  if (kind === "otherAlly") return living(s).filter((id) => id !== casterFor(s, skill, who));
   if (kind === "fallenAlly") return s.lineup.filter((id) => !isAlive(s, id));
   if (kind === "actedAlly") {
-    const owner = SKILLS[skill].owner;
+    const owner = casterFor(s, skill, who);
     return s.lineup.filter((id) => id !== owner && isAlive(s, id) && s.party[id].acted && !s.party[id].shaken);
   }
   return [];
 }
 
 /** Why this skill can't be used right now (an i18n key), or null. */
-export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target): string | null {
+export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target, who?: CharacterId): string | null {
   const def = SKILLS[skill];
+  const caster = casterFor(s, skill, who);
   if (s.result !== "ongoing") return "v2.reason.over";
-  if (!isAlive(s, def.owner)) return "v2.reason.fallen";
-  if (s.party[def.owner].shaken) return "v2.reason.shaken";
-  if (s.party[def.owner].acted) return "v2.reason.acted";
+  if (!isAlive(s, caster)) return "v2.reason.fallen";
+  if (s.party[caster].shaken) return "v2.reason.shaken";
+  if (s.party[caster].acted) return "v2.reason.acted";
   if (skill === "arise" && s.ariseUsed) return "v2.reason.ariseUsed";
   if (skill === "helper" && s.helperUsed) return "v2.reason.ariseUsed";
   if (skill === "beguile" && s.beguileUsed) return "v2.reason.ariseUsed";
@@ -1350,12 +1398,13 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   return null;
 }
 
-function hitEnemy(s: BattleState, skill: SkillId, enemy: EnemyId) {
-  const dmg = skillDamage(s, skill, enemy);
+function hitEnemy(s: BattleState, skill: SkillId, enemy: EnemyId, who?: CharacterId) {
+  const caster = casterFor(s, skill, who);
+  const dmg = skillDamage(s, skill, enemy, caster);
   const e = s.enemies[enemy];
   e.hp = Math.max(0, e.hp - dmg);
   log(s, skill === "slingStone" ? "v2.log.slingStone" : "v2.log.attack", "player", {
-    char: SKILLS[skill].owner,
+    char: caster,
     skill,
     enemy,
     n: dmg,
@@ -1396,6 +1445,7 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         log(s, "v2.log.frenzy", "enemy");
         break;
       case "temptation":
+      case "revealed":
         // Half his HP gone, the demon stops pretending to be patient: his devouring hits harder.
         s.goliath.enraged = true;
         log(s, "v2.log.satanRage", "enemy");
@@ -1436,32 +1486,36 @@ export function basicAttack(state: BattleState, who: CharacterId, target: EnemyI
 }
 
 /** Use a skill: the owner acts for this turn and the energy is spent (matching kind first, then Faith). */
-export function castSkill(state: BattleState, skill: SkillId, target?: Target, rng: Rng = Math.random): BattleState {
-  if (skillBlockReason(state, skill, target) !== null) return state;
+export function castSkill(state: BattleState, skill: SkillId, target?: Target, rng: Rng = Math.random, who?: CharacterId): BattleState {
+  // Which character uses it: `who`, or the first copy of the skill's owner that can (see casterFor).
+  const caster = casterFor(state, skill, who);
+  // A skill's words about its owner ("Samson loses 10 HP") are about the copy that uses it.
+  const self = (id: BaseCharacterId): CharacterId => (baseCharacter(caster) === id ? caster : id);
+  if (skillBlockReason(state, skill, target, caster) !== null) return state;
   if (skillTargetKind(skill) !== "none" && target === undefined) return state;
-  const pay = payment(state, skill)!;
+  const pay = payment(state, skill, caster)!;
 
   const s = clone(state);
   const def = SKILLS[skill];
-  s.party[def.owner].acted = true;
+  s.party[caster].acted = true;
   // Against the Giant reads the Faith held before paying. Sling Stone flies over the shield into Goliath.
   // Taunt hits every enemy; other attacks hit their target (Sling Stone always the boss).
-  if (skill === "taunt" || skill === "sea" || skill === "timbrel" || skill === "jericho" || skill === "torches" || skill === "jawbone" || skill === "templeFire" || skill === "nineveh" || skill === "samaria" || skill === "prisonOpened" || skill === "spreadLetter" || skill === "commitSpirit" || skill === "hamansDecree" || skill === "sevenTimesHotter" || skill === "arrowVolley" || skill === "fencedCities" || skill === "strangeCensers" || skill === "troubleOfAchor" || skill === "ironChariots" || skill === "voiceOfGod" || skill === "notByMight") ENEMY_ORDER.filter((id) => enemyAlive(s, id)).forEach((id) => s.result === "ongoing" && hitEnemy(s, skill, id));
-  else if (def.damage) hitEnemy(s, skill, skill === "slingStone" || skill === "starsFought" || skill === "pillars" || skill === "hannahSong" || skill === "carmel" || skill === "greatLight" || skill === "myLord" ? bossOf(s) : (target as EnemyId));
+  if (skill === "taunt" || skill === "sea" || skill === "timbrel" || skill === "jericho" || skill === "torches" || skill === "jawbone" || skill === "templeFire" || skill === "nineveh" || skill === "samaria" || skill === "prisonOpened" || skill === "spreadLetter" || skill === "commitSpirit" || skill === "hamansDecree" || skill === "sevenTimesHotter" || skill === "arrowVolley" || skill === "fencedCities" || skill === "strangeCensers" || skill === "troubleOfAchor" || skill === "ironChariots" || skill === "voiceOfGod" || skill === "notByMight") ENEMY_ORDER.filter((id) => enemyAlive(s, id)).forEach((id) => s.result === "ongoing" && hitEnemy(s, skill, id, caster));
+  else if (def.damage) hitEnemy(s, skill, skill === "slingStone" || skill === "starsFought" || skill === "pillars" || skill === "hannahSong" || skill === "carmel" || skill === "greatLight" || skill === "myLord" ? bossOf(s) : (target as EnemyId), caster);
   s.energy.faith -= pay.faith;
   s.energy.attack -= pay.attack;
   s.energy.guard -= pay.guard;
   if (table(s)) {
-    const arr = cardsOf(s, def.owner)[energyColor(tableKind(skill))];
+    const arr = cardsOf(s, caster)[energyColor(tableKind(skill))];
     const pick = pickCards(arr, def.cost) ?? [];
     const spent = pick.map((i) => arr[i]);
     for (const i of [...pick].sort((a, b) => b - a)) arr.splice(i, 1);
-    sync(s, def.owner);
+    sync(s, caster);
     // No change is given: say so when a bigger card paid for a smaller cost.
-    if (sumOf(spent) > def.cost) log(s, "v2.log.wasted", "detail", { char: def.owner, n: sumOf(spent) - def.cost, spent: spent.join("+") });
+    if (sumOf(spent) > def.cost) log(s, "v2.log.wasted", "detail", { char: caster, n: sumOf(spent) - def.cost, spent: spent.join("+") });
   } else if (personal(s)) {
-    if (def.kind === "attack") s.party[def.owner].sp -= spCost(skill);
-    else s.party[def.owner].mp -= mpCost(skill);
+    if (def.kind === "attack") s.party[caster].sp -= spCost(skill);
+    else s.party[caster].mp -= mpCost(skill);
   }
   if (pay.faith && def.kind !== "faith") log(s, "v2.log.faithSpent", "detail", { n: pay.faith });
 
@@ -1522,7 +1576,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "keep":
       log(s, "v2.log.keep", "player");
-      addShield(s, "adam", supportAmount(s, "keep"));
+      addShield(s, self("adam"), supportAmount(s, "keep"));
       break;
     case "mother":
       log(s, "v2.log.mother", "player");
@@ -1554,7 +1608,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "stars": {
       // Look now toward heaven, and tell the stars (Genesis 15:5).
-      const gained = gainFaith(s, def.owner, R.starsFaith);
+      const gained = gainFaith(s, caster, R.starsFaith);
       log(s, "v2.log.stars", "player", { n: gained });
       break;
     }
@@ -1566,9 +1620,9 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "wrestle": {
       // I will not let thee go, except thou bless me (Genesis 32:26).
-      const c = s.party.jacob;
+      const c = s.party[self("jacob")];
       c.hp = Math.max(R.wrestleCost, c.hp - R.wrestleCost);
-      const gained = gainFaith(s, def.owner, R.wrestleFaith);
+      const gained = gainFaith(s, caster, R.wrestleFaith);
       log(s, "v2.log.wrestle", "player", { n: gained, hp: c.hp, max: MAX_HP.jacob });
       break;
     }
@@ -1588,7 +1642,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "ravens": {
       // The ravens brought him bread and flesh in the morning (1 Kings 17:6).
-      const c = s.party.elijah;
+      const c = s.party[self("elijah")];
       const healed = Math.min(R.ravensHeal, MAX_HP.elijah - c.hp);
       c.hp += healed;
       log(s, "v2.log.ravens", "player", { n: healed, hp: c.hp, max: MAX_HP.elijah });
@@ -1597,16 +1651,16 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "fasting": {
       // Fast ye for me, neither eat nor drink three days (Esther 4:16).
-      const c = s.party.esther;
+      const c = s.party[self("esther")];
       c.hp = Math.max(R.fastingCost, c.hp - R.fastingCost);
-      const gained = gainFaith(s, def.owner, R.fastingFaith);
+      const gained = gainFaith(s, caster, R.fastingFaith);
       log(s, "v2.log.fasting", "player", { n: gained, hp: c.hp, max: MAX_HP.esther });
       break;
     }
     case "philipComeSee":
       // Philip saith unto him, Come and see (John 1:46) — and Nathanael comes ready.
-      gainFaith(s, def.owner, 1);
-      if (isAlive(s, "nathanael")) gainAttack(s, def.owner, 1);
+      gainFaith(s, caster, 1);
+      if (isAlive(s, self("nathanael"))) gainAttack(s, caster, 1);
       log(s, "v2.log.philipComeSee", "player");
       break;
     case "lotFell": {
@@ -1624,31 +1678,31 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       // From the sword of the zealots to the peace of Christ.
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.swordDown", "player");
-      addShield(s, "simonZealot", 20);
+      addShield(s, self("simonZealot"), 20);
       break;
     case "aQuestion": {
       // Lord, how is it that thou wilt manifest thyself unto us, and not unto the world? (John 14:22).
       const n = supportAmount(s, "aQuestion");
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.aQuestion", "player", { n });
       draw(s, n, rng);
       break;
     }
     case "quietFaith":
       // Named among the twelve, and faithful without being noticed.
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.quietFaith", "player");
-      addShield(s, "jamesAlph", 30);
+      addShield(s, self("jamesAlph"), 30);
       break;
     case "figTree":
       // When thou wast under the fig tree, I saw thee (John 1:48).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.figTree", "player");
       draw(s, 1, rng);
       break;
     case "thirtySilver": {
       // They covenanted with him for thirty pieces of silver (Matthew 26:15): Faith now, paid for by a friend.
-      gainFaith(s, def.owner, R.silverFaith);
+      gainFaith(s, caster, R.silverFaith);
       const victim = living(s).filter((id) => id !== "judas" && !NEVER_FALLS.has(id)).sort((a, b) => s.party[a].hp / MAX_HP[a] - s.party[b].hp / MAX_HP[b])[0];
       log(s, "v2.log.thirtySilver", "player", { n: R.silverFaith });
       if (victim) {
@@ -1661,12 +1715,12 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "moneyBag":
       // He had the bag (John 12:6).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       break;
     case "giveBasket":
       // There is a lad here, which hath five barley loaves, and two small fishes (John 6:9).
       s.basketGiven = true;
-      gainFaith(s, def.owner, R.basketFaith);
+      gainFaith(s, caster, R.basketFaith);
       log(s, "v2.log.giveBasket", "player", { n: R.basketFaith });
       if (jesusHere(s))
         living(s).forEach((id) => {
@@ -1678,21 +1732,21 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "nightAndDay":
       // She served God with fastings and prayers night and day (Luke 2:37).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.nightAndDay", "player");
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, R.annaShield));
       break;
     case "gaveThanks": {
       // She coming in that instant gave thanks likewise unto the Lord, and spake of him (Luke 2:38).
       const n = supportAmount(s, "gaveThanks");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.gaveThanks", "player", { n });
       break;
     }
     case "waiting":
       // Waiting for the consolation of Israel (Luke 2:25): Faith now, and every other turn from here on.
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       s.simeonWaiting = true;
       log(s, "v2.log.waiting", "player");
       break;
@@ -1707,7 +1761,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
         if (!NEVER_FALLS.has(id) && id !== "simeon") addShield(s, id, R.nuncShield);
       });
-      const me = s.party.simeon;
+      const me = s.party[self("simeon")];
       me.hp = 0;
       me.shield = 0;
       me.shaken = false;
@@ -1729,8 +1783,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "leaped": {
       // The babe leaped in her womb; and Elisabeth was filled with the Holy Ghost (Luke 1:41).
-      const kin = isAlive(s, "mary") || isAlive(s, "johnBaptist");
-      if (kin) gainFaith(s, def.owner, 1);
+      const kin = isAlive(s, self("mary")) || isAlive(s, self("johnBaptist"));
+      if (kin) gainFaith(s, caster, 1);
       log(s, kin ? "v2.log.leapedKin" : "v2.log.leaped", "player");
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -1753,21 +1807,21 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "wouldNotBow":
       // But Mordecai bowed not, nor did him reverence (Esther 3:2).
-      addShield(s, "mordecai", R.bowShield);
+      addShield(s, self("mordecai"), R.bowShield);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.wouldNotBow", "player", { n: R.bowShield });
       break;
     case "suchATime": {
       // Who knoweth whether thou art come to the kingdom for such a time as this? (Esther 4:14).
       const n = supportAmount(s, "suchATime");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.suchATime", "player", { n });
       break;
     }
     case "laughter": {
       // God hath made me to laugh, so that all that hear will laugh with me (Genesis 21:6).
-      const n = isAlive(s, "abraham") || isAlive(s, "isaac") ? 2 : 1;
-      gainFaith(s, def.owner, n);
+      const n = isAlive(s, self("abraham")) || isAlive(s, self("isaac")) ? 2 : 1;
+      gainFaith(s, caster, n);
       log(s, "v2.log.laughter", "player", { n });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -1799,8 +1853,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "waterCamels": {
       // I will draw water for thy camels also, until they have done drinking (Genesis 24:19).
-      const isaac = isAlive(s, "isaac");
-      if (isaac) gainFaith(s, def.owner, 1);
+      const isaac = isAlive(s, self("isaac"));
+      if (isaac) gainFaith(s, caster, 1);
       log(s, isaac ? "v2.log.waterCamelsIsaac" : "v2.log.waterCamels", "player");
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -1821,27 +1875,27 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "fewDays": {
       // They seemed unto him but a few days, for the love he had to her (Genesis 29:20).
       const n = supportAmount(s, "fewDays");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.fewDays", "player", { n });
       break;
     }
     case "ifThouGo": {
       // If thou wilt go with me, then I will go (Judges 4:8).
       const n = supportAmount(s, "ifThouGo");
-      gainAttack(s, def.owner, n);
+      gainAttack(s, caster, n);
       log(s, "v2.log.ifThouGo", "player", { n });
       break;
     }
     case "blessedAbove": {
       // Blessed above women shall Jael the wife of Heber the Kenite be (Judges 5:24).
       const n = supportAmount(s, "blessedAbove");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.blessedAbove", "player", { n });
       break;
     }
     case "wentInBoldly":
       // Joseph of Arimathaea... went in boldly unto Pilate, and craved the body of Jesus (Mark 15:43).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.wentInBoldly", "player");
       break;
@@ -1867,8 +1921,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "scalesFell": {
       // There fell from his eyes as it had been scales: and he received sight forthwith (Acts 9:18).
-      const paul = isAlive(s, "paul");
-      if (paul) gainFaith(s, def.owner, 1);
+      const paul = isAlive(s, self("paul"));
+      if (paul) gainFaith(s, caster, 1);
       living(s).forEach((id) => {
         s.party[id].shaken = false;
         if (!NEVER_FALLS.has(id)) addShield(s, id, R.scalesShield);
@@ -1879,7 +1933,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "butIfNot": {
       // But if not, be it known unto thee, O king, that we will not serve thy gods (Daniel 3:18).
       const n = supportAmount(s, "butIfNot");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.butIfNot", "player", { n });
       break;
@@ -1892,33 +1946,33 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "lordGave": {
       // The LORD gave, and the LORD hath taken away; blessed be the name of the LORD (Job 1:21).
-      const low = s.party.job.hp <= MAX_HP.job / 2;
-      addShield(s, "job", R.jobShield);
-      if (low) gainFaith(s, def.owner, 1);
+      const low = s.party[self("job")].hp <= MAX_HP.job / 2;
+      addShield(s, self("job"), R.jobShield);
+      if (low) gainFaith(s, caster, 1);
       log(s, low ? "v2.log.lordGaveLow" : "v2.log.lordGave", "player", { n: R.jobShield });
       break;
     }
     case "turnedCaptivity": {
       // The LORD turned the captivity of Job... and gave Job twice as much as he had before (Job 42:10).
-      const c = s.party.job;
+      const c = s.party[self("job")];
       const lost = MAX_HP.job - c.hp;
       c.hp = MAX_HP.job;
       c.shaken = false;
-      addShield(s, "job", Math.min(lost, R.captivityShieldMax));
+      addShield(s, self("job"), Math.min(lost, R.captivityShieldMax));
       s.captivityUsed = true;
       log(s, "v2.log.turnedCaptivity", "player", { n: lost, shield: Math.min(lost, R.captivityShieldMax) });
       break;
     }
     case "walkedWithGod":
       // Enoch walked with God (Genesis 5:22); before his translation he had this testimony, that he pleased God (Hebrews 11:5).
-      addShield(s, "enoch", R.walkShield);
-      gainFaith(s, def.owner, 1);
+      addShield(s, self("enoch"), R.walkShield);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.walkedWithGod", "player", { n: R.walkShield });
       break;
     case "breadAndWine": {
       // Melchizedek king of Salem brought forth bread and wine: and he was the priest of the most high God (Genesis 14:18).
-      const abram = isAlive(s, "abraham");
-      if (abram) gainFaith(s, def.owner, 1);
+      const abram = isAlive(s, self("abraham"));
+      if (abram) gainFaith(s, caster, 1);
       log(s, abram ? "v2.log.breadAndWineAbram" : "v2.log.breadAndWine", "player");
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -1931,28 +1985,28 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "tenthOfAll": {
       // And he gave him tithes of all (Genesis 14:20).
       const n = supportAmount(s, "tenthOfAll");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.tenthOfAll", "player", { n });
       break;
     }
     case "goUpAtOnce": {
       // Let us go up at once, and possess it; for we are well able to overcome it (Numbers 13:30).
       const n = supportAmount(s, "goUpAtOnce");
-      gainAttack(s, def.owner, n);
+      gainAttack(s, caster, n);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.goUpAtOnce", "player", { n });
       break;
     }
     case "almondRod":
       // I see a rod of an almond tree... for I will hasten my word to perform it (Jeremiah 1:11-12).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.almondRod", "player");
       draw(s, 1, rng);
       break;
     case "watchman":
       // Son of man, I have made thee a watchman unto the house of Israel (Ezekiel 3:17).
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, R.watchmanShield));
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.watchman", "player", { n: R.watchmanShield });
       break;
     case "dryBones":
@@ -1977,7 +2031,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "readTheLaw": {
       // They read in the book in the law of God distinctly, and gave the sense (Nehemiah 8:8).
       const n = supportAmount(s, "readTheLaw");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.readTheLaw", "player", { n });
       break;
@@ -1985,7 +2039,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "houseForever":
       // Thine house and thy kingdom shall be established for ever before thee (2 Samuel 7:16).
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, id === "david" || id === "solomon" ? R.houseKingShield : R.houseShield));
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.houseForever", "player", { n: R.houseShield });
       break;
     case "spreadLetter":
@@ -1995,7 +2049,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "fifteenYears": {
       // I have heard thy prayer, I have seen thy tears... I will add unto thy days fifteen years (2 Kings 20:5-6).
-      const c = s.party.hezekiah;
+      const c = s.party[self("hezekiah")];
       const healed = Math.min(supportAmount(s, "fifteenYears"), MAX_HP.hezekiah - c.hp);
       c.hp += healed;
       log(s, "v2.log.fifteenYears", "player", { n: healed, hp: c.hp, max: MAX_HP.hezekiah });
@@ -2003,7 +2057,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "heardTheBook":
       // When the king had heard the words of the book of the law, he rent his clothes (2 Kings 22:11).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.heardTheBook", "player");
       break;
@@ -2017,14 +2071,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "hisStar": {
       // We have seen his star in the east, and are come to worship him (Matthew 2:2).
       const n = supportAmount(s, "hisStar");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.hisStar", "player", { n });
       break;
     }
     case "threeGifts":
       // They presented unto him gifts; gold, and frankincense, and myrrh (Matthew 2:11).
       s.giftsGiven = true;
-      gainAttack(s, def.owner, R.giftAttack);
+      gainAttack(s, caster, R.giftAttack);
       log(s, "v2.log.threeGifts", "player", { n: R.giftAttack });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2036,7 +2090,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "goodTidings":
       // Fear not: for, behold, I bring you good tidings of great joy, which shall be to all people (Luke 2:10).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.goodTidings", "player");
       break;
@@ -2054,7 +2108,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "sonOfDavid": {
       // Jesus, thou son of David, have mercy on me (Mark 10:47).
       const n = supportAmount(s, "sonOfDavid");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.sonOfDavid", "player", { n });
       break;
     }
@@ -2078,7 +2132,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "onlyBelieve": {
       // Be not afraid, only believe (Mark 5:36).
       const n = supportAmount(s, "onlyBelieve");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.onlyBelieve", "player", { n });
       break;
     }
@@ -2098,28 +2152,28 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "bearHisCross":
       // On him they laid the cross, that he might bear it after Jesus (Luke 23:26).
       s.simonCovers = target as CharacterId;
-      addShield(s, "simonCyrene", R.crossShield);
+      addShield(s, self("simonCyrene"), R.crossShield);
       log(s, "v2.log.bearHisCross", "player", { char: target as CharacterId, n: R.crossShield });
       break;
     case "comingFromCountry": {
       // Simon a Cyrenian, who passed by, coming out of the country (Mark 15:21).
-      const c = s.party.simonCyrene;
+      const c = s.party[self("simonCyrene")];
       const healed = Math.min(R.countryHeal, MAX_HP.simonCyrene - c.hp);
       c.hp += healed;
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.comingFromCountry", "player", { n: healed, hp: c.hp, max: MAX_HP.simonCyrene });
       break;
     }
     case "rememberMe": {
       // Lord, remember me when thou comest into thy kingdom (Luke 23:42).
       const n = supportAmount(s, "rememberMe");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.rememberMe", "player", { n });
       break;
     }
     case "paradise": {
       // Verily I say unto thee, To day shalt thou be with me in paradise (Luke 23:43).
-      gainFaith(s, def.owner, R.paradiseFaith);
+      gainFaith(s, caster, R.paradiseFaith);
       log(s, "v2.log.paradise", "player", { n: R.paradiseFaith });
       living(s).filter((id) => id !== "thief").forEach((id) => {
         const c = s.party[id];
@@ -2127,7 +2181,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += healed;
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
-      const me = s.party.thief;
+      const me = s.party[self("thief")];
       me.hp = 0;
       me.shield = 0;
       me.shaken = false;
@@ -2137,15 +2191,15 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "swiftToHear": {
       // Let every man be swift to hear, slow to speak, slow to wrath (James 1:19).
-      const council = isAlive(s, "peter") || isAlive(s, "paul");
+      const council = isAlive(s, self("peter")) || isAlive(s, self("paul"));
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, R.hearShield));
-      if (council) gainFaith(s, def.owner, 1);
+      if (council) gainFaith(s, caster, 1);
       log(s, council ? "v2.log.swiftToHearCouncil" : "v2.log.swiftToHear", "player", { n: R.hearShield });
       break;
     }
     case "railedOn": {
       // One of the malefactors which were hanged railed on him (Luke 23:39): the bitterness costs him too.
-      const me = s.party.mockingThief;
+      const me = s.party[self("mockingThief")];
       const lost = Math.min(R.railCost, me.hp - 10);
       if (lost > 0) me.hp -= lost;
       log(s, "v2.log.railedOn", "player", { n: Math.max(0, lost), hp: me.hp, max: MAX_HP.mockingThief });
@@ -2153,7 +2207,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "forgiveThem":
       // Father, forgive them; for they know not what they do (Luke 23:34).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.forgiveThem", "player");
       break;
@@ -2167,7 +2221,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += healed;
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
-      const me = s.party.jesusCross;
+      const me = s.party[self("jesusCross")];
       me.hp = 0;
       me.shield = 0;
       me.shaken = false;
@@ -2180,20 +2234,20 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       let n = 1;
       if (perChar(s)) {
         // Her own SP (red cards) is poured out into MP.
-        n += attackOf(s, def.owner);
-        clearAttack(s, def.owner);
+        n += attackOf(s, caster);
+        clearAttack(s, caster);
       } else {
         n += s.energy.attack + s.energy.guard;
         s.energy.attack = 0;
         s.energy.guard = 0;
       }
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.twoMites", "player", { n });
       break;
     }
     case "allHerLiving": {
       // She cast in all that she had, even all her living (Mark 12:44): half her HP heals every other ally.
-      const me = s.party.widow;
+      const me = s.party[self("widow")];
       const gift = toTens(me.hp / 2);
       me.hp -= gift;
       log(s, "v2.log.allHerLiving", "player", { n: gift });
@@ -2207,7 +2261,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "toiledAllNight":
       // Master, we have toiled all the night, and have taken nothing (Luke 5:5).
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.toiledAllNight", "player");
       break;
     case "throughTheRoof": {
@@ -2223,7 +2277,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "theirFaith": {
       // When Jesus saw their faith (Mark 2:5).
       const n = supportAmount(s, "theirFaith");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.theirFaith", "player", { n });
       break;
     }
@@ -2244,12 +2298,12 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "hardenedHeart":
       // And he hardened Pharaoh's heart, that he hearkened not unto them (Exodus 7:13).
-      addShield(s, "pharaoh", R.hardShield);
+      addShield(s, self("pharaoh"), R.hardShield);
       log(s, "v2.log.hardenedHeart", "player", { n: R.hardShield });
       break;
     case "makeBricks":
       // Ye shall no more give the people straw to make brick... yet the tale of the bricks ye shall lay upon them (Exodus 5:7-8).
-      gainAttack(s, def.owner, R.bricksAttack);
+      gainAttack(s, caster, R.bricksAttack);
       log(s, "v2.log.makeBricks", "player", { n: R.bricksAttack });
       living(s).filter((id) => id !== "pharaoh" && !NEVER_FALLS.has(id)).forEach((id) => {
         const c = s.party[id];
@@ -2260,34 +2314,34 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "chosenChariots":
       // He took six hundred chosen chariots, and all the chariots of Egypt (Exodus 14:7).
-      gainAttack(s, def.owner, 1);
-      addShield(s, "charioteer", R.chariotShield);
+      gainAttack(s, caster, 1);
+      addShield(s, self("charioteer"), R.chariotShield);
       log(s, "v2.log.chosenChariots", "player", { n: R.chariotShield });
       break;
     case "royalCommand":
       // Dost thou now govern the kingdom of Israel? arise... I will give thee the vineyard (1 Kings 21:7).
-      gainAttack(s, def.owner, 1);
-      addShield(s, "jezebel", R.queenShield);
+      gainAttack(s, caster, 1);
+      addShield(s, self("jezebel"), R.queenShield);
       log(s, "v2.log.royalCommand", "player", { n: R.queenShield });
       break;
     case "cutThemselves": {
       // They cried aloud, and cut themselves after their manner with knives (1 Kings 18:28).
-      const me = s.party.baalProphet;
+      const me = s.party[self("baalProphet")];
       const lost = Math.max(0, Math.min(R.cutCost, me.hp - 10));
       me.hp -= lost;
-      gainAttack(s, def.owner, R.cutAttack);
+      gainAttack(s, caster, R.cutAttack);
       log(s, "v2.log.cutThemselves", "player", { n: R.cutAttack, lost, hp: me.hp, max: MAX_HP.baalProphet });
       break;
     }
     case "kingsRing":
       // The king took his ring from his hand, and gave it unto Haman (Esther 3:10).
-      gainAttack(s, def.owner, R.ringAttack);
+      gainAttack(s, caster, R.ringAttack);
       log(s, "v2.log.kingsRing", "player", { n: R.ringAttack });
       break;
     case "hamansDecree":
       // So they hanged Haman on the gallows that he had prepared for Mordecai (Esther 7:10).
-      if (isAlive(s, "esther") || isAlive(s, "mordecai")) {
-        const me = s.party.haman;
+      if (isAlive(s, self("esther")) || isAlive(s, self("mordecai"))) {
+        const me = s.party[self("haman")];
         const lost = Math.max(0, Math.min(R.gallowsCost, me.hp - 10));
         me.hp -= lost;
         log(s, "v2.log.gallows", "player", { n: lost, hp: me.hp, max: MAX_HP.haman });
@@ -2295,14 +2349,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "pieceOfSilver":
       // We will give thee every one of us eleven hundred pieces of silver (Judges 16:5).
-      gainAttack(s, def.owner, 1);
-      gainFaith(s, def.owner, 1);
+      gainAttack(s, caster, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.pieceOfSilver", "player");
       break;
     case "whereinStrength":
       // She called for a man, and she caused him to shave off the seven locks of his head (Judges 16:19).
-      if (isAlive(s, "samson")) {
-        s.party.samson.shaken = true;
+      if (isAlive(s, self("samson"))) {
+        s.party[self("samson")].shaken = true;
         log(s, "v2.log.samsonShaved", "player");
       }
       break;
@@ -2313,7 +2367,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "praiseKingOfHeaven":
       // Now I Nebuchadnezzar praise and extol and honour the King of heaven (Daniel 4:37).
       s.praisedHeaven = true;
-      gainFaith(s, def.owner, R.heavenFaith);
+      gainFaith(s, caster, R.heavenFaith);
       log(s, "v2.log.praiseKingOfHeaven", "player", { n: R.heavenFaith });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2325,14 +2379,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "covetVineyard": {
       // Give me thy vineyard, that I may have it for a garden of herbs (1 Kings 21:2).
       const n = supportAmount(s, "covetVineyard");
-      gainAttack(s, def.owner, n);
+      gainAttack(s, caster, n);
       log(s, "v2.log.covetVineyard", "player", { n });
       break;
     }
     case "humbledHimself": {
       // Seest thou how Ahab humbleth himself before me? (1 Kings 21:29).
       s.ahabHumbled = true;
-      const c = s.party.ahab;
+      const c = s.party[self("ahab")];
       const healed = Math.min(R.humbledHeal, MAX_HP.ahab - c.hp);
       c.hp += healed;
       living(s).forEach((id) => (s.party[id].shaken = false));
@@ -2342,7 +2396,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "mealNotSpent": {
       // The barrel of meal shall not waste, neither shall the cruse of oil fail (1 Kings 17:14).
       const n = supportAmount(s, "mealNotSpent");
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.mealNotSpent", "player", { n });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2374,7 +2428,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const ally = target as CharacterId;
       if (ally === "jesusUR") s.tomb = null;
       const c = s.party[ally];
-      c.hp = isAlive(s, "elisha") ? MAX_HP[ally] : Math.min(R.wellHp, MAX_HP[ally]);
+      c.hp = isAlive(s, self("elisha")) ? MAX_HP[ally] : Math.min(R.wellHp, MAX_HP[ally]);
       c.shaken = false;
       c.shield = 0;
       c.acted = false;
@@ -2385,19 +2439,19 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "sevenTimesJordan": {
       // He dipped himself seven times in Jordan... and his flesh came again like the flesh of a little child (2 Kings 5:14).
       s.jordanUsed = true;
-      const c = s.party.naaman;
+      const c = s.party[self("naaman")];
       const healed = MAX_HP.naaman - c.hp;
       c.hp = MAX_HP.naaman;
       living(s).forEach((id) => (s.party[id].shaken = false));
-      const elisha = isAlive(s, "elisha");
-      if (elisha) gainFaith(s, def.owner, R.jordanFaith);
+      const elisha = isAlive(s, self("elisha"));
+      if (elisha) gainFaith(s, caster, R.jordanFaith);
       log(s, elisha ? "v2.log.sevenTimesJordanElisha" : "v2.log.sevenTimesJordan", "player", { n: healed, f: R.jordanFaith });
       break;
     }
     case "wouldGod": {
       // Would God my lord were with the prophet that is in Samaria! for he would recover him of his leprosy (2 Kings 5:3).
       const n = supportAmount(s, "wouldGod");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.wouldGod", "player", { n });
       break;
     }
@@ -2414,7 +2468,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "rememberOath": {
       // My lord, thou swarest by the LORD thy God unto thine handmaid, saying, Assuredly Solomon thy son shall reign (1 Kings 1:17).
       const n = supportAmount(s, "rememberOath");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.rememberOath", "player", { n });
       break;
     }
@@ -2431,36 +2485,36 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "stoleHearts":
       // So Absalom stole the hearts of the men of Israel (2 Samuel 15:6) — at his father's cost.
-      gainFaith(s, def.owner, R.heartsFaith);
-      if (isAlive(s, "david")) s.party.david.shaken = true;
-      log(s, isAlive(s, "david") ? "v2.log.stoleHeartsDavid" : "v2.log.stoleHearts", "player", { n: R.heartsFaith });
+      gainFaith(s, caster, R.heartsFaith);
+      if (isAlive(s, self("david"))) s.party[self("david")].shaken = true;
+      log(s, isAlive(s, self("david")) ? "v2.log.stoleHeartsDavid" : "v2.log.stoleHearts", "player", { n: R.heartsFaith });
       break;
     case "kingsTable": {
       // As for Mephibosheth, said the king, he shall eat at my table, as one of the king's sons (2 Samuel 9:11).
-      const c = s.party.mephibosheth;
+      const c = s.party[self("mephibosheth")];
       const healed = Math.min(supportAmount(s, "kingsTable"), MAX_HP.mephibosheth - c.hp);
       c.hp += healed;
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.kingsTable", "player", { n: healed, hp: c.hp, max: MAX_HP.mephibosheth });
       break;
     }
     case "deadDog":
       // What is thy servant, that thou shouldest look upon such a dead dog as I am? (2 Samuel 9:8).
       living(s).forEach((id) => (s.party[id].shaken = false));
-      gainGuard(s, def.owner, 1);
+      gainGuard(s, caster, 1);
       log(s, "v2.log.deadDog", "player");
       break;
     case "hardQuestions": {
       // She came to prove him with hard questions... and Solomon told her all her questions (1 Kings 10:1, 3).
       const n = supportAmount(s, "hardQuestions");
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.hardQuestions", "player", { n });
       draw(s, n, rng);
       break;
     }
     case "spicesAndGold":
       // She gave the king an hundred and twenty talents of gold, and of spices very great store (1 Kings 10:10).
-      gainAttack(s, def.owner, R.goldAttack);
+      gainAttack(s, caster, R.goldAttack);
       log(s, "v2.log.spicesAndGold", "player", { n: R.goldAttack });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2471,18 +2525,18 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "lookedUpon": {
       // Surely the LORD hath looked upon my affliction (Genesis 29:32).
-      const c = s.party.leah;
+      const c = s.party[self("leah")];
       const low = c.hp <= MAX_HP.leah / 2;
       const healed = Math.min(R.afflictionHeal, MAX_HP.leah - c.hp);
       c.hp += healed;
-      if (low) gainFaith(s, def.owner, 1);
+      if (low) gainFaith(s, caster, 1);
       log(s, low ? "v2.log.lookedUponLow" : "v2.log.lookedUpon", "player", { n: healed, hp: c.hp, max: MAX_HP.leah });
       break;
     }
     case "nowPraise": {
       // Now will I praise the LORD: therefore she called his name Judah (Genesis 29:35).
       const n = supportAmount(s, "nowPraise");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.nowPraise", "player", { n });
       break;
     }
@@ -2492,13 +2546,13 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         s.party[id].shaken = false;
         addShield(s, id, id === "jacob" ? R.embraceJacobShield : R.embraceShield);
       });
-      log(s, isAlive(s, "jacob") ? "v2.log.ranToMeetJacob" : "v2.log.ranToMeet", "player", { n: R.embraceShield });
+      log(s, isAlive(s, self("jacob")) ? "v2.log.ranToMeetJacob" : "v2.log.ranToMeet", "player", { n: R.embraceShield });
       break;
     case "godHeard": {
       // God hath heard the voice of the lad where he is (Genesis 21:17).
       const n = supportAmount(s, "godHeard");
-      gainFaith(s, def.owner, n);
-      const c = s.party.hagar;
+      gainFaith(s, caster, n);
+      const c = s.party[self("hagar")];
       const healed = Math.min(R.heardHeal, MAX_HP.hagar - c.hp);
       c.hp += healed;
       log(s, "v2.log.godHeard", "player", { n, heal: healed });
@@ -2518,16 +2572,16 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "escapeForLife": {
       // Escape for thy life; look not behind thee (Genesis 19:17) — and God remembered Abraham, and sent Lot out (19:29).
-      const abraham = isAlive(s, "abraham");
+      const abraham = isAlive(s, self("abraham"));
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, R.escapeShield));
-      if (abraham) gainFaith(s, def.owner, 1);
+      if (abraham) gainFaith(s, caster, 1);
       log(s, abraham ? "v2.log.escapeForLifeAbraham" : "v2.log.escapeForLife", "player", { n: R.escapeShield });
       break;
     }
     case "lookedBack":
       // But his wife looked back from behind him, and she became a pillar of salt (Genesis 19:26).
-      gainAttack(s, def.owner, R.lookBackAttack);
-      s.party.lot.shaken = true;
+      gainAttack(s, caster, R.lookBackAttack);
+      s.party[self("lot")].shaken = true;
       log(s, "v2.log.lookedBack", "player", { n: R.lookBackAttack });
       break;
     case "arkOfBulrushes": {
@@ -2544,8 +2598,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const c = s.party[ally];
       const healed = Math.min(R.nurseHeal, MAX_HP[ally] - c.hp);
       c.hp += healed;
-      const f = isAlive(s, "moses") || isAlive(s, "mosesSinai") || isAlive(s, "miriam") ? 2 : 1;
-      gainFaith(s, def.owner, f);
+      const f = isAlive(s, self("moses")) || isAlive(s, self("mosesSinai")) || isAlive(s, self("miriam")) ? 2 : 1;
+      gainFaith(s, caster, f);
       log(s, "v2.log.nurseHim", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally], f });
       break;
     }
@@ -2563,29 +2617,29 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "drewHimOut": {
       // She called his name Moses: and she said, Because I drew him out of the water (Exodus 2:10).
       const n = supportAmount(s, "drewHimOut");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.drewHimOut", "player", { n });
       break;
     }
     case "shareBurden": {
       // Provide out of all the people able men... and they shall bear the burden with thee (Exodus 18:21-22).
-      const moses = isAlive(s, "moses") || isAlive(s, "mosesSinai");
-      gainAttack(s, def.owner, 1);
-      gainGuard(s, def.owner, 1);
-      if (moses) gainFaith(s, def.owner, 1);
+      const moses = isAlive(s, self("moses")) || isAlive(s, self("mosesSinai"));
+      gainAttack(s, caster, 1);
+      gainGuard(s, caster, 1);
+      if (moses) gainFaith(s, caster, 1);
       log(s, moses ? "v2.log.shareBurdenMoses" : "v2.log.shareBurden", "player");
       break;
     }
     case "greaterThanAll": {
       // Now I know that the LORD is greater than all gods (Exodus 18:11).
       const n = supportAmount(s, "greaterThanAll");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.greaterThanAll", "player", { n });
       break;
     }
     case "wateredFlock": {
       // Moses stood up and helped them, and watered their flock (Exodus 2:17).
-      const moses = isAlive(s, "moses") || isAlive(s, "mosesSinai");
+      const moses = isAlive(s, self("moses")) || isAlive(s, self("mosesSinai"));
       log(s, moses ? "v2.log.wateredFlockMoses" : "v2.log.wateredFlock", "player", { n: R.flockHeal });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2599,14 +2653,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "strangerLand": {
       // She bare him a son, and he called his name Gershom: for he said, I have been a stranger in a strange land (Exodus 2:22).
       const n = supportAmount(s, "strangerLand");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.strangerLand", "player", { n });
       break;
     }
     case "unfeignedFaith": {
       // The unfeigned faith that is in thee, which dwelt first in thy grandmother Lois, and thy mother Eunice (2 Timothy 1:5).
       const n = supportAmount(s, "unfeignedFaith");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.unfeignedFaith", "player", { n });
       break;
     }
@@ -2618,19 +2672,19 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "soldPossession":
       // Ananias, with Sapphira his wife, sold a possession (Acts 5:1).
-      gainAttack(s, def.owner, R.soldAttack);
+      gainAttack(s, caster, R.soldAttack);
       log(s, "v2.log.soldPossession", "player", { n: R.soldAttack });
       break;
     case "keptBackPart": {
       // And kept back part of the price... Why hath Satan filled thine heart to lie to the Holy Ghost? (Acts 5:2-3).
-      const me = s.party.sapphira;
-      if (isAlive(s, "peter")) {
+      const me = s.party[self("sapphira")];
+      if (isAlive(s, self("peter"))) {
         const lost = Math.max(0, Math.min(R.keptCost, me.hp - 10));
         me.hp -= lost;
         me.shaken = true;
         log(s, "v2.log.keptBackFound", "player", { n: lost, hp: me.hp, max: MAX_HP.sapphira });
       } else {
-        gainFaith(s, def.owner, R.keptFaith);
+        gainFaith(s, caster, R.keptFaith);
         log(s, "v2.log.keptBackPart", "player", { n: R.keptFaith });
       }
       break;
@@ -2643,14 +2697,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "washedHands":
       // He took water, and washed his hands before the multitude, saying, I am innocent (Matthew 27:24).
       living(s).filter((id) => id !== "pilate").forEach((id) => (s.party[id].shield = 0));
-      s.party.pilate.shaken = false;
-      addShield(s, "pilate", R.washShield);
-      gainAttack(s, def.owner, 1);
+      s.party[self("pilate")].shaken = false;
+      addShield(s, self("pilate"), R.washShield);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.washedHands", "player", { n: R.washShield });
       break;
     case "oneManDie": {
       // It is expedient for us, that one man should die for the people (John 11:50) — another pays for it.
-      gainFaith(s, def.owner, R.expedientFaith);
+      gainFaith(s, caster, R.expedientFaith);
       const victim = living(s).filter((id) => id !== "caiaphas" && !NEVER_FALLS.has(id)).sort((a, b) => s.party[b].hp - s.party[a].hp)[0];
       if (victim) {
         const c = s.party[victim];
@@ -2667,37 +2721,37 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "gorgeousRobe": {
       // Herod... arrayed him in a gorgeous robe... and Pilate and Herod were made friends together (Luke 23:11-12).
-      const pilate = isAlive(s, "pilate");
-      addShield(s, "herod", R.robeShield);
-      gainAttack(s, def.owner, 1);
-      if (pilate) gainFaith(s, def.owner, 1);
+      const pilate = isAlive(s, self("pilate"));
+      addShield(s, self("herod"), R.robeShield);
+      gainAttack(s, caster, 1);
+      if (pilate) gainFaith(s, caster, 1);
       log(s, pilate ? "v2.log.gorgeousRobePilate" : "v2.log.gorgeousRobe", "player", { n: R.robeShield });
       break;
     }
     case "releasedUnto": {
       // And so Pilate... released Barabbas unto them, and delivered Jesus (Mark 15:15) — another took his place.
       s.releasedUsed = true;
-      const c = s.party.barabbas;
+      const c = s.party[self("barabbas")];
       const healed = MAX_HP.barabbas - c.hp;
       c.hp = MAX_HP.barabbas;
       c.shaken = false;
       const jesus = jesusHere(s);
-      if (jesus) gainFaith(s, def.owner, R.releasedFaith);
+      if (jesus) gainFaith(s, caster, R.releasedFaith);
       log(s, jesus ? "v2.log.releasedUntoJesus" : "v2.log.releasedUnto", "player", { n: healed, f: R.releasedFaith });
       break;
     }
     case "convenientDay": {
       // And when a convenient day was come, that Herod on his birthday made a supper (Mark 6:21).
-      const herod = isAlive(s, "herod");
-      gainAttack(s, def.owner, R.convenientAttack);
-      if (herod) gainFaith(s, def.owner, 1);
+      const herod = isAlive(s, self("herod"));
+      gainAttack(s, caster, R.convenientAttack);
+      if (herod) gainFaith(s, caster, 1);
       log(s, herod ? "v2.log.convenientDayHerod" : "v2.log.convenientDay", "player", { n: R.convenientAttack });
       break;
     }
     case "heldGrudge":
       // Therefore Herodias had a quarrel against him, and would have killed him (Mark 6:19).
-      if (isAlive(s, "johnBaptist")) {
-        s.party.johnBaptist.shaken = true;
+      if (isAlive(s, self("johnBaptist"))) {
+        s.party[self("johnBaptist")].shaken = true;
         log(s, "v2.log.grudgeJohn", "player");
       }
       break;
@@ -2709,12 +2763,12 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "braceSpears":
       // Two hundred spearmen... to bring Paul safe (Acts 23:23-24): the line holds in front of the one it guards.
       s.spearCovers = target as CharacterId;
-      addShield(s, "romanSpearman", R.braceShield);
+      addShield(s, self("romanSpearman"), R.braceShield);
       log(s, "v2.log.braceSpears", "player", { char: target as CharacterId, n: R.braceShield });
       break;
     case "rideOut":
       // On the morrow they left the horsemen to go with him (Acts 23:32): swift riders bring word and strength.
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.rideOut", "player");
       draw(s, 1, rng);
       break;
@@ -2722,31 +2776,31 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       // I say to this man, Go, and he goeth (Matthew 8:9): +1 Attack, +1 more for each Roman soldier under him (up to 3).
       const troops = (["romanSoldier", "romanSpearman", "romanArcher", "romanCavalry"] as CharacterId[]).filter((id) => isAlive(s, id)).length;
       const n = Math.min(3, 1 + troops);
-      gainAttack(s, def.owner, n);
+      gainAttack(s, caster, n);
       log(s, "v2.log.commandCohort", "player", { n });
       break;
     }
     case "trulySonOfGod": {
       // When the centurion... saw that he so cried out, and gave up the ghost, he said, Truly this man was the Son of God (Mark 15:39).
-      const n = jesusHere(s) || isAlive(s, "jesusCross") ? 3 : 2;
-      gainFaith(s, def.owner, n);
+      const n = jesusHere(s) || isAlive(s, self("jesusCross")) ? 3 : 2;
+      gainFaith(s, caster, n);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.trulySonOfGod", "player", { n });
       break;
     }
     case "whomTrust": {
       // Now on whom dost thou trust, that thou rebellest against me? (2 Kings 18:20) — Hezekiah answers by praying.
-      gainAttack(s, def.owner, 2);
-      const hezekiah = isAlive(s, "hezekiah");
-      if (hezekiah) gainFaith(s, def.owner, 1);
+      gainAttack(s, caster, 2);
+      const hezekiah = isAlive(s, self("hezekiah"));
+      if (hezekiah) gainFaith(s, caster, 1);
       log(s, hezekiah ? "v2.log.whomTrustHezekiah" : "v2.log.whomTrust", "player");
       break;
     }
     case "fencedCities":
       // Sennacherib king of Assyria came up against all the fenced cities of Judah (2 Kings 18:13).
-      if (isAlive(s, "hezekiah")) {
+      if (isAlive(s, self("hezekiah"))) {
         // That night the angel of the LORD went out, and smote in the camp of the Assyrians (2 Kings 19:35).
-        const me = s.party.sennacherib;
+        const me = s.party[self("sennacherib")];
         const lost = Math.max(0, Math.min(R.campSmitten, me.hp - 10));
         me.hp -= lost;
         log(s, "v2.log.campSmitten", "player", { n: lost, hp: me.hp, max: MAX_HP.sennacherib });
@@ -2754,16 +2808,16 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "goldenVessels":
       // They brought the golden vessels taken out of the temple... and drank wine in them (Daniel 5:3-4) — then his knees smote one against another (5:6).
-      gainAttack(s, def.owner, R.vesselsAttack);
-      s.party.belshazzar.shaken = true;
+      gainAttack(s, caster, R.vesselsAttack);
+      s.party[self("belshazzar")].shaken = true;
       log(s, "v2.log.goldenVessels", "player", { n: R.vesselsAttack });
       break;
     case "writingOnWall": {
       // MENE, MENE, TEKEL, UPHARSIN (Daniel 5:25) — and they clothed Daniel with scarlet (5:29).
       const n = supportAmount(s, "writingOnWall");
-      gainFaith(s, def.owner, n);
-      if (isAlive(s, "daniel")) addShield(s, "daniel", R.scarletShield);
-      log(s, isAlive(s, "daniel") ? "v2.log.writingDaniel" : "v2.log.writingOnWall", "player", { n });
+      gainFaith(s, caster, n);
+      if (isAlive(s, self("daniel"))) addShield(s, self("daniel"), R.scarletShield);
+      log(s, isAlive(s, self("daniel")) ? "v2.log.writingDaniel" : "v2.log.writingOnWall", "player", { n });
       break;
     }
     case "donkeySaw":
@@ -2776,7 +2830,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "blessNotCurse":
       // How shall I curse, whom God hath not cursed? (Numbers 23:8).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.blessNotCurse", "player", { n: R.blessHeal });
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -2787,14 +2841,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "takeTooMuch":
       // Ye take too much upon you, seeing all the congregation are holy (Numbers 16:3).
-      gainAttack(s, def.owner, 2);
+      gainAttack(s, caster, 2);
       (["moses", "mosesSinai", "aaron"] as CharacterId[]).filter((id) => isAlive(s, id)).forEach((id) => (s.party[id].shaken = true));
       log(s, "v2.log.takeTooMuch", "player");
       break;
     case "strangeCensers": {
       // The earth opened her mouth, and swallowed them up (Numbers 16:32) — when they stood against Moses and Aaron.
-      if (isAlive(s, "moses") || isAlive(s, "mosesSinai") || isAlive(s, "aaron")) {
-        const me = s.party.korah;
+      if (isAlive(s, self("moses")) || isAlive(s, self("mosesSinai")) || isAlive(s, self("aaron"))) {
+        const me = s.party[self("korah")];
         const lost = Math.max(0, Math.min(R.censerCost, me.hp - 10));
         me.hp -= lost;
         log(s, "v2.log.earthOpened", "player", { n: lost, hp: me.hp, max: MAX_HP.korah });
@@ -2803,21 +2857,21 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "hiddenSpoil": {
       // I saw among the spoils a goodly Babylonish garment... and hid them in the earth (Joshua 7:21).
-      const me = s.party.achan;
-      if (isAlive(s, "joshua")) {
+      const me = s.party[self("achan")];
+      if (isAlive(s, self("joshua"))) {
         const lost = Math.max(0, Math.min(R.spoilCost, me.hp - 10));
         me.hp -= lost;
         me.shaken = true;
         log(s, "v2.log.spoilFound", "player", { n: lost, hp: me.hp, max: MAX_HP.achan });
       } else {
-        gainFaith(s, def.owner, R.spoilFaith);
+        gainFaith(s, caster, R.spoilFaith);
         log(s, "v2.log.hiddenSpoil", "player", { n: R.spoilFaith });
       }
       break;
     }
     case "troubleOfAchor": {
       // Why hast thou troubled us? the LORD shall trouble thee this day (Joshua 7:25).
-      const me = s.party.achan;
+      const me = s.party[self("achan")];
       const lost = Math.max(0, Math.min(R.achorCost, me.hp - 10));
       me.hp -= lost;
       log(s, "v2.log.troubleOfAchor", "player", { n: lost, hp: me.hp, max: MAX_HP.achan });
@@ -2826,34 +2880,34 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "ironChariots":
       // Sisera gathered together all his chariots, even nine hundred chariots of iron (Judges 4:13).
       log(s, "v2.log.ironChariots", "player");
-      if (isAlive(s, "deborah") || isAlive(s, "barak")) {
+      if (isAlive(s, self("deborah")) || isAlive(s, self("barak"))) {
         // And the LORD discomfited Sisera, and all his chariots... before Barak (Judges 4:15).
-        s.party.sisera.shaken = true;
+        s.party[self("sisera")].shaken = true;
         log(s, "v2.log.ironRouted", "player");
       }
       break;
     case "fledToTent": {
       // Sisera fled away on his feet to the tent of Jael... she gave him drink, and covered him (Judges 4:17-19).
-      const me = s.party.sisera;
-      if (isAlive(s, "jael")) {
+      const me = s.party[self("sisera")];
+      if (isAlive(s, self("jael"))) {
         // Then Jael took a nail of the tent, and took an hammer in her hand (Judges 4:21).
         const lost = Math.max(0, Math.min(R.siseraPegCost, me.hp - 10));
         me.hp -= lost;
         me.shaken = true;
-        gainAttack(s, def.owner, 1);
+        gainAttack(s, caster, 1);
         log(s, "v2.log.siseraPeg", "player", { n: lost, hp: me.hp, max: MAX_HP.sisera });
       } else {
         const healed = Math.min(R.siseraMilkHeal, MAX_HP.sisera - me.hp);
         me.hp += healed;
-        addShield(s, "sisera", R.siseraMantleShield);
+        addShield(s, self("sisera"), R.siseraMantleShield);
         log(s, "v2.log.fledToTent", "player", { n: healed, shield: R.siseraMantleShield });
       }
       break;
     }
     case "privilyCalled":
-      if (isAlive(s, "magi") || isAlive(s, "josephNaz")) {
+      if (isAlive(s, self("magi")) || isAlive(s, self("josephNaz"))) {
         // Being warned of God in a dream... they departed into their own country another way (Matthew 2:12-13).
-        s.party.herodGreat.shaken = true;
+        s.party[self("herodGreat")].shaken = true;
         log(s, "v2.log.privilyFoiled", "player");
       } else {
         // Herod, when he had privily called the wise men, enquired of them diligently (Matthew 2:7).
@@ -2863,7 +2917,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "exceedingWroth": {
       // Herod... was exceeding wroth (Matthew 2:16).
-      const me = s.party.herodGreat;
+      const me = s.party[self("herodGreat")];
       const lost = Math.max(0, Math.min(R.wrothCost, me.hp - 10));
       me.hp -= lost;
       log(s, "v2.log.exceedingWroth", "player", { n: lost, hp: me.hp, max: MAX_HP.herodGreat });
@@ -2872,10 +2926,10 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "rightMind":
       // They see him that was possessed with the devil... sitting, and clothed, and in his right mind (Mark 5:15).
       living(s).forEach((id) => (s.party[id].shaken = false));
-      addShield(s, "legionFreed", R.legionShield);
+      addShield(s, self("legionFreed"), R.legionShield);
       log(s, "v2.log.rightMind", "player", { n: R.legionShield });
       if (jesusHere(s)) {
-        gainFaith(s, def.owner, R.legionFaith);
+        gainFaith(s, caster, R.legionFaith);
         log(s, "v2.log.rightMindJesus", "player", { n: R.legionFaith });
       }
       break;
@@ -2890,26 +2944,26 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "cameToHimself": {
       // And when he came to himself... I will arise and go to my father (Luke 15:17-18).
-      const low = s.party.prodigal.hp <= MAX_HP.prodigal / 2;
+      const low = s.party[self("prodigal")].hp <= MAX_HP.prodigal / 2;
       const n = low ? R.prodigalLowFaith : R.prodigalFaith;
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, low ? "v2.log.cameToHimselfLow" : "v2.log.cameToHimself", "player", { n });
       break;
     }
     case "bestRobe": {
       // Bring forth the best robe, and put it on him... for this my son was dead, and is alive again (Luke 15:22-24).
-      const me = s.party.prodigal;
+      const me = s.party[self("prodigal")];
       const healed = Math.min(R.prodigalRobeHeal, MAX_HP.prodigal - me.hp);
       me.hp += healed;
-      addShield(s, "prodigal", R.prodigalRobeShield);
+      addShield(s, self("prodigal"), R.prodigalRobeShield);
       log(s, "v2.log.bestRobe", "player", { n: healed, shield: R.prodigalRobeShield });
       break;
     }
     case "readingIsaiah": {
       // Understandest thou what thou readest? How can I, except some man should guide me? (Acts 8:30-31).
-      const guided = isAlive(s, "philip");
+      const guided = isAlive(s, self("philip"));
       const n = guided ? R.eunuchPhilipFaith : R.eunuchFaith;
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, guided ? "v2.log.readingIsaiahPhilip" : "v2.log.readingIsaiah", "player", { n });
       break;
     }
@@ -2919,12 +2973,12 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         const c = s.party[id];
         c.hp += Math.min(R.rejoicingHeal, MAX_HP[id] - c.hp);
       });
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.wentRejoicing", "player", { n: R.rejoicingHeal });
       break;
     case "inTheSpirit":
       // I was in the Spirit on the Lord's day, and heard behind me a great voice, as of a trumpet (Revelation 1:10).
-      gainFaith(s, def.owner, R.patmosFaith);
+      gainFaith(s, caster, R.patmosFaith);
       log(s, "v2.log.inTheSpirit", "player", { n: R.patmosFaith });
       draw(s, 1, rng);
       break;
@@ -2935,7 +2989,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += Math.min(R.lightHeal, MAX_HP[id] - c.hp);
         c.shaken = false;
       });
-      gainAttack(s, def.owner, R.lightAttack);
+      gainAttack(s, caster, R.lightAttack);
       log(s, "v2.log.letThereBeLight", "player", { n: R.lightHeal });
       break;
     case "lordMyShield":
@@ -2950,7 +3004,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "heraldNews": {
       // The Spirit of God descending like a dove (Matthew 3:16); I am sent to shew thee these glad tidings (Luke 1:19).
       const n = skill === "likeADove" ? R.doveFaith : R.heraldFaith;
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, skill === "likeADove" ? "v2.log.likeADove" : "v2.log.heraldNews", "player", { n });
       draw(s, 1, rng);
       break;
@@ -2975,8 +3029,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "angelOfLight": {
       // Satan himself is transformed into an angel of light (2 Corinthians 11:14): the lie has a price.
-      gainFaith(s, def.owner, R.lightFaith);
-      const c = s.party[def.owner];
+      gainFaith(s, caster, R.lightFaith);
+      const c = s.party[caster];
       c.hp = Math.max(1, c.hp - R.lightCost);
       log(s, "v2.log.angelOfLight", "player", { n: R.lightFaith, cost: R.lightCost });
       break;
@@ -2988,7 +3042,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += Math.min(R.newHeavenHeal, MAX_HP[id] - c.hp);
         c.shaken = false;
       });
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.newHeaven", "player", { n: R.newHeavenHeal });
       break;
     case "leftHanded":
@@ -2997,19 +3051,19 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "blewTrumpet":
       // He blew a trumpet in the mountain of Ephraim... Follow after me: for the LORD hath delivered your enemies (Judges 3:27-28).
-      gainAttack(s, def.owner, R.trumpetAttack);
-      addShield(s, "ehud", R.trumpetShield);
+      gainAttack(s, caster, R.trumpetAttack);
+      addShield(s, self("ehud"), R.trumpetShield);
       log(s, "v2.log.blewTrumpet", "player", { n: R.trumpetAttack, shield: R.trumpetShield });
       break;
     case "judgeThisDay":
       // The LORD the Judge be judge this day between the children of Israel and the children of Ammon (Judges 11:27).
-      gainFaith(s, def.owner, R.judgeFaith);
-      addShield(s, "jephthah", R.judgeShield);
+      gainFaith(s, caster, R.judgeFaith);
+      addShield(s, self("jephthah"), R.judgeShield);
       log(s, "v2.log.judgeThisDay", "player", { n: R.judgeFaith, shield: R.judgeShield });
       break;
     case "rashVow": {
       // I have opened my mouth unto the LORD, and I cannot go back (Judges 11:35).
-      const me = s.party.jephthah;
+      const me = s.party[self("jephthah")];
       const lost = Math.max(0, Math.min(R.vowCost, me.hp - 10));
       me.hp -= lost;
       me.shaken = true;
@@ -3019,14 +3073,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "playTheMen":
       // Be of good courage, and let us play the men for our people, and for the cities of our God (2 Samuel 10:12).
       living(s).forEach((id) => addShield(s, id, R.joabShield));
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.playTheMen", "player", { n: R.joabShield });
       break;
     case "threeDarts":
       // He took three darts in his hand, and thrust them through the heart of Absalom (2 Samuel 18:14).
       log(s, "v2.log.threeDarts", "player");
-      if (isAlive(s, "absalom")) {
-        const ab = s.party.absalom;
+      if (isAlive(s, self("absalom"))) {
+        const ab = s.party[self("absalom")];
         const lost = Math.max(0, Math.min(R.dartsCost, ab.hp - 10));
         ab.hp -= lost;
         log(s, "v2.log.threeDartsAbsalom", "player", { n: lost, hp: ab.hp, max: MAX_HP.absalom });
@@ -3034,59 +3088,59 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "wouldNotGoHome":
       // The ark, and Israel, and Judah, abide in tents... shall I then go into mine house? (2 Samuel 11:11).
-      addShield(s, "uriah", R.uriahShield);
-      gainFaith(s, def.owner, R.uriahFaith);
+      addShield(s, self("uriah"), R.uriahShield);
+      gainFaith(s, caster, R.uriahFaith);
       log(s, "v2.log.wouldNotGoHome", "player", { n: R.uriahShield, faith: R.uriahFaith });
       break;
     case "hottestBattle": {
       // Set ye Uriah in the forefront of the hottest battle, and retire ye from him (2 Samuel 11:15).
-      const me = s.party.uriah;
-      const betrayed = isAlive(s, "david");
+      const me = s.party[self("uriah")];
+      const betrayed = isAlive(s, self("david"));
       const lost = Math.max(0, Math.min(betrayed ? R.hottestBetrayed : R.hottestCost, me.hp - 10));
       me.hp -= lost;
       log(s, betrayed ? "v2.log.hottestBetrayed" : "v2.log.hottestBattle", "player", { n: lost, hp: me.hp, max: MAX_HP.uriah });
       break;
     }
     case "sorceries":
-      if (isAlive(s, "philip")) {
+      if (isAlive(s, self("philip"))) {
         // Then Simon himself believed also: and when he was baptized, he continued with Philip (Acts 8:13).
-        gainFaith(s, def.owner, R.sorceryFaith);
+        gainFaith(s, caster, R.sorceryFaith);
         log(s, "v2.log.sorceriesBelieved", "player", { n: R.sorceryFaith });
       } else {
         // He had bewitched them with sorceries (Acts 8:11).
-        gainAttack(s, def.owner, R.sorceryAttack);
+        gainAttack(s, caster, R.sorceryAttack);
         log(s, "v2.log.sorceries", "player", { n: R.sorceryAttack });
       }
       break;
     case "offeredMoney": {
       // He offered them money, saying, Give me also this power (Acts 8:18-19).
-      const n = attackOf(s, def.owner);
-      if (perChar(s)) clearAttack(s, def.owner);
+      const n = attackOf(s, caster);
+      if (perChar(s)) clearAttack(s, caster);
       else s.energy.attack = 0;
-      if (isAlive(s, "peter")) {
+      if (isAlive(s, self("peter"))) {
         // Thy money perish with thee, because thou hast thought that the gift of God may be purchased with money (Acts 8:20).
-        s.party.simonMagus.shaken = true;
+        s.party[self("simonMagus")].shaken = true;
         log(s, "v2.log.moneyPerish", "player", { n });
       } else {
-        gainFaith(s, def.owner, n);
+        gainFaith(s, caster, n);
         log(s, "v2.log.offeredMoney", "player", { n });
       }
       break;
     }
     case "pleasedJews":
-      if (isAlive(s, "peter")) {
+      if (isAlive(s, self("peter"))) {
         // Peter therefore was kept in prison: but prayer was made without ceasing... and his chains fell off (Acts 12:5-7).
-        s.party.herodAgrippa.shaken = true;
+        s.party[self("herodAgrippa")].shaken = true;
         log(s, "v2.log.peterFreed", "player");
       } else {
         // Because he saw it pleased the Jews, he proceeded further (Acts 12:3).
-        gainAttack(s, def.owner, R.agrippaAttack);
+        gainAttack(s, caster, R.agrippaAttack);
         log(s, "v2.log.pleasedJews", "player", { n: R.agrippaAttack });
       }
       break;
     case "voiceOfGod": {
       // It is the voice of a god, and not of a man. And immediately the angel of the Lord smote him (Acts 12:22-23).
-      const me = s.party.herodAgrippa;
+      const me = s.party[self("herodAgrippa")];
       const lost = Math.max(0, Math.min(R.voiceCost, me.hp - 10));
       me.hp -= lost;
       log(s, "v2.log.voiceOfGod", "player", { n: lost, hp: me.hp, max: MAX_HP.herodAgrippa });
@@ -3094,10 +3148,10 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "cyrusDecree":
       // The LORD stirred up the spirit of Cyrus... Who is there among you of all his people? let him go up to Jerusalem (Ezra 1:1-3).
-      gainFaith(s, def.owner, R.cyrusFaith);
+      gainFaith(s, caster, R.cyrusFaith);
       log(s, "v2.log.cyrusDecree", "player", { n: R.cyrusFaith });
-      if (isAlive(s, "ezra") || isAlive(s, "nehemiah") || isAlive(s, "daniel")) {
-        gainAttack(s, def.owner, 1);
+      if (isAlive(s, self("ezra")) || isAlive(s, self("nehemiah")) || isAlive(s, self("daniel"))) {
+        gainAttack(s, caster, 1);
         log(s, "v2.log.cyrusGoUp", "player");
       }
       break;
@@ -3108,8 +3162,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "laidFoundation":
       // When the builders laid the foundation of the temple... all the people shouted with a great shout (Ezra 3:10-11).
-      addShield(s, "zerubbabel", R.foundationShield);
-      gainFaith(s, def.owner, R.foundationFaith);
+      addShield(s, self("zerubbabel"), R.foundationShield);
+      gainFaith(s, caster, R.foundationFaith);
       log(s, "v2.log.laidFoundation", "player", { n: R.foundationShield, faith: R.foundationFaith });
       break;
     case "notByMight":
@@ -3118,7 +3172,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "refusedToCome":
       // But the queen Vashti refused to come at the king's commandment (Esther 1:12).
-      addShield(s, "vashti", R.vashtiShield);
+      addShield(s, self("vashti"), R.vashtiShield);
       log(s, "v2.log.refusedToCome", "player", { n: R.vashtiShield });
       break;
     case "royalFeast":
@@ -3128,9 +3182,9 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += Math.min(R.vashtiFeastHeal, MAX_HP[id] - c.hp);
       });
       log(s, "v2.log.royalFeast", "player", { n: R.vashtiFeastHeal });
-      if (isAlive(s, "esther")) {
+      if (isAlive(s, self("esther"))) {
         // Let the king give her royal estate unto another that is better than she (Esther 1:19).
-        gainFaith(s, def.owner, 1);
+        gainFaith(s, caster, 1);
         log(s, "v2.log.royalEstate", "player");
       }
       break;
@@ -3145,27 +3199,27 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "imageInBed":
       // Michal took an image, and laid it in the bed... and covered it with a cloth (1 Samuel 19:13).
-      addShield(s, "michal", R.michalDecoyShield);
+      addShield(s, self("michal"), R.michalDecoyShield);
       log(s, "v2.log.imageInBed", "player", { n: R.michalDecoyShield });
       draw(s, 1, rng);
       break;
     case "ranAfterNaaman":
-      if (isAlive(s, "elisha")) {
+      if (isAlive(s, self("elisha"))) {
         // Went not mine heart with thee, when the man turned again from his chariot to meet thee? (2 Kings 5:26).
-        const me = s.party.gehazi;
+        const me = s.party[self("gehazi")];
         const lost = Math.max(0, Math.min(R.gehaziCost, me.hp - 10));
         me.hp -= lost;
         me.shaken = true;
         log(s, "v2.log.gehaziFound", "player", { n: lost, hp: me.hp, max: MAX_HP.gehazi });
       } else {
         // As the LORD liveth, I will run after him, and take somewhat of him (2 Kings 5:20).
-        gainAttack(s, def.owner, R.gehaziAttack);
+        gainAttack(s, caster, R.gehaziAttack);
         log(s, "v2.log.ranAfterNaaman", "player", { n: R.gehaziAttack });
       }
       break;
     case "twoTalents":
       // He bound two talents of silver in two bags, with two changes of garments (2 Kings 5:23).
-      gainFaith(s, def.owner, 1);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.twoTalents", "player");
       draw(s, 1, rng);
       break;
@@ -3175,7 +3229,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "zealForLord":
       // Come with me, and see my zeal for the LORD (2 Kings 10:16).
-      gainAttack(s, def.owner, R.jehuAttack);
+      gainAttack(s, caster, R.jehuAttack);
       log(s, "v2.log.zealForLord", "player", { n: R.jehuAttack });
       living(s).filter((id) => id === "ahab" || id === "jezebel" || id === "baalProphet").forEach((id) => {
         s.party[id].shaken = true;
@@ -3185,7 +3239,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "lordHelpMe": {
       // Then came she and worshipped him, saying, Lord, help me (Matthew 15:25).
       const n = supportAmount(s, "lordHelpMe");
-      gainFaith(s, def.owner, n);
+      gainFaith(s, caster, n);
       log(s, "v2.log.lordHelpMe", "player", { n });
       break;
     }
@@ -3201,22 +3255,22 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "keptAllThese":
       // All these things have I kept from my youth up: what lack I yet? (Matthew 19:20).
-      addShield(s, "richRuler", R.rulerShield);
-      gainFaith(s, def.owner, 1);
+      addShield(s, self("richRuler"), R.rulerShield);
+      gainFaith(s, caster, 1);
       log(s, "v2.log.keptAllThese", "player", { n: R.rulerShield });
       break;
     case "greatPossessions":
       // He went away sorrowful: for he had great possessions (Matthew 19:22).
-      gainAttack(s, def.owner, R.possessionsAttack);
-      s.party.richRuler.shaken = true;
+      gainAttack(s, caster, R.possessionsAttack);
+      s.party[self("richRuler")].shaken = true;
       log(s, "v2.log.greatPossessions", "player", { n: R.possessionsAttack });
       break;
     case "heartsBurn":
       // Did not our heart burn within us, while he talked with us by the way? (Luke 24:32).
-      gainFaith(s, def.owner, R.burnFaith);
+      gainFaith(s, caster, R.burnFaith);
       log(s, "v2.log.heartsBurn", "player", { n: R.burnFaith });
       if (jesusHere(s)) {
-        gainAttack(s, def.owner, 1);
+        gainAttack(s, caster, 1);
         log(s, "v2.log.heartsBurnJesus", "player");
       }
       break;
@@ -3231,25 +3285,25 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "lanternsTorches":
       // Judas then, having received a band of men and officers... cometh thither with lanterns and torches and weapons (John 18:3).
-      gainAttack(s, def.owner, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.lanternsTorches", "player");
       draw(s, 1, rng);
       break;
     case "earHealed": {
       // And he touched his ear, and healed him (Luke 22:51).
-      const me = s.party.malchus;
+      const me = s.party[self("malchus")];
       const withJesus = jesusHere(s);
       const healed = withJesus ? MAX_HP.malchus - me.hp : Math.min(R.earHeal, MAX_HP.malchus - me.hp);
       me.hp += healed;
-      if (withJesus) addShield(s, "malchus", R.earJesusShield);
+      if (withJesus) addShield(s, self("malchus"), R.earJesusShield);
       log(s, withJesus ? "v2.log.earHealedJesus" : "v2.log.earHealed", "player", { n: healed, shield: R.earJesusShield });
       break;
     }
     case "whatMustIDo":
       // Sirs, what must I do to be saved? Believe on the Lord Jesus Christ, and thou shalt be saved, and thy house (Acts 16:30-31).
-      gainFaith(s, def.owner, R.jailerFaith);
+      gainFaith(s, caster, R.jailerFaith);
       log(s, "v2.log.whatMustIDo", "player", { n: R.jailerFaith });
-      if (isAlive(s, "paul") || isAlive(s, "silas")) {
+      if (isAlive(s, self("paul")) || isAlive(s, self("silas"))) {
         log(s, "v2.log.whatMustIDoPaul", "player");
         draw(s, 1, rng);
       }
@@ -3264,10 +3318,10 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "forGladness":
       // When she knew Peter's voice, she opened not the gate for gladness (Acts 12:14).
-      gainFaith(s, def.owner, R.gladFaith);
+      gainFaith(s, caster, R.gladFaith);
       log(s, "v2.log.forGladness", "player", { n: R.gladFaith });
-      if (isAlive(s, "peter")) {
-        gainAttack(s, def.owner, 1);
+      if (isAlive(s, self("peter"))) {
+        gainAttack(s, caster, 1);
         log(s, "v2.log.forGladnessPeter", "player");
       }
       break;
@@ -3279,14 +3333,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "comeSee":
       // Come, see a man, which told me all things that ever I did (John 4:29).
-      gainFaith(s, def.owner, 1);
-      gainAttack(s, def.owner, 1);
+      gainFaith(s, caster, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.comeSee", "player");
       break;
     case "byNight": {
       // The same came to Jesus by night (John 3:2).
       const n = supportAmount(s, "byNight");
-      gainFaith(s, def.owner, R.nightFaith);
+      gainFaith(s, caster, R.nightFaith);
       log(s, "v2.log.byNight", "player", { n });
       draw(s, n, rng);
       break;
@@ -3304,8 +3358,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "belovedBrother":
       // Not now as a servant, but above a servant, a brother beloved (Philemon 1:16).
-      gainFaith(s, def.owner, R.brotherFaith);
-      s.party.onesimus.shaken = false;
+      gainFaith(s, caster, R.brotherFaith);
+      s.party[self("onesimus")].shaken = false;
       log(s, "v2.log.belovedBrother", "player");
       break;
     case "refreshed":
@@ -3332,8 +3386,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "setInOrder":
       // That thou shouldest set in order the things that are wanting (Titus 1:5): one Faith becomes a Guard and an Attack.
-      gainGuard(s, def.owner, 1);
-      gainAttack(s, def.owner, 1);
+      gainGuard(s, caster, 1);
+      gainAttack(s, caster, 1);
       log(s, "v2.log.setInOrder", "player");
       break;
     case "earnestCare": {
@@ -3345,7 +3399,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "departed": {
       // John departing from them returned to Jerusalem (Acts 13:13).
-      const gained = gainFaith(s, def.owner, R.departFaith);
+      const gained = gainFaith(s, caster, R.departFaith);
       s.markLeft = true;
       log(s, "v2.log.departed", "player", { n: gained });
       break;
@@ -3371,14 +3425,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const c = s.party[ally];
       const healed = Math.min(R.succourHeal, MAX_HP[ally] - c.hp);
       c.hp += healed;
-      gainGuard(s, def.owner, 1);
+      gainGuard(s, caster, 1);
       log(s, "v2.log.succourer", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
       break;
     }
     case "bearLetter": {
       // I commend unto you Phoebe our sister (Romans 16:1) — carrying Paul's letter to Rome.
-      const k = isAlive(s, "paul") ? 2 : 1;
-      gainFaith(s, def.owner, R.letterFaith * k);
+      const k = isAlive(s, self("paul")) ? 2 : 1;
+      gainFaith(s, caster, R.letterFaith * k);
       log(s, "v2.log.bearLetter", "player", { n: R.letterDraw * k });
       draw(s, R.letterDraw * k, rng);
       break;
@@ -3395,8 +3449,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "prayersAlms":
       // Thy prayers and thine alms are come up for a memorial before God... call for Simon (Acts 10:4-5).
-      gainFaith(s, def.owner, R.memorialFaith);
-      if (isAlive(s, "peter")) gainAttack(s, def.owner, 1);
+      gainFaith(s, caster, R.memorialFaith);
+      if (isAlive(s, self("peter"))) gainAttack(s, caster, 1);
       log(s, "v2.log.prayersAlms", "player");
       break;
     case "garments":
@@ -3420,7 +3474,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "layDownNeck":
       s.aquilaCovers = target as CharacterId;
       log(s, "v2.log.layDownNeck", "player", { char: target as CharacterId });
-      if (isAlive(s, "priscilla")) addShield(s, "aquila", R.aquilaShield);
+      if (isAlive(s, self("priscilla"))) addShield(s, self("aquila"), R.aquilaShield);
       break;
     case "goInPeace": {
       // Go in peace: and the God of Israel grant thee thy petition (1 Samuel 1:17) — twice over for Hannah.
@@ -3429,7 +3483,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const c = s.party[ally];
       const healed = Math.min(R.peaceHeal * k, MAX_HP[ally] - c.hp);
       c.hp += healed;
-      gainFaith(s, def.owner, R.peaceFaith * k);
+      gainFaith(s, caster, R.peaceFaith * k);
       log(s, "v2.log.goInPeace", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
       break;
     }
@@ -3438,7 +3492,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const ally = target as CharacterId;
       s.party[ally].acted = false;
       s.speakUsed = true;
-      if (ally === "samuel") gainFaith(s, def.owner, 1);
+      if (ally === "samuel") gainFaith(s, caster, 1);
       log(s, "v2.log.speakLord", "player", { char: ally });
       break;
     }
@@ -3453,7 +3507,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "purpleCloth":
       // Lydia, a seller of purple, of the city of Thyatira (Acts 16:14).
-      gainFaith(s, def.owner, R.purpleFaith);
+      gainFaith(s, caster, R.purpleFaith);
       log(s, "v2.log.purpleCloth", "player", { char: target as CharacterId });
       addShield(s, target as CharacterId, R.purpleShield);
       break;
@@ -3466,7 +3520,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += healed;
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
-      if (isAlive(s, "paul") || isAlive(s, "silas")) gainFaith(s, def.owner, 1);
+      if (isAlive(s, self("paul")) || isAlive(s, self("silas"))) gainFaith(s, caster, 1);
       break;
     case "example":
       s.example = true;
@@ -3474,7 +3528,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "midnightHymns":
       living(s).forEach((id) => (s.party[id].shaken = false));
-      gainFaith(s, def.owner, supportAmount(s, "midnightHymns"));
+      gainFaith(s, caster, supportAmount(s, "midnightHymns"));
       log(s, "v2.log.midnightHymns", "player");
       break;
     case "prisonOpened":
@@ -3486,14 +3540,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "encourage":
       // Barnabas, the son of consolation (Acts 4:36) — who brought Saul to the apostles (Acts 9:27).
       living(s).forEach((id) => (s.party[id].shaken = false));
-      gainAttack(s, def.owner, R.encourageAttack);
+      gainAttack(s, caster, R.encourageAttack);
       log(s, "v2.log.encourage", "player");
-      if (isAlive(s, "paul")) addShield(s, "paul", R.encouragePaulShield);
+      if (isAlive(s, self("paul"))) addShield(s, self("paul"), R.encouragePaulShield);
       break;
     case "soldField":
       // Having land, sold it, and brought the money, and laid it at the apostles' feet (Acts 4:37).
       s.fieldSold = true;
-      gainFaith(s, def.owner, R.fieldFaith);
+      gainFaith(s, caster, R.fieldFaith);
       log(s, "v2.log.soldField", "player", { n: R.fieldFaith });
       break;
     case "armourOfGod":
@@ -3506,7 +3560,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "swordOfSpirit":
       // The sword of the Spirit, which is the word of God (Ephesians 6:17).
-      gainFaith(s, def.owner, R.swordFaith);
+      gainFaith(s, caster, R.swordFaith);
       break;
     case "hereIsWater": {
       // See, here is water; what doth hinder me to be baptized? (Acts 8:36).
@@ -3520,7 +3574,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "samaria":
       // And there was great joy in that city (Acts 8:8).
-      gainFaith(s, def.owner, R.samariaFaith);
+      gainFaith(s, caster, R.samariaFaith);
       log(s, "v2.log.samaria", "player");
       break;
     case "heavensOpened":
@@ -3545,7 +3599,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "manyBelieved":
       // By reason of him many of the Jews went away, and believed on Jesus (John 12:11).
-      gainFaith(s, def.owner, R.believedFaith);
+      gainFaith(s, caster, R.believedFaith);
       log(s, "v2.log.manyBelieved", "player");
       living(s).forEach((id) => {
         const c = s.party[id];
@@ -3554,8 +3608,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "atHisFeet":
       // Mary sat at Jesus' feet, and heard his word... and Martha served (Luke 10:39-40).
-      gainFaith(s, def.owner, R.feetFaith);
-      if (isAlive(s, "martha")) gainGuard(s, def.owner, 1);
+      gainFaith(s, caster, R.feetFaith);
+      if (isAlive(s, self("martha"))) gainGuard(s, caster, 1);
       log(s, "v2.log.atHisFeet", "player");
       break;
     case "spikenard":
@@ -3573,19 +3627,19 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "sycamore":
       // He ran before, and climbed up into a sycomore tree to see him (Luke 19:4).
       s.inTree = true;
-      gainFaith(s, def.owner, R.sycamoreFaith);
+      gainFaith(s, caster, R.sycamoreFaith);
       log(s, "v2.log.sycamore", "player");
       break;
     case "fourfold":
       // The half of my goods I give to the poor; and if I have taken any thing, I restore him fourfold (Luke 19:8).
       s.fourfoldUsed = true;
-      gainAttack(s, def.owner, R.fourfoldAttack);
-      gainFaith(s, def.owner, R.fourfoldFaith);
+      gainAttack(s, caster, R.fourfoldAttack);
+      gainFaith(s, caster, R.fourfoldFaith);
       log(s, "v2.log.fourfold", "player");
       break;
     case "serving":
       // Martha was cumbered about much serving (Luke 10:40).
-      gainGuard(s, def.owner, R.servingGuard);
+      gainGuard(s, caster, R.servingGuard);
       log(s, "v2.log.serving", "player", { n: R.servingGuard });
       break;
     case "riseAgain":
@@ -3619,7 +3673,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     case "reachFinger":
       // Reach hither thy finger, and behold my hands; and be not faithless, but believing (John 20:27).
       s.thomasBelieves = true;
-      gainFaith(s, def.owner, R.fingerFaith);
+      gainFaith(s, caster, R.fingerFaith);
       log(s, "v2.log.reachFinger", "player");
       break;
     case "mendNets": {
@@ -3633,7 +3687,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "taxBooth":
       // He arose, and followed him (Matthew 9:9).
-      gainAttack(s, def.owner, R.taxBoothAttack);
+      gainAttack(s, caster, R.taxBoothAttack);
       log(s, "v2.log.taxBooth", "player", { n: R.taxBoothAttack });
       break;
     case "feast":
@@ -3668,13 +3722,13 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "aLadHere":
       // There is a lad here, which hath five barley loaves, and two small fishes (John 6:9).
-      gainFaith(s, def.owner, R.ladFaith);
+      gainFaith(s, caster, R.ladFaith);
       log(s, "v2.log.aLadHere", "player", { n: R.ladDraw });
       draw(s, R.ladDraw, rng);
       break;
     case "greatCatch":
       // They inclosed a great multitude of fishes: and their net brake (Luke 5:6).
-      gainAttack(s, def.owner, R.catchAttack);
+      gainAttack(s, caster, R.catchAttack);
       log(s, "v2.log.greatCatch", "player", { n: R.catchDraw });
       draw(s, R.catchDraw, rng);
       break;
@@ -3693,7 +3747,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       s.withYouUsed = true;
       log(s, "v2.log.withYouAlway", "player");
       living(s).filter((id) => !NEVER_FALLS.has(id)).forEach((id) => addShield(s, id, R.alwayShield));
-      gainFaith(s, def.owner, R.alwayFaith);
+      gainFaith(s, caster, R.alwayFaith);
       break;
     case "walkOnWater":
       // He came unto them, walking on the sea; and when they were come into the ship, the wind ceased (Matthew 14:25, 32).
@@ -3701,7 +3755,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       s.walkUsed = true;
       log(s, "v2.log.walkOnWater", "player");
       // At Gerasa: Come out of the man, thou unclean spirit (Mark 5:8).
-      if (inStory(s, "jesusUR") && s.result === "ongoing") hitEnemy(s, "walkOnWater", bossOf(s));
+      if (inStory(s, self("jesusUR")) && s.result === "ongoing") hitEnemy(s, "walkOnWater", bossOf(s), caster);
       break;
     case "loaves":
       // They did all eat, and were filled: and they took up of the fragments twelve baskets full (Matthew 14:20).
@@ -3714,7 +3768,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
       draw(s, R.loavesDraw, rng);
-      gainFaith(s, def.owner, R.loavesFaith);
+      gainFaith(s, caster, R.loavesFaith);
       break;
     case "baptism": {
       // I indeed baptize you with water unto repentance (Matthew 3:11).
@@ -3727,7 +3781,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
       // His father Zechariah beside him: +1 Faith.
-      if (isAlive(s, "zechariah")) gainFaith(s, def.owner, 1);
+      if (isAlive(s, self("zechariah"))) gainFaith(s, caster, 1);
       break;
     }
     case "carpenter": {
@@ -3749,7 +3803,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "handmaid":
       // Behold the handmaid of the Lord; be it unto me according to thy word (Luke 1:38).
-      gainFaith(s, def.owner, R.handmaidFaith);
+      gainFaith(s, caster, R.handmaidFaith);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.handmaid", "player");
       break;
@@ -3773,7 +3827,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "incense": {
       // His lot was to burn incense when he went into the temple of the Lord (Luke 1:9).
-      gainFaith(s, def.owner, R.incenseFaith);
+      gainFaith(s, caster, R.incenseFaith);
       log(s, "v2.log.incense", "player");
       living(s).forEach((id) => addShield(s, id, R.incenseShield));
       break;
@@ -3788,7 +3842,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         c.hp += healed;
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
-      gainFaith(s, def.owner, R.johnFaith);
+      gainFaith(s, caster, R.johnFaith);
       break;
     case "buildWall": {
       const n = supportAmount(s, "buildWall");
@@ -3799,7 +3853,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "swordAndTrowel":
       // Every one with one of his hands wrought in the work, and with the other hand held a weapon (Nehemiah 4:17).
-      addShield(s, "nehemiah", R.trowelShield);
+      addShield(s, self("nehemiah"), R.trowelShield);
       break;
     case "lionsDen":
       s.lionsDenUsed = true;
@@ -3844,8 +3898,8 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "wisdom":
       // Give therefore thy servant an understanding heart (1 Kings 3:9).
-      gainFaith(s, def.owner, R.wisdomFaith);
-      gainAttack(s, def.owner, R.wisdomAttack);
+      gainFaith(s, caster, R.wisdomFaith);
+      gainAttack(s, caster, R.wisdomAttack);
       log(s, "v2.log.wisdom", "player");
       break;
     case "templeFire":
@@ -3875,14 +3929,14 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "rashOffering": {
       // I forced myself therefore, and offered a burnt offering (1 Samuel 13:12): Faith now, Shaken next turn.
-      const gained = gainFaith(s, def.owner, R.rashFaith);
+      const gained = gainFaith(s, caster, R.rashFaith);
       s.saulRash = true;
       log(s, "v2.log.rashOffering", "player", { n: gained });
       break;
     }
     case "prayer": {
       // Hannah spake in her heart; only her lips moved (1 Samuel 1:13).
-      const gained = gainFaith(s, def.owner, supportAmount(s, "prayer"));
+      const gained = gainFaith(s, caster, supportAmount(s, "prayer"));
       log(s, "v2.log.prayer", "player", { n: gained });
       break;
     }
@@ -3946,7 +4000,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "pillars": {
       // Let me die with the Philistines. And he bowed himself with all his might (Judges 16:30).
-      const c = s.party.samson;
+      const c = s.party[self("samson")];
       c.hp = 0;
       c.shield = 0;
       c.shaken = false;
@@ -3957,7 +4011,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     }
     case "fleece": {
       // Let it now be dry only upon the fleece (Judges 6:39): a sign, and Faith to go on.
-      const gained = gainFaith(s, def.owner, R.fleeceFaith);
+      const gained = gainFaith(s, caster, R.fleeceFaith);
       log(s, "v2.log.fleece", "player", { n: gained });
       draw(s, R.fleeceDraw, rng);
       break;
@@ -3972,7 +4026,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "upToday":
       // Up; for this is the day in which the LORD hath delivered Sisera into thine hand (Judges 4:14).
-      gainAttack(s, def.owner, R.upTodayAttack);
+      gainAttack(s, caster, R.upTodayAttack);
       log(s, "v2.log.upToday", "player", { n: R.upTodayAttack });
       break;
     case "starsFought":
@@ -4008,7 +4062,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       // God spake all these words (Exodus 20:1).
       log(s, "v2.log.tenWords", "player");
       living(s).forEach((id) => addShield(s, id, R.tenWordsShield));
-      gainFaith(s, def.owner, R.tenWordsFaith);
+      gainFaith(s, caster, R.tenWordsFaith);
       break;
     }
     case "faceShone":
@@ -4019,7 +4073,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "song": {
       // Miriam took a timbrel, and all the women went out after her (Exodus 15:20).
-      const gained = gainFaith(s, def.owner, R.songFaith);
+      const gained = gainFaith(s, caster, R.songFaith);
       living(s).forEach((id) => (s.party[id].shaken = false));
       log(s, "v2.log.song", "player", { n: gained });
       break;
@@ -4076,7 +4130,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       break;
     case "offering": {
       // Cain brought of the fruit of the ground an offering (Genesis 4:3).
-      const gained = gainFaith(s, def.owner, R.offeringFaith);
+      const gained = gainFaith(s, caster, R.offeringFaith);
       log(s, "v2.log.offering", "player", { n: gained });
       break;
     }
@@ -4101,7 +4155,7 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
 export function resolveGoliath(state: BattleState, rng: Rng = Math.random): BattleState {
   if (state.result !== "ongoing") return state;
   const s = clone(state);
-  PARTY_ORDER.forEach((id) => (s.party[id].shaken = false));
+  (Object.keys(s.party) as CharacterId[]).forEach((id) => (s.party[id].shaken = false));
   s.coiled = null;
   const g = s.goliath;
   const boss = bossOf(s);
@@ -4119,6 +4173,15 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
     if (t) {
       log(s, "v2.log.archer", "enemy", { char: t, enemy: shooter });
       damageAlly(s, t, SHOOTER_DAMAGE[shooter] ?? 0, shooter);
+    }
+  }
+  // Reinforcements in the front row (the v3 board, against a big party) each strike the ally they were aimed at.
+  for (const [aide, aimed] of Object.entries(s.aideTargets ?? {}) as [EnemyId, CharacterId][]) {
+    if (s.result !== "ongoing" || !enemyAlive(s, aide)) continue;
+    const t = isAlive(s, aimed) ? aimed : randomAlly(s, rng);
+    if (t) {
+      log(s, "v2.log.archer", "enemy", { char: t, enemy: aide });
+      damageAlly(s, t, R.aideDamage, aide);
     }
   }
 
@@ -4390,7 +4453,7 @@ export function startNextTurn(state: BattleState, rng: Rng = Math.random, drawCo
     s.party.jonah.hp = R.fishHp;
     log(s, "v2.log.fishReturns", "player", { hp: R.fishHp });
   }
-  for (const id of PARTY_ORDER) {
+  for (const id of Object.keys(s.party) as CharacterId[]) {
     if (!table(s)) s.party[id].shield = 0; // the tabletop rules: extra HP stays until it is used up
     s.party[id].acted = false;
   }

@@ -1,14 +1,31 @@
 "use client";
 
 // Campaign progress and the player's card collection, kept in this browser only (localStorage, no account or server).
-// The collection starts empty and grows from stage drops; duplicates are counted, not merged.
+// The collection starts empty and grows from stage drops and packs; duplicates are counted, not merged, up to COPY_LIMIT
+// copies of a card; past it a card turns into blessing points.
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { safeStorage } from "../locale";
 import type { Rng } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { dropFor, type CampaignStageId, type Cleared } from "./campaign";
-import { CLEAR_POINTS, PACKS, STARTING_POINTS, openPack, packCost } from "./gacha";
+import { CARD_RARITY } from "@/components/cards/rarity";
+import { CLEAR_POINTS, COPY_LIMIT, OVERFLOW_POINTS, PACKS, STARTING_POINTS, openPack, packCost } from "./gacha";
+
+/** A card gained: added to the collection, or, when the collection already holds COPY_LIMIT of it, this many blessing points. */
+export interface Gained {
+  card: CharacterId;
+  /** Blessing points given instead of the card (0 when the card was added). */
+  overflow: number;
+}
+
+/** Adds `card` to `collection` (changed in place) unless it is full; returns the blessing points given instead. */
+function gain(collection: Partial<Record<CharacterId, number>>, card: CharacterId): number {
+  const have = collection[card] ?? 0;
+  if (have >= COPY_LIMIT) return OVERFLOW_POINTS[CARD_RARITY[card]];
+  collection[card] = have + 1;
+  return 0;
+}
 
 export interface Drop {
   card: CharacterId;
@@ -25,12 +42,14 @@ interface ProgressStore {
   history: Drop[];
   /** Blessing points to spend on draws; earned by clearing stages. */
   points: number;
-  /** Records a clear, rolls the stage's drop, adds it to the collection and returns it. */
-  clear: (stage: CampaignStageId, rng?: Rng) => CharacterId;
+  /** Records a clear, rolls the stage's drop, adds it to the collection (or its points, when full) and returns it. */
+  clear: (stage: CampaignStageId, rng?: Rng) => Gained;
+  /** Adds a card the hell level gives (no clear is recorded and no clear points are paid: the stage was cleared already). */
+  grant: (card: CharacterId, stage: CampaignStageId) => Gained;
   /** Throws one copy of a card away (the last copy removes the card from the collection); false if there is none to throw. */
   discard: (card: CharacterId) => boolean;
   /** Spends the price of a pack and returns its cards in turn-over order, each marked new or a copy; null if the points do not cover it. */
-  buyPack: (packId: string, rng?: Rng) => { card: CharacterId; isNew: boolean }[] | null;
+  buyPack: (packId: string, rng?: Rng) => (Gained & { isNew: boolean })[] | null;
 }
 
 export const useProgressStore = create<ProgressStore>()(
@@ -44,13 +63,22 @@ export const useProgressStore = create<ProgressStore>()(
         const card = dropFor(stage, rng);
         const { cleared, collection, history, points } = get();
         const first = (cleared[stage] ?? 0) === 0;
+        const owned = { ...collection };
+        const overflow = gain(owned, card);
         set({
           cleared: { ...cleared, [stage]: (cleared[stage] ?? 0) + 1 },
-          collection: { ...collection, [card]: (collection[card] ?? 0) + 1 },
+          collection: owned,
           history: [...history, { card, stage, at: Date.now() }],
-          points: points + (first ? CLEAR_POINTS.first : CLEAR_POINTS.repeat),
+          points: points + (first ? CLEAR_POINTS.first : CLEAR_POINTS.repeat) + overflow,
         });
-        return card;
+        return { card, overflow };
+      },
+      grant: (card, stage) => {
+        const { collection, history, points } = get();
+        const owned = { ...collection };
+        const overflow = gain(owned, card);
+        set({ collection: owned, history: [...history, { card, stage, at: Date.now() }], points: points + overflow });
+        return { card, overflow };
       },
       discard: (card) => {
         const { collection } = get();
@@ -70,10 +98,9 @@ export const useProgressStore = create<ProgressStore>()(
         const owned = { ...collection };
         const results = openPack(kind, rng).map((card) => {
           const isNew = (owned[card] ?? 0) === 0;
-          owned[card] = (owned[card] ?? 0) + 1;
-          return { card, isNew };
+          return { card, isNew, overflow: gain(owned, card) };
         });
-        set({ collection: owned, points: points - cost });
+        set({ collection: owned, points: points - cost + results.reduce((n, r) => n + r.overflow, 0) });
         return results;
       },
     }),

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CLEAR_POINTS, PACK, STARTING_POINTS } from "./gacha";
+import { CARD_RARITY } from "@/components/cards/rarity";
+import { CLEAR_POINTS, COPY_LIMIT, OVERFLOW_POINTS, PACK, STARTING_POINTS } from "./gacha";
 import { freeModePool, ownedCards, useProgressStore } from "./progress";
 
 const ORDER = ["david", "samuel", "jonathan", "adam"] as const;
@@ -38,9 +39,41 @@ describe("points and draws", () => {
     // A steady roll draws the same five cards again, so none is new the second time.
     expect(again.map((r) => r.card)).toEqual(first.map((r) => r.card));
     expect(again.some((r) => r.isNew)).toBe(false);
+    // Every card is kept, up to COPY_LIMIT copies; the rest came back as blessing points.
     const s = useProgressStore.getState();
-    expect(s.points).toBe(0);
-    expect(Object.values(s.collection).reduce((n, v) => n + (v ?? 0), 0)).toBe(10);
+    const overflow = [...first, ...again].reduce((n, r) => n + r.overflow, 0);
+    expect(s.points).toBe(overflow);
+    expect(Object.values(s.collection).every((v) => (v ?? 0) <= COPY_LIMIT)).toBe(true);
+    expect(Object.values(s.collection).reduce((n, v) => n + (v ?? 0), 0)).toBe(10 - [...first, ...again].filter((r) => r.overflow > 0).length);
+  });
+
+  it("holds at most COPY_LIMIT copies of a card: past it a card turns into blessing points", () => {
+    fresh(0);
+    useProgressStore.setState({ collection: { satan: COPY_LIMIT } });
+    const got = useProgressStore.getState().grant("satan", "temptation");
+    expect(got).toEqual({ card: "satan", overflow: OVERFLOW_POINTS[CARD_RARITY.satan] });
+    expect(useProgressStore.getState().collection.satan).toBe(COPY_LIMIT);
+    expect(useProgressStore.getState().points).toBe(OVERFLOW_POINTS[CARD_RARITY.satan]);
+    // Below the limit the card is added and nothing is paid.
+    useProgressStore.setState({ collection: { satan: COPY_LIMIT - 1 } });
+    expect(useProgressStore.getState().grant("satan", "temptation").overflow).toBe(0);
+    expect(useProgressStore.getState().collection.satan).toBe(COPY_LIMIT);
+  });
+
+  it("a stage drop and a pack card past the limit pay their points too", () => {
+    fresh(0);
+    const full = Object.fromEntries(["adam", "eve", "cain", "abel", "seth", "enoch"].map((id) => [id, COPY_LIMIT]));
+    useProgressStore.setState({ collection: full });
+    const drop = useProgressStore.getState().clear("eden", steady);
+    expect(drop.overflow).toBe(OVERFLOW_POINTS[CARD_RARITY[drop.card]]);
+    expect(useProgressStore.getState().points).toBe(CLEAR_POINTS.first + drop.overflow);
+
+    fresh(PACK.cost);
+    const pack = useProgressStore.getState().buyPack("ministry", steady)!;
+    useProgressStore.setState({ collection: Object.fromEntries(pack.map((r) => [r.card, COPY_LIMIT])), points: PACK.cost });
+    const again = useProgressStore.getState().buyPack("ministry", steady)!;
+    expect(again.every((r) => r.overflow === OVERFLOW_POINTS[CARD_RARITY[r.card]])).toBe(true);
+    expect(useProgressStore.getState().points).toBe(again.reduce((n, r) => n + r.overflow, 0));
   });
 
   it("does nothing for an unknown pack", () => {

@@ -8,7 +8,7 @@ import { earnedBy, useAchievementStore, type AchievementId } from "./achievement
 import { campaignStage, type CampaignStageId } from "./campaign";
 import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
-import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
+import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, moveTo, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, type Board, type Slots } from "./engine";
 
 /** Auto battle's pauses at 1x (ms): between plays, and after the end of a turn while the enemy acts. 2x halves them. */
 const AUTO_STEP_DELAY = 1500;
@@ -28,7 +28,7 @@ interface BattleV3Store {
   /** null while the player picks a line-up. */
   board: Board | null;
   /** The last line-up, preselected when picking again. */
-  lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId; mode: PoolMode; foes?: BattleState["foes"] };
+  lastLineup: { lineup: CharacterId[]; slots: Slots; stage: StageId; mode: PoolMode; foes?: BattleState["foes"] };
   resolving: boolean;
   auto: boolean;
   /** How fast auto battle plays: 1x (a readable pace) or 2x. */
@@ -41,14 +41,18 @@ interface BattleV3Store {
   campaign: CampaignStageId | null;
   /** The card the campaign stage just dropped. */
   drop: CharacterId | null;
+  /** Blessing points given instead of the dropped card, when the collection already held as many as it may (0 otherwise). */
+  dropPoints: number;
   /** Between the two rounds of a stage: the battle the second round plays (the first round is won, the stage not yet). */
   interlude: StageId | null;
   /** Starts the second round of the stage with the same party. */
   nextRound: () => void;
+  /** After the stage is cleared: takes on its hell level with the same party (and the HP it has left). */
+  hellRound: () => void;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
   enter: (campaign: CampaignStageId | null) => void;
   /** foes: free mode's own guard and shooter (left out: the stage's own). */
-  start: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode?: PoolMode, foes?: BattleState["foes"]) => void;
+  start: (lineup: CharacterId[], slots: Slots, stage: StageId, mode?: PoolMode, foes?: BattleState["foes"]) => void;
   restart: () => void;
   pickLineup: () => void;
   play: (uid: number, target?: CharacterId) => void;
@@ -57,10 +61,12 @@ interface BattleV3Store {
   draw: () => void;
   /** Use up every draw left this turn. */
   drawAll: () => void;
-  cast: (skill: SkillId, target?: Target) => void;
+  /** `who`: which copy of the skill's owner uses it (the first able one when left out). */
+  cast: (skill: SkillId, target?: Target, who?: CharacterId) => void;
   /** The tabletop rules' free basic attack. */
   basic: (who: CharacterId, target: EnemyId) => void;
-  swap: (id: CharacterId) => void;
+  /** This turn's free move: `id` to place `to`. */
+  move: (id: CharacterId, to: number) => void;
   endTurn: () => void;
   setAuto: (on: boolean) => void;
 }
@@ -77,9 +83,19 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         set({ interlude: stage.battle, newAchievements: [], drop: null });
         return;
       }
+      // The hell level is played after the clear: winning gives its card, losing takes nothing away.
+      if (stage?.hell && board.battle.stage === stage.hell) {
+        const won = board.battle.result === "victory";
+        const got = won && stage.hellDrop ? useProgressStore.getState().grant(stage.hellDrop, stage.id) : null;
+        set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)), drop: got?.card ?? null, dropPoints: got?.overflow ?? 0 });
+        return;
+      }
       set({
         newAchievements: useAchievementStore.getState().unlock(earnedBy(board)),
-        drop: campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null,
+        ...(() => {
+          const got = campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null;
+          return { drop: got?.card ?? null, dropPoints: got?.overflow ?? 0 };
+        })(),
       });
     }
   };
@@ -102,8 +118,8 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         ? drawOnBoard(b)
         : action.type === "play"
         ? playCardOnBoard(b, action.uid, action.target)
-        : action.type === "front"
-          ? swapFront(b, action.id)
+        : action.type === "move"
+          ? moveTo(b, action.id, action.to)
           : action.type === "basic"
             ? basicAttackOnBoard(b, action.who, action.target)
             : castOnBoard(b, action.skill, action.target),
@@ -113,7 +129,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
 
   return {
     board: null,
-    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
+    lastLineup: { lineup: ["david", "samuel", "jonathan"], slots: [], stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
     resolving: false,
     auto: false,
     autoSpeed: 1,
@@ -127,19 +143,20 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     newAchievements: [],
     campaign: null,
     drop: null,
+    dropPoints: 0,
     interlude: null,
     enter: (campaign) => {
       if (get().campaign === campaign) return;
       set((st) => ({ campaign, board: null, drop: null, interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
     },
-    start: (lineup, front, stage, mode, foes) =>
+    start: (lineup, slots, stage, mode, foes) =>
       set((st) => {
         // A stage with a first round starts there; `stage` stays the last battle, so playing again starts over from the first round.
         const entry = st.campaign ? campaignStage(st.campaign) : null;
         const first = entry?.before && entry.battle === stage ? entry.before : stage;
         return {
-          board: createBoard(lineup, front, Math.random, first, mode ?? st.lastLineup.mode, entry ? undefined : foes),
-          lastLineup: { lineup, front, stage, mode: mode ?? st.lastLineup.mode, foes },
+          board: createBoard(lineup, slots, Math.random, first, mode ?? st.lastLineup.mode, entry ? undefined : foes),
+          lastLineup: { lineup, slots, stage, mode: mode ?? st.lastLineup.mode, foes },
           resolving: false,
           auto: false,
           runId: st.runId + 1,
@@ -153,7 +170,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       if (!board || !interlude || board.battle.result !== "victory") return;
       set((st) => ({ board: nextRoundBoard(board, interlude), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
     },
-    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage, get().lastLineup.mode, get().lastLineup.foes),
+    hellRound: () => {
+      const { board, campaign } = get();
+      const stage = campaign ? campaignStage(campaign) : null;
+      if (!board || !stage?.hell || board.battle.stage !== stage.battle || board.battle.result !== "victory") return;
+      set((st) => ({ board: nextRoundBoard(board, stage.hell!), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
+    },
+    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.slots, get().lastLineup.stage, get().lastLineup.mode, get().lastLineup.foes),
     pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null, interlude: null })),
     play: (uid, target) => act((b) => playCardOnBoard(b, uid, target)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),
@@ -163,14 +186,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         while (canDrawOnBoard(b)) b = drawOnBoard(b);
         return b;
       }),
-    cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
+    cast: (skill, target, who) => act((b) => castOnBoard(b, skill, target, Math.random, who)),
     basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
-    swap: (id) => act((b) => swapFront(b, id)),
+    move: (id, to) => act((b) => moveTo(b, id, to)),
     endTurn: () => {
       const { board, resolving, runId } = get();
       if (!board || resolving || board.battle.result !== "ongoing") return;
       const after = resolveBoard(board);
-      if (after === board) return; // the front line must be filled first
       commit(after);
       if (after.battle.result !== "ongoing") return;
       set({ resolving: true });

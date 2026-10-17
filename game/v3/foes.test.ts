@@ -17,15 +17,25 @@ describe("free mode's enemy side", () => {
   });
 
   it("a battle can have another guard and shooter than its stage's, or none", () => {
-    const b = createBoard(["david", "samuel", "jonathan"], "david", steady, "goliath", "table", { guard: "pharaohHost", shooter: "windows" });
+    const b = createBoard(["david", "samuel", "jonathan"], undefined, steady, "goliath", "table", { guard: "pharaohHost", shooter: "windows" });
     const s = b.battle;
     expect([guardOf(s), shooterOf(s)]).toEqual(["pharaohHost", "windows"]);
     expect(enemyAlive(s, "pharaohHost") && enemyAlive(s, "windows")).toBe(true);
     expect(enemyAlive(s, "bearer") || enemyAlive(s, "archer")).toBe(false);
     expect(attackableEnemies(s)).not.toContain("goliath"); // the chosen guard protects the boss
-    const bare = createBoard(["david", "samuel"], "david", steady, "goliath", "table", { guard: null, shooter: null }).battle;
+    const bare = createBoard(["david", "samuel"], undefined, steady, "goliath", "table", { guard: null, shooter: null }).battle;
     expect(attackableEnemies(bare)).toEqual(["goliath"]);
     expect(bare.archerTarget).toBeNull();
+  });
+
+  it("a big party meets more of the chosen guard, when it has copies; they shield the back row too", () => {
+    const five = ["david", "samuel", "jonathan", "moses", "joseph"] as const;
+    const b = createBoard([...five], undefined, steady, "goliath", "table", { guard: "pharaohHost", shooter: "windows" });
+    expect(b.aides).toEqual(["pharaohHost#1", "pharaohHost#2"]);
+    b.battle.enemies.pharaohHost.hp = 0;
+    expect(attackableEnemies(b.battle).sort()).toEqual(["pharaohHost#1", "pharaohHost#2"]);
+    // A guard without copies brings none.
+    expect(createBoard([...five], undefined, steady, "goliath", "table", { guard: "roaringLion", shooter: null }).aides).toEqual([]);
   });
 
   it("sets up a side to suit the team: a boss near 40% of the team's HP, minions for bigger teams", () => {
