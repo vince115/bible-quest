@@ -175,6 +175,11 @@ export interface BattleState {
   /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
   goliath: GoliathState;
   stage: StageId;
+  /**
+   * Free mode: the guard and the shooter chosen by the player (null for none) instead of the stage's own; the boss is always
+   * the stage's. Left out, the stage's own stand.
+   */
+  foes?: { guard: EnemyId | null; shooter: EnemyId | null };
   /** The ally the Serpent coiled around: they can't be swapped out of the front line this turn. */
   coiled: CharacterId | null;
   /** Goliath's [current intent, next intent]; both are always shown. */

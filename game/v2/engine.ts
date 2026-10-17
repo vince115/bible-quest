@@ -115,8 +115,8 @@ const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: 
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
-export const guardOf = (s: BattleState): EnemyId | undefined => STAGE_GUARD[s.stage];
-export const shooterOf = (s: BattleState): EnemyId | undefined => STAGE_SHOOTER[s.stage];
+export const guardOf = (s: BattleState): EnemyId | undefined => (s.foes ? (s.foes.guard ?? undefined) : STAGE_GUARD[s.stage]);
+export const shooterOf = (s: BattleState): EnemyId | undefined => (s.foes ? (s.foes.shooter ?? undefined) : STAGE_SHOOTER[s.stage]);
 const shooterAlive = (s: BattleState): boolean => {
   const shooter = shooterOf(s);
   return !!shooter && enemyAlive(s, shooter);
@@ -822,7 +822,9 @@ export function enemyDamage(enemy: EnemyId, ally: CharacterId, base: number, mod
 
 /** lineup: who fights; everyone else sits the battle out (HP 0). */
 /** openingHand: cards dealt at the start (the v3 board deals none and lets the player draw from the deck). */
-export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEFAULT_LINEUP, stage: StageId = "goliath", openingHand: number = R.openingHand, pools: PoolMode = "team"): BattleState {
+/** foes: free mode's own guard and shooter for this battle (see BattleState.foes). */
+export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEFAULT_LINEUP, stage: StageId = "goliath", openingHand: number = R.openingHand, pools: PoolMode = "team", foes?: BattleState["foes"]): BattleState {
+  const standing: EnemyId[] = foes ? [STAGE_BOSS[stage], foes.guard, foes.shooter].filter((e): e is EnemyId => !!e) : STAGE_ENEMIES[stage];
   const deck = shuffle(
     DECK_V2.map((card, i): CardInstance => ({ uid: i + 1, card })),
     rng,
@@ -933,7 +935,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     dorcas: "ready",
     tomb: null,
     risenUsed: false,
-    enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: STAGE_ENEMIES[stage].includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
+    enemies: Object.fromEntries(ENEMY_ORDER.map((id) => [id, { hp: standing.includes(id) ? ENEMY_HP[id] : 0 }])) as BattleState["enemies"],
+    ...(foes ? { foes } : {}),
     stage,
     coiled: null,
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },

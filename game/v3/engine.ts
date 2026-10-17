@@ -7,7 +7,7 @@
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
 // Everything else is the v2 engine, unchanged.
-import { HUNT_WEAKEST, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, STAGE_SHOOTER } from "../v2/data";
+import { HUNT_WEAKEST, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, RULES_V2 as R, SINGLE_TARGET } from "../v2/data";
 import {
   canDraw,
   basicAttack,
@@ -16,6 +16,8 @@ import {
   createBattle,
   drawCard,
   enemyAlive,
+  guardOf,
+  shooterOf,
   isAlive,
   playCard,
   resolveGoliath,
@@ -55,11 +57,12 @@ export const isDuel = (b: Board) => b.lineup.length === 1;
 export const needsFront = (b: Board) => b.battle.result === "ongoing" && !isAlive(b.battle, b.front) && standing(b).length > 0;
 
 /** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
-export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode): Board {
+/** foes: free mode's own guard and shooter (see BattleState.foes). */
+export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode, foes?: BattleState["foes"]): Board {
   const chosen = PARTY_ORDER.filter((id) => lineup.includes(id));
   if (!chosen.length) throw new Error("line-up needs at least one character");
-  const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"));
-  const minions = [STAGE_GUARD[stage], STAGE_SHOOTER[stage]].filter((e) => e !== undefined);
+  const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"), foes);
+  const minions = [guardOf(battle), shooterOf(battle)].filter((e) => e !== undefined);
   if (chosen.length === 1 && minions.length) {
     for (const e of minions) battle.enemies[e].hp = 0;
     battle.archerTarget = null;
@@ -125,7 +128,7 @@ function aim(b: Board, rng: Rng): Board {
       while (pool.length && intent.targets.length < many) intent.targets.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
     }
   }
-  const shooter = STAGE_SHOOTER[s.stage];
+  const shooter = shooterOf(s);
   s.archerTarget = shooter && enemyAlive(s, shooter) && front ? front : null;
   return b;
 }
