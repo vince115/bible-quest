@@ -27,6 +27,9 @@ import {
   BAAL_CYCLE,
   LIONS_CYCLE,
   PLOT_CYCLE,
+  TEMPTER_CYCLE,
+  DISGUISE_CYCLE,
+  TEMPTATION_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -103,6 +106,12 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return LIONS_CYCLE;
     case "plot":
       return PLOT_CYCLE;
+    case "tempter":
+      return TEMPTER_CYCLE;
+    case "disguise":
+      return DISGUISE_CYCLE;
+    case "temptation":
+      return TEMPTATION_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -110,8 +119,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -208,6 +217,10 @@ export function actionBase(s: BattleState, action: GoliathActionId): number {
     case "cut": return enraged ? R.cutFrenzy : R.cut;
     case "pounce": return R.pounce;
     case "decree": return R.decree;
+    case "lure": return R.lure;
+    case "darts": return enraged ? R.dartsRage : R.darts;
+    case "devour": return enraged ? R.devourRage : R.devour;
+    case "pinnacle": return R.pinnacle;
     case "maul": return R.maul;
     case "many": return R.many;
     case "chains": return R.chains;
@@ -217,7 +230,7 @@ export function actionBase(s: BattleState, action: GoliathActionId): number {
 
 /** Does this action hit every ally in the boss's current phase? (We Are Many does once Legion is unleashed.) */
 export const hitsEveryone = (s: BattleState, action: GoliathActionId): boolean =>
-  ["swing", "coil", "rain", "deluge", "arrows", "leap"].includes(action) || (action === "many" && s.goliath.enraged);
+  ["swing", "coil", "rain", "deluge", "arrows", "leap", "darts"].includes(action) || (action === "many" && s.goliath.enraged);
 
 function checkVictory(s: BattleState) {
   const boss = bossOf(s);
@@ -400,8 +413,8 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  * Sling Stone is a fixed number: no bonuses, no element.
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
-/** A character fights in their own story: the first round of the lions' stage ("plot") is still Daniel's story. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage) && s.lineup.includes(id);
+/** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" ? "temptation" : s.stage) && s.lineup.includes(id);
 
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
@@ -418,7 +431,7 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
   const giant = def.owner === "david" && inStory(s, "david") && faithOf(s, "david") >= R.giantFaith ? R.giantBonus : 0;
   const till = skill === "till" && inStory(s, "adam") ? R.edenTillBonus : 0;
   // Eve in Eden: her seed shall bruise the serpent's head — every attack on the Serpent +20.
-  const seed = target === "serpent" && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
+  const seed = (target === "serpent" || target === "serpentTempter") && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
   // Isaac sowed and reaped a hundredfold, for the LORD blessed him (Genesis 26:12): more with his father beside him.
   const blessing = skill === "harvest" && isAlive(s, "abraham") ? R.harvestBlessing : 0;
   // While Moses held up his hand, Israel prevailed (Exodus 17:11).
@@ -518,6 +531,14 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "mark") return R.markRetaliate;
   if (skill === "firstlings") return R.firstlingsHeal;
   if (skill === "anotherSeed") return 40;
+  if (skill === "letThereBeLight") return R.lightHeal;
+  if (skill === "lordMyShield") return R.fatherShield;
+  if (skill === "likeADove") return R.doveFaith;
+  if (skill === "comforter") return R.comforterHeal;
+  if (skill === "heraldNews") return R.heraldFaith;
+  if (skill === "fearNot") return R.fearNotShield;
+  if (skill === "heavenlyHost") return R.hostShield;
+  if (skill === "angelOfLight") return R.lightFaith;
   if (skill === "ark") return R.arkShield;
   if (skill === "rainbow") return R.rainbowHeal;
   if (skill === "stars") return R.starsFaith;
@@ -1222,9 +1243,9 @@ function dryBonesFallen(s: BattleState): CharacterId[] {
 
 export function skillTargetKind(skill: SkillId): TargetKind {
   if (skill === "comeOut" || skill === "greatFlood" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
-  if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
+  if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
-  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
+  if (skill === "heal" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
   if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
   if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim" || skill === "lotFell" || skill === "talithaCumi" || skill === "itIsWell") return "fallenAlly";
   if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord" || skill === "underAuthority") return "actedAlly";
@@ -1370,6 +1391,11 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         // They cried aloud, and cut themselves after their manner (1 Kings 18:28): a frenzy.
         s.goliath.enraged = true;
         log(s, "v2.log.frenzy", "enemy");
+        break;
+      case "temptation":
+        // Half his HP gone, the demon stops pretending to be patient: his devouring hits harder.
+        s.goliath.enraged = true;
+        log(s, "v2.log.satanRage", "enemy");
         break;
       case "gerasa":
         // Legion unleashed: We Are Many now falls on everyone.
@@ -2899,6 +2925,59 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       log(s, "v2.log.inTheSpirit", "player", { n: R.patmosFaith });
       draw(s, 1, rng);
       break;
+    case "letThereBeLight":
+      // And God said, Let there be light: and there was light (Genesis 1:3).
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        c.hp += Math.min(R.lightHeal, MAX_HP[id] - c.hp);
+        c.shaken = false;
+      });
+      gainAttack(s, def.owner, R.lightAttack);
+      log(s, "v2.log.letThereBeLight", "player", { n: R.lightHeal });
+      break;
+    case "lordMyShield":
+    case "heavenlyHost": {
+      // But thou, O LORD, art a shield for me (Psalm 3:3); the angel of the LORD encampeth round about them that fear him (Psalm 34:7).
+      const n = skill === "lordMyShield" ? R.fatherShield : R.hostShield;
+      living(s).forEach((id) => addShield(s, id, n));
+      log(s, skill === "lordMyShield" ? "v2.log.lordMyShield" : "v2.log.heavenlyHost", "player", { n });
+      break;
+    }
+    case "likeADove":
+    case "heraldNews": {
+      // The Spirit of God descending like a dove (Matthew 3:16); I am sent to shew thee these glad tidings (Luke 1:19).
+      const n = skill === "likeADove" ? R.doveFaith : R.heraldFaith;
+      gainFaith(s, def.owner, n);
+      log(s, skill === "likeADove" ? "v2.log.likeADove" : "v2.log.heraldNews", "player", { n });
+      draw(s, 1, rng);
+      break;
+    }
+    case "comforter": {
+      // The Comforter, which is the Holy Ghost, shall teach you all things (John 14:26).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.comforterHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      c.shaken = false;
+      log(s, "v2.log.comforter", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "fearNot": {
+      // Fear not, Mary: for thou hast found favour with God (Luke 1:30).
+      const ally = target as CharacterId;
+      s.party[ally].shaken = false;
+      addShield(s, ally, R.fearNotShield);
+      log(s, "v2.log.fearNot", "player", { char: ally, n: R.fearNotShield });
+      break;
+    }
+    case "angelOfLight": {
+      // Satan himself is transformed into an angel of light (2 Corinthians 11:14): the lie has a price.
+      gainFaith(s, def.owner, R.lightFaith);
+      const c = s.party[def.owner];
+      c.hp = Math.max(1, c.hp - R.lightCost);
+      log(s, "v2.log.angelOfLight", "player", { n: R.lightFaith, cost: R.lightCost });
+      break;
+    }
     case "newHeaven":
       // And God shall wipe away all tears from their eyes; and there shall be no more death (Revelation 21:4).
       living(s).forEach((id) => {
@@ -4043,9 +4122,9 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
   if (g.stunned) {
     g.stunned = false;
     g.charging = false;
-    log(s, s.stage === "goliath" ? "v2.log.stunned" : s.stage === "eden" ? "v2.log.serpentStunned" : "v2.log.bossStunned", "enemy", { action: intent.action, enemy: boss });
+    log(s, s.stage === "goliath" ? "v2.log.stunned" : s.stage === "eden" || s.stage === "tempter" ? "v2.log.serpentStunned" : "v2.log.bossStunned", "enemy", { action: intent.action, enemy: boss });
   } else {
-    log(s, s.stage === "goliath" ? "v2.log.goliathUses" : s.stage === "eden" ? "v2.log.serpentUses" : "v2.log.bossUses", "enemy", { action: intent.action, enemy: boss });
+    log(s, s.stage === "goliath" ? "v2.log.goliathUses" : s.stage === "eden" || s.stage === "tempter" ? "v2.log.serpentUses" : "v2.log.bossUses", "enemy", { action: intent.action, enemy: boss });
     switch (intent.action) {
       case "defy":
         // A Shield steadies an ally: they can't be Shaken.
@@ -4107,6 +4186,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       // ---- The Flood (Noah's ark) ----
       case "rain":
       case "arrows":
+      case "darts":
       case "leap":
         living(s).forEach((id) => damageAlly(s, id, actionBase(s, intent.action), boss));
         break;
@@ -4126,6 +4206,8 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       case "boulder":
       case "pounce":
       case "decree":
+      case "lure":
+      case "devour":
       case "chains": {
         const t = target();
         if (t) damageAlly(s, t, actionBase(s, intent.action), boss);
@@ -4171,6 +4253,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       // ---- The lions: Roar shakes, Maul hunts the weakest ----
       case "roar":
       case "accuse":
+      case "kingdoms":
       case "torment":
         spread(s, intent, rng).forEach((id) => {
           if (s.party[id].shield > 0) log(s, "v2.log.shieldHolds", "detail", { char: id });
@@ -4180,11 +4263,25 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
           }
         });
         break;
-      case "maul": {
+      case "summon": {
+        // He calls his own to the front line (Revelation 12:9), the guard first and then the shooter; with both standing, the host closes ranks round the boss.
+        const minion = [guardOf(s), shooterOf(s)].find((m): m is EnemyId => !!m && !enemyAlive(s, m));
+        if (minion) {
+          s.enemies[minion].hp = ENEMY_HP[minion];
+          log(s, "v2.log.summon", "enemy", { enemy: minion, hp: ENEMY_HP[minion] });
+        } else {
+          const e = s.enemies[boss];
+          e.hp = Math.min(ENEMY_HP[boss], e.hp + R.hostHeal);
+          log(s, "v2.log.hostCloses", "enemy", { n: R.hostHeal, hp: e.hp });
+        }
+        break;
+      }
+      case "maul":
+      case "pinnacle": {
         const t = intent.targets[0] && isAlive(s, intent.targets[0]) ? intent.targets[0] : weakestAlly(s);
         if (t) {
           log(s, "v2.log.hunted", "detail", { char: t });
-          damageAlly(s, t, actionBase(s, "maul"), boss);
+          damageAlly(s, t, actionBase(s, intent.action), boss);
         }
         break;
       }

@@ -6,7 +6,7 @@ import { STAGE_BOSS } from "../v2/data";
 import type { Rng } from "../v2/engine";
 import type { CardId, CharacterId, EnemyId, StageId } from "../v2/types";
 
-export type CampaignStageId = "eden" | "ark" | "redSea" | "jericho" | "goliath" | "carmel" | "lions" | "gerasa";
+export type CampaignStageId = "eden" | "ark" | "redSea" | "jericho" | "goliath" | "carmel" | "lions" | "temptation" | "gerasa";
 
 export type Testament = "old" | "new";
 
@@ -35,14 +35,15 @@ export interface CampaignStage {
 }
 
 export const CAMPAIGN: CampaignStage[] = [
-  { id: "eden", testament: "old", era: "creation", battle: "eden", pool: ["adam", "eve", "cain", "abel", "seth", "enoch"], pick: 5, art: "/stages/eden.jpg", bgm: "/audio/bgm/eden.mp3" },
-  { id: "ark", testament: "old", era: "creation", battle: "ark", pool: ["noah", "enoch", "seth", "adam", "cain", "abel"], pick: 5, art: "/stages/ark.jpg", bgm: "/audio/bgm/ark.mp3" },
-  { id: "redSea", testament: "old", era: "exodus", battle: "redSea", pool: ["moses", "aaron", "miriam", "joshua", "jochebed", "zipporah"], pick: 5, art: "/stages/red-sea.jpg", bgm: "/audio/bgm/red-sea.m4a" },
-  { id: "jericho", testament: "old", era: "exodus", battle: "jericho", pool: ["joshua", "rahab", "caleb", "achan", "aaron", "miriam"], pick: 5, art: "/stages/jericho.jpg", bgm: "/audio/bgm/jericho.mp3" },
-  { id: "goliath", testament: "old", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 5, art: "/stages/goliath.jpg", bgm: "/audio/bgm/goliath.mp3" },
-  { id: "carmel", testament: "old", era: "prophets", battle: "carmel", pool: ["elijah", "elisha", "naaman", "jehu", "zarephath", "shunammite"], pick: 5, art: "/stages/carmel.jpg", bgm: "/audio/bgm/carmel.mp3" },
-  { id: "lions", testament: "old", era: "exile", battle: "lions", before: "plot", pool: ["daniel", "threeFriends", "nebuchadnezzar", "esther", "haman", "nehemiah"], pick: 5, art: "/stages/lions.jpg", bgm: "/audio/bgm/lions.mp3" },
-  { id: "gerasa", testament: "new", era: "ministry", battle: "gerasa", pool: ["jesusUR", "peter", "jamesZeb", "johnApostle", "simonZealot", "legionFreed"], pick: 5, art: "/stages/legion.jpg", bgm: "/audio/bgm/gerasa.mp3" },
+  { id: "eden", testament: "old", era: "creation", battle: "eden", before: "tempter", pool: ["adam", "eve", "cain", "abel", "seth", "enoch"], pick: 6, art: "/stages/eden.jpg", bgm: "/audio/bgm/eden.mp3" },
+  { id: "ark", testament: "old", era: "creation", battle: "ark", pool: ["noah", "enoch", "seth", "adam", "cain", "abel"], pick: 6, art: "/stages/ark.jpg", bgm: "/audio/bgm/ark.mp3" },
+  { id: "redSea", testament: "old", era: "exodus", battle: "redSea", pool: ["moses", "aaron", "miriam", "joshua", "jochebed", "zipporah"], pick: 6, art: "/stages/red-sea.jpg", bgm: "/audio/bgm/red-sea.m4a" },
+  { id: "jericho", testament: "old", era: "exodus", battle: "jericho", pool: ["joshua", "rahab", "caleb", "achan", "aaron", "miriam"], pick: 6, art: "/stages/jericho.jpg", bgm: "/audio/bgm/jericho.mp3" },
+  { id: "goliath", testament: "old", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 6, art: "/stages/goliath.jpg", bgm: "/audio/bgm/goliath.mp3" },
+  { id: "carmel", testament: "old", era: "prophets", battle: "carmel", pool: ["elijah", "elisha", "naaman", "jehu", "zarephath", "shunammite"], pick: 6, art: "/stages/carmel.jpg", bgm: "/audio/bgm/carmel.mp3" },
+  { id: "lions", testament: "old", era: "exile", battle: "lions", before: "plot", pool: ["daniel", "threeFriends", "nebuchadnezzar", "esther", "haman", "nehemiah"], pick: 6, art: "/stages/lions.jpg", bgm: "/audio/bgm/lions.mp3" },
+  { id: "temptation", testament: "new", era: "ministry", battle: "temptation", before: "disguise", pool: ["jesusUR", "holySpirit", "peter", "johnApostle", "satanDisguised", "satan"], drops: ["satanDisguised", "satan"], pick: 6, art: "/stages/temptation.jpg", bgm: "/audio/bgm/battle.mp3" },
+  { id: "gerasa", testament: "new", era: "ministry", battle: "gerasa", pool: ["jesusUR", "peter", "jamesZeb", "johnApostle", "simonZealot", "legionFreed"], pick: 6, art: "/stages/legion.jpg", bgm: "/audio/bgm/gerasa.mp3" },
 ];
 
 export const CAMPAIGN_IDS = CAMPAIGN.map((s) => s.id);

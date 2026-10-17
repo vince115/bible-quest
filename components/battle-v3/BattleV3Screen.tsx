@@ -26,6 +26,7 @@ import {
   SINGLE_TARGET,
   SKILLS,
   STAGE_GUARD,
+  SUMMONED,
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
@@ -35,7 +36,7 @@ import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, Poo
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { backRow, boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, frontLiving, inFront, isDuel, leader, needsFront, type Board } from "@/game/v3/engine";
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
-import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
+import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, stageOfBattle, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
@@ -1404,6 +1405,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [scale] = useState(savedScale);
   const [showLog, setShowLog] = useState(false);
   useEffect(() => setAutoSpeed(savedSpeed()), [setAutoSpeed]);
+  // The stage this battle belongs to, and whether it is played in two rounds (then which round this is)
+  const resultStage = b ? stageOfBattle(b.stage) : stage ?? CAMPAIGN[0];
+  const inRounds = b && resultStage.before && (b.stage === resultStage.before || (b.stage === resultStage.battle && campaign)) ? resultStage : null;
   const [showResult, setShowResult] = useState(true);
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
@@ -1566,18 +1570,18 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
         {/* The enemy's formation: its back row (the boss, and the shooter) above, its front row (the guard) below */}
         <section className="relative flex flex-col items-center gap-1 px-2 pt-3 sm:px-4">
-          {(b.stage === "plot" || (b.stage === "lions" && campaign && campaignStage(campaign).before)) && (
+          {inRounds && (
             <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
-              {b.stage === "plot" ? t("v3.round.first") : t("v3.round.second")}
+              {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : "second"}`)}
             </div>
           )}
           <FormationLane label={t("v3.ui.enemyBack")} tone="enemy">
-            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
+            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_SHOOTER[b.stage]!)) && (
               <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
             <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
           </FormationLane>
-          {!isDuel(board) && STAGE_GUARD[b.stage] && (
+          {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
             <FormationLane label={t("v3.ui.enemyFront")} tone="enemy">
               <EnemyCard b={b} front={leader(board)} id={STAGE_GUARD[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
             </FormationLane>
@@ -1979,10 +1983,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <ResultPanel
           won={b.result === "victory"}
           title={interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}
-          eyebrow={stage ? t(`v3.campaign.${stage.id}.name`) : t(`v3.stage.${b.stage === "plot" ? "lions" : b.stage}`)}
-          hint={interlude && b.result === "victory" ? t("v3.round.hint") : undefined}
+          eyebrow={t(`v3.campaign.${resultStage.id}.name`)}
+          hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : undefined}
           facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
-          art={stage?.art ?? STAGE_ART[b.stage === "plot" ? "lions" : b.stage]}
+          art={resultStage.art}
           sections={!!drop || newAchievements.length > 0}
           actions={
             <>
@@ -1994,7 +1998,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   }}
                   className={resultButton(true)}
                 >
-                  {t("v3.round.go")} →
+                  {t(`v3.round.${resultStage.id}.go`)} →
                 </button>
               )}
               {campaign && b.result === "victory" && !interlude && next && (
