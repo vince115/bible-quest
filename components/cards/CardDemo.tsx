@@ -4,7 +4,7 @@
 // layout groups the same cards by the period of the story they belong to.
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
+import { APOSTLES, CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
 import { translate } from "@/game/i18n";
 import type { BaseEnemyId as EnemyId, CardId, CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
@@ -21,8 +21,11 @@ import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WID
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
-/** All the cards in one grid, or grouped along the Bible timeline; remembered in this browser. */
-type Layout = "grid" | "timeline";
+/** All the cards in one grid, grouped along the Bible timeline, or only Jesus' disciples; remembered in this browser. */
+type Layout = "grid" | "timeline" | "disciples";
+const LAYOUTS: Layout[] = ["grid", "timeline", "disciples"];
+/** The twelve in the order Matthew 10:2–4 names them (both of John's cards together), then Matthias, chosen in Judas' place (Acts 1:26). */
+const DISCIPLES: CharacterId[] = [...APOSTLES];
 const LAYOUT_KEY = "bq-card-demo-layout";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
@@ -214,8 +217,9 @@ export function CardDemo() {
   }, []);
   const [layout, setLayout] = useState<Layout>("grid");
   useEffect(() => {
+    const saved = safeStorage.getItem(LAYOUT_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
-    if (safeStorage.getItem(LAYOUT_KEY) === "timeline") setLayout("timeline");
+    if (saved && (LAYOUTS as string[]).includes(saved)) setLayout(saved as Layout);
   }, []);
   const arrange = (l: Layout) => {
     setLayout(l);
@@ -258,12 +262,16 @@ export function CardDemo() {
     </div>
   );
 
+  // The disciples, in the order they are named (search and the rarity tab still apply).
+  const disciples = DISCIPLES.map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c);
+  const onScreen = layout === "disciples" ? disciples : shown;
+
   // Flip through the cards on screen (the current search and rarity tab), wrapping at either end.
-  const at = viewing ? shown.findIndex((c) => c.id === viewing.id) : -1;
+  const at = viewing ? onScreen.findIndex((c) => c.id === viewing.id) : -1;
   const step = (d: number) =>
     setViewing((cur) => {
-      const i = cur ? shown.findIndex((c) => c.id === cur.id) : -1;
-      return i < 0 || shown.length < 2 ? cur : shown[(i + d + shown.length) % shown.length];
+      const i = cur ? onScreen.findIndex((c) => c.id === cur.id) : -1;
+      return i < 0 || onScreen.length < 2 ? cur : onScreen[(i + d + onScreen.length) % onScreen.length];
     });
   const swipeFrom = useRef<number | null>(null);
 
@@ -308,8 +316,8 @@ export function CardDemo() {
           );
         })}
       </div>
-      <div role="radiogroup" aria-label={t("v3.demo.layout")} className="flex gap-2">
-        {(["grid", "timeline"] as const).map((l) => (
+      <div role="radiogroup" aria-label={t("v3.demo.layout")} className="flex flex-wrap justify-center gap-2">
+        {LAYOUTS.map((l) => (
           <button
             key={l}
             role="radio"
@@ -321,8 +329,16 @@ export function CardDemo() {
           </button>
         ))}
       </div>
-      {shown.length === 0 && <p className="py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
-      {layout === "grid" ? (
+      {onScreen.length === 0 && <p className="py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
+      {layout === "disciples" ? (
+        onScreen.length > 0 && (
+          <section className="w-full max-w-7xl overflow-x-clip px-2">
+            <h2 className="text-lg font-black text-amber-100">{t("v3.demo.disciples")}</h2>
+            <p className="text-sm text-stone-400">{t("v3.demo.disciplesHint")}</p>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{disciples.map((card) => cardTile(card))}</div>
+          </section>
+        )
+      ) : layout === "grid" ? (
         <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
           {shown.map((card) => cardTile(card))}
         </div>
@@ -397,7 +413,7 @@ export function CardDemo() {
           }}
           className="fixed inset-0 z-[60] flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4"
         >
-          {shown.length > 1 && (
+          {onScreen.length > 1 && (
             <>
               <button
                 onClick={(e) => {
@@ -445,7 +461,7 @@ export function CardDemo() {
           {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
-            {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {shown.length}</span>}
+            {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {onScreen.length}</span>}
             {!viewing.scripture && !viewing.enemy && CARD_RARITY[viewing.id as CharacterId] === "GR" && (
               <button onClick={() => setCeremony(viewing.id as CharacterId)} className="rounded-full border border-amber-200 bg-amber-100/90 px-3 py-1 text-xs font-bold text-stone-900 hover:bg-white">
                 ✦ {t("v3.demo.ceremony")}
