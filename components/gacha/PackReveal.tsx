@@ -17,6 +17,14 @@ import { CARD_BACK } from "@/components/cards/ScriptureCardFace";
 import { asset } from "@/game/assets";
 import { VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttons";
+import type { PackKind } from "@/game/v3/gacha";
+import { PackArt } from "./PackArt";
+import { STRIP } from "./PackTear";
+
+/** The torn pack the cards are drawn from, one at a time: how much of it shows (its open top), and how far a card sits in it. */
+const POUCH_SHOWN = 120;
+const TUCKED = 40;
+const CARD_H = (220 * 88) / 63;
 
 export interface Pulled {
   card: CharacterId;
@@ -46,7 +54,7 @@ function Badge({ pulled }: { pulled: Pulled }) {
   );
 }
 
-export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: () => void }) {
+export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack?: PackKind; onAgain: () => void }) {
   const t = useT();
   const [at, setAt] = useState(0); // the card on show
   const [flipped, setFlipped] = useState(false);
@@ -184,13 +192,16 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       <div className="text-sm font-bold tabular-nums text-stone-400">
         {at + 1} / {results.length}
       </div>
+      {/* The card is drawn up out of the torn pack, which stays in front of its lower edge; while a card flies to the row,
+          nothing clips it. */}
+      <div className={`relative flex w-[260px] justify-center ${leaving ? "" : "overflow-hidden"}`} style={{ height: pack ? CARD_H + POUCH_SHOWN - TUCKED : undefined }}>
       <motion.div
         key={at}
         ref={oneRef}
-        className="relative z-40"
-        initial={{ opacity: 0, y: -30, scale: 0.92 }}
+        className="relative z-40 self-start"
+        initial={pack ? { y: CARD_H } : { opacity: 0, y: -30, scale: 0.92 }}
         animate={leaving ? { x: leaving.x, y: leaving.y, scale: leaving.scale } : { opacity: 1, x: 0, y: 0, scale: 1 }}
-        transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 220, damping: 22 }}
+        transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 160, damping: 22, delay: 0.1 }}
         onAnimationComplete={() => leaving && placedOne()}
       >
       <button
@@ -216,6 +227,14 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
         </div>
       </button>
       </motion.div>
+      {pack && (
+        <div aria-hidden className={`pointer-events-none absolute bottom-0 left-0 w-[260px] overflow-hidden text-[16.5px] ${leaving ? "z-30" : "z-50"}`} style={{ height: POUCH_SHOWN }}>
+          <div style={{ clipPath: `inset(${STRIP}% 0 0 0)`, transform: `translateY(-${STRIP}%)` }}>
+            <PackArt pack={pack} />
+          </div>
+        </div>
+      )}
+      </div>
       <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {flipped && (

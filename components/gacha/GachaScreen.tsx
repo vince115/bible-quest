@@ -14,7 +14,7 @@ import { PackTear } from "./PackTear";
 
 const CHOSEN_KEY = "bible-quest-gacha-pack";
 
-type Phase = { name: "choose" } | { name: "tear"; pack: PackKind } | { name: "reveal"; results: Pulled[] };
+type Phase = { name: "choose" } | { name: "tear"; pack: PackKind } | { name: "reveal"; results: Pulled[]; pack: PackKind };
 
 export function GachaScreen() {
   const t = useT();
@@ -54,7 +54,7 @@ export function GachaScreen() {
   // The pack is paid for when it is torn open, so choosing and backing out costs nothing.
   const torn = (pack: PackKind) => {
     const results = buyPack(pack.id);
-    setPhase(results ? { name: "reveal", results } : { name: "choose" });
+    setPhase(results ? { name: "reveal", results, pack } : { name: "choose" });
   };
 
   return (
@@ -115,7 +115,7 @@ export function GachaScreen() {
         </>
       )}
 
-      {phase.name === "reveal" && <PackReveal results={phase.results} onAgain={() => setPhase({ name: "choose" })} />}
+      {phase.name === "reveal" && <PackReveal results={phase.results} pack={phase.pack} onAgain={() => setPhase({ name: "choose" })} />}
 
       {phase.name === "choose" && (
         <div className="max-w-md text-center text-xs text-stone-500">
