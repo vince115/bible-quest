@@ -292,10 +292,12 @@ export function CardDemo() {
       const key = `${where}:${pile[0].id}`;
       const front = pile.find((c) => c.id === fronts[key]) ?? pile[0];
       const order = [front, ...pile.filter((c) => c !== front)];
-      // The pile fills one card's place: the front card sits at the bottom left, a little smaller, and each card behind steps
-      // up and to the right, so the pile lines up with the cards beside it and never spills into them.
-      const step = Math.min(18, 40 / (order.length - 1));
-      const width = 220 - step * (order.length - 1);
+      // The front card sits at the bottom left and each card behind steps up and to the right. A pair keeps the front card at
+      // full size, the one behind showing past its top and right edge; a bigger pile shrinks to fit one card's place, so it
+      // never spills into the cards beside it.
+      const pair = order.length === 2;
+      const step = pair ? 10 : Math.min(18, 40 / (order.length - 1));
+      const width = pair ? 220 : 220 - step * (order.length - 1);
       const face = (card: (typeof CARDS)[number], fx: boolean) => (
         <HoloCard element={elementOf(card)} effects={fx} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-full">
           <CardFace {...card} />
@@ -304,7 +306,7 @@ export function CardDemo() {
       const at = (k: number) => ({ left: step * k, bottom: step * k, width, fontSize: `${(10.3 * width) / 220}px` });
       return (
         <div key={key} className="flex flex-col items-center gap-2">
-          <div className="relative aspect-[63/88] w-[220px]">
+          <div className="relative aspect-[63/88] w-[220px]" style={pair ? { marginRight: step } : undefined}>
             {order
               .slice(1)
               .reverse()
