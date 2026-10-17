@@ -60,7 +60,8 @@ interface BattleV3Store {
   draw: () => void;
   /** Use up every draw left this turn. */
   drawAll: () => void;
-  cast: (skill: SkillId, target?: Target) => void;
+  /** `who`: which copy of the skill's owner uses it (the first able one when left out). */
+  cast: (skill: SkillId, target?: Target, who?: CharacterId) => void;
   /** The tabletop rules' free basic attack. */
   basic: (who: CharacterId, target: EnemyId) => void;
   /** This turn's free move: `id` to place `to`. */
@@ -184,7 +185,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         while (canDrawOnBoard(b)) b = drawOnBoard(b);
         return b;
       }),
-    cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
+    cast: (skill, target, who) => act((b) => castOnBoard(b, skill, target, Math.random, who)),
     basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
     move: (id, to) => act((b) => moveTo(b, id, to)),
     endTurn: () => {

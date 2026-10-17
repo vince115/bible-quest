@@ -30,10 +30,11 @@ import {
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
-import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
+import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target, inPartyOrder } from "@/game/v2/engine";
 import { MAGIC_VERSION_ENABLED, baseEnemy, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
-import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
+import type { BaseCharacterId, BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
+import { baseCharacter, copyNumber, copyOf } from "@/game/v2/copies";
 import { MAX_LINEUP, ROW, SLOTS, arrange, boardBlockReason, boardSkillTargets, canDrawOnBoard, canMove, isDuel, leader, slotOf, type Board, type Slots } from "@/game/v3/engine";
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { COPY_LIMIT } from "@/game/v3/gacha";
@@ -59,7 +60,8 @@ import { sfxEvents } from "@/game/v3/sfxEvents";
 
 type T = ReturnType<typeof useT>;
 /** A skill waiting for its target; `basic` is the tabletop rules' free basic attack (made by that character) instead of a skill. */
-type Pending = { skill: SkillId; targets: Target[]; basic?: CharacterId };
+/** `who`: the character (a card or a copy of it) using the skill. */
+type Pending = { skill: SkillId; targets: Target[]; basic?: CharacterId; who?: CharacterId };
 
 const ENERGY_RING: Record<EnergyKind, string> = {
   faith: "border-amber-300 bg-amber-500/25 text-amber-100",
@@ -204,7 +206,7 @@ function EnemyCard({
         )}
         {isTarget && pending && (
           <span className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-md bg-amber-400 py-1 text-center text-xs font-black text-stone-950 shadow-lg sm:text-sm">
-            🎯 {pending.basic ? elementAdjust(basicDamage(pending.basic), mult, b.pools) : skillDamage(b, pending.skill, id)}
+            🎯 {pending.basic ? elementAdjust(basicDamage(pending.basic), mult, b.pools) : skillDamage(b, pending.skill, id, pending.who)}
             {mult !== 1 && ` ×${mult}`}
           </span>
         )}
@@ -374,6 +376,12 @@ function EmptyPlace({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
+/** Which copy of its card a character is (#2 … #6), on the card's lower left; nothing on the card itself. */
+function CopyMark({ id }: { id: CharacterId }) {
+  const n = copyNumber(id);
+  return n > 1 ? <span className="pointer-events-none absolute bottom-1 left-1 z-20 rounded-full bg-black/75 px-1.5 text-[10px] font-black tabular-nums text-amber-100">#{n}</span> : null;
+}
+
 /** HP badge hung on the card's top-right corner (outside the art), Pokémon TCG Pocket style. */
 function HpBadge({ hp, max, shield = 0, big, endless, bonus }: { hp: number; max: number; shield?: number; big?: boolean; endless?: boolean; bonus?: boolean }) {
   const pct = endless ? 100 : Math.max(0, (hp / max) * 100);
@@ -516,6 +524,7 @@ function CharacterSlot({
             ✝
           </motion.span>
         )}
+        <CopyMark id={id} />
         <span className="absolute -right-2 -top-4 z-20">
           <HpBadge hp={c.hp} max={MAX_HP[id]} shield={alive ? c.shield : 0} bonus={b.pools === "table"} endless={NEVER_FALLS.has(id)} />
         </span>
@@ -757,9 +766,9 @@ function SkillFocus({
             )}
             {CHARACTER_SKILLS[id].map((skill) => {
               const def = SKILLS[skill];
-              const reason = boardBlockReason(board, skill);
+              const reason = boardBlockReason(board, skill, undefined, id);
               const ready = !locked && !reason;
-              const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? bossOf(b) : skillTargets(b, skill).length === 1 ? (skillTargets(b, skill)[0] as EnemyId) : undefined) : supportAmount(b, skill);
+              const amount = def.damage ? skillDamage(b, skill, skill === "slingStone" ? bossOf(b) : skillTargets(b, skill, id).length === 1 ? (skillTargets(b, skill, id)[0] as EnemyId) : undefined, id) : supportAmount(b, skill);
               const boosted = !!def.damage && amount > def.damage;
               // Not enough energy just fades the button; other reasons (Shaken, already acted…) are spelled out.
               const short = reason === "v2.reason.energy" || reason === "v2.reason.needFaith";
@@ -817,7 +826,7 @@ function SkillFocus({
                     <span className="block text-[11px] leading-snug text-slate-600">{t(`v2.skill.${skill}.desc`, { n: amount })}</span>
                     {/* The tabletop rules give no change: say which cards would be spent and how much of them is wasted. */}
                     {tab && (() => {
-                      const pay = paymentPreview(b, skill);
+                      const pay = paymentPreview(b, skill, id);
                       return pay && pay.waste > 0 ? (
                         <span className="block text-[10px] font-bold leading-snug text-amber-700">
                           {t("v3.pool.waste", { spent: pay.spent.join("+"), n: pay.waste })}
@@ -880,6 +889,7 @@ function FormationPicker({ t, slots, picked, onPlace, onAuto }: { t: T; slots: S
                 <CharacterCardFace id={id} />
               </span>
             )}
+            {id && <CopyMark id={id} />}
           </button>
         );
       })}
@@ -932,25 +942,50 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const shownPool = rarity === "all" ? matching : matching.filter((id) => CARD_RARITY[id] === rarity);
   // The last line-up, as far as this stage lends it; otherwise the first cards of the pool.
   const [lineup, setLineup] = useState<CharacterId[]>(() => {
-    const kept = last.lineup.filter((id) => pool.includes(id));
+    const kept = last.lineup.filter((id) => pool.includes(baseCharacter(id)));
     return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
   });
-  const inPool = (ids: CharacterId[]) => PARTY_ORDER.filter((id) => ids.includes(id) && pool.includes(id));
+  // A line-up drawn from the pool, in print order; free mode may bring copies of a card (see mayBring), a stage never does.
+  const inPool = (ids: CharacterId[]) => inPartyOrder(ids.filter((id) => pool.includes(baseCharacter(id)) && (!campaign || copyNumber(id) === 1)));
   const chosen = inPool(lineup);
+  /** How many copies of a card are in the line-up. */
+  const copiesIn = (card: CharacterId) => chosen.filter((x) => baseCharacter(x) === card).length;
+  /** How many copies of a card may go to battle: one in a stage; in free mode as many as the collection holds (up to COPY_LIMIT). */
+  const mayBring = (card: CharacterId) =>
+    campaign ? 1 : Math.min(COPY_LIMIT, process.env.NEXT_PUBLIC_DEBUG_ALL_CARDS === "1" ? COPY_LIMIT : (collection[baseCharacter(card)] ?? 0));
   // Where everyone stands: the last formation as far as it still fits, newcomers arranged into the empty places.
   const [placement, setPlacement] = useState<Slots>(() => arrange(chosen, last.slots));
   const slots = arrange(chosen, placement);
   /** The card picked in the formation, waiting for the place it moves to. */
   const [picked, setPicked] = useState<CharacterId | null>(null);
-  // Up to six characters go to battle, and one card per person: picking another card of the same person swaps it in.
+  // Up to six characters go to battle, and one card per person (free mode may bring copies of the same card): picking
+  // another card of the same person swaps it in.
   const full = chosen.length >= max;
-  const twin = (id: CharacterId) => chosen.find((x) => x !== id && personOf(x) === personOf(id));
-  const toggle = (id: CharacterId) => {
-    const next = lineup.includes(id) ? lineup.filter((x) => x !== id) : twin(id) ? [...lineup.filter((x) => x !== twin(id)), id] : !full ? [...lineup, id] : lineup;
+  const twin = (id: CharacterId) => chosen.find((x) => baseCharacter(x) !== id && personOf(baseCharacter(x)) === personOf(id));
+  const change = (next: CharacterId[]) => {
     setLineup(next);
     setPlacement(arrange(inPool(next), slots));
     setPicked(null);
   };
+  const toggle = (id: CharacterId) =>
+    change(copiesIn(id) ? lineup.filter((x) => baseCharacter(x) !== id) : twin(id) ? [...lineup.filter((x) => personOf(baseCharacter(x)) !== personOf(id)), id] : !full ? [...lineup, id] : lineup);
+  /** One more copy of a card, or one fewer (the last one out leaves the card out). */
+  const addCopy = (id: CharacterId) => !full && copiesIn(id) < mayBring(id) && change([...lineup, copyOf(id as BaseCharacterId, copiesIn(id) + 1)]);
+  const dropCopy = (id: CharacterId) => (copiesIn(id) > 1 ? change(lineup.filter((x) => x !== copyOf(id as BaseCharacterId, copiesIn(id)))) : toggle(id));
+  /** Free mode, a card owned more than once and in the line-up: how many copies of it go. */
+  const copyStepper = (id: CharacterId) =>
+    copiesIn(id) > 0 &&
+    mayBring(id) > 1 && (
+      <div className="flex items-center gap-1 rounded-full border border-stone-500 px-1 text-xs font-bold text-stone-200" title={t("v3.lineup.copies", { n: mayBring(id) })}>
+        <button onClick={() => dropCopy(id)} aria-label={t("v3.lineup.fewer")} className="h-6 w-6 rounded-full hover:bg-white/10">
+          −
+        </button>
+        <span className="tabular-nums">×{copiesIn(id)}</span>
+        <button onClick={() => addCopy(id)} disabled={full || copiesIn(id) >= mayBring(id)} aria-label={t("v3.lineup.more")} className="h-6 w-6 rounded-full hover:bg-white/10 disabled:opacity-40">
+          +
+        </button>
+      </div>
+    );
   const place = (to: number) => {
     const here = slots[to];
     if (!picked) return setPicked(here);
@@ -1065,7 +1100,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       ) : campaign || pool.length <= 6 ? (
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 justify-items-center max-w-4xl mx-auto px-2 sm:px-4 py-2">
           {pool.map((id) => {
-            const on = chosen.includes(id);
+            const on = copiesIn(id) > 0;
             return (
               <div key={id} className="flex flex-col items-center gap-1.5 sm:gap-2">
                 <button
@@ -1085,6 +1120,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
                   </button>
+                  {copyStepper(id)}
                 </div>
               </div>
             );
@@ -1136,7 +1172,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
           {shownPool.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
           {shownPool.map((id) => {
-            const on = chosen.includes(id);
+            const on = copiesIn(id) > 0;
             return (
               <div key={id} className="flex flex-col items-center gap-2">
                 <button
@@ -1156,6 +1192,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
                   </button>
+                  {copyStepper(id)}
                 </div>
               </div>
             );
@@ -1305,14 +1342,15 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const locked = resolving || auto || b.result !== "ongoing";
   const open = acting && board.lineup.includes(acting) && !pending ? acting : null;
   const onSkill = (skill: SkillId) => {
+    const who = acting ?? undefined;
     setActing(null);
-    const targets = boardSkillTargets(board, skill);
-    if (targets.length) setPending({ skill, targets });
-    else cast(skill);
+    const targets = boardSkillTargets(board, skill, who);
+    if (targets.length) setPending({ skill, targets, who });
+    else cast(skill, undefined, who);
   };
   const onTarget = (target: Target) => {
     if (pending?.basic) basic(pending.basic, target as EnemyId);
-    else if (pending) cast(pending.skill, target);
+    else if (pending) cast(pending.skill, target, pending.who);
     setPending(null);
   };
   /** The free basic attack: pick the target when there is more than one, otherwise attack at once. */
