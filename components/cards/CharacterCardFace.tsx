@@ -211,8 +211,8 @@ const ART: Partial<Record<CharacterId, { src: string; figure: Figure }>> = {
   archerP: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   bearerP: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
   // The Father on the throne of clouds and the Spirit as a dove fill the whole picture; the angels and Satan stand in the middle.
-  father: { src: "/cards/father.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
-  holySpirit: { src: "/cards/holySpirit.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  father: { src: "/cards/father.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98, size: 1.1, gaze: "center" } },
+  holySpirit: { src: "/cards/holySpirit.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98, gaze: "center" } },
   gabriel: { src: "/cards/gabriel.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.93 } },
   michael: { src: "/cards/michael.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
   satanDisguised: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
