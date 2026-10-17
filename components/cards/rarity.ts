@@ -209,6 +209,7 @@ export const CARD_RARITY: Record<CharacterId | BaseEnemyId, Rarity> = {
   satanMan: "SSR",
   roaringLion: "SR",
   fieryDarts: "SR",
+  satanVeiled: "UR",
   satanFoe: "UR",
   flood: "SSR",
   chariots: "SSR",

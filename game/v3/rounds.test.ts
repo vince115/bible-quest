@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENEMY_HP, MAX_HP, RULES_V2 as R, STAGE_ENEMIES } from "../v2/data";
-import { isAlive, resolveGoliath } from "../v2/engine";
+import { actionBase, isAlive, resolveGoliath } from "../v2/engine";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { campaignStage, stageBgm, stageOfBattle } from "./campaign";
 import { createBoard, nextRoundBoard } from "./engine";
@@ -112,19 +112,24 @@ describe("the lions' den in two rounds", () => {
     expect(useBattleV3Store.getState().board!.battle.stage).toBe("eden");
   });
 
-  it("the wilderness: a tempter who looks like a man, then Satan shown for what he is, the strongest of the three", () => {
+  it("the wilderness: the tempter who looks like a man, then Satan with his wings half seen; his true form is an optional hell level", () => {
     expect(STAGE_ENEMIES.disguise).toEqual(["satanMan"]);
-    expect(STAGE_ENEMIES.temptation).toEqual(["satanFoe"]);
+    expect(STAGE_ENEMIES.temptation).toEqual(["satanVeiled"]);
+    expect(STAGE_ENEMIES.revealed).toEqual(["satanFoe"]);
     const stage = campaignStage("temptation");
     expect(stage.before).toBe("disguise");
+    expect(stage.hell).toBe("revealed");
     expect(stage.drops).toEqual(["satanDisguised", "satan"]);
     expect(stageOfBattle("disguise")).toBe(stage);
+    expect(stageOfBattle("revealed")).toBe(stage);
     expect(CARD_RARITY.satanMan).toBe("SSR");
     expect(CARD_RARITY.satanFoe).toBe("UR");
-    expect(MAX_HP.satanDisguised).toBeGreaterThanOrEqual(250);
-    // Disguised < Satan (wings half seen) < Satan in his true form.
+    // Disguised < Satan (wings half seen) < Satan in his true form, who also hits harder.
     expect(MAX_HP.satan).toBeGreaterThan(MAX_HP.satanDisguised);
+    expect(ENEMY_HP.satanVeiled).toBeGreaterThan(ENEMY_HP.satanMan);
     expect(ENEMY_HP.satanFoe).toBeGreaterThan(MAX_HP.satan);
+    expect(actionBase(createBoard(["peter"], undefined, () => 0.5, "revealed", "table").battle, "devour")).toBeGreaterThan(R.devour);
+
     const store = useBattleV3Store.getState();
     store.enter("temptation");
     store.start(["peter", "johnApostle", "holySpirit"], [], "temptation", "table");
@@ -134,10 +139,24 @@ describe("the lions' den in two rounds", () => {
     expect(useBattleV3Store.getState().interlude).toBe("temptation");
     useBattleV3Store.getState().nextRound();
     expect(useBattleV3Store.getState().board!.battle.stage).toBe("temptation");
+    // Round 2 won: the stage is cleared, and the hell level may follow.
+    const cleared = useProgressStore.getState().cleared.temptation ?? 0;
+    useBattleV3Store.getState().board!.battle.enemies.satanVeiled.hp = 1;
+    useBattleV3Store.getState().basic("peter", "satanVeiled");
+    expect(useBattleV3Store.getState().board!.battle.result).toBe("victory");
+    expect(useProgressStore.getState().cleared.temptation).toBe(cleared + 1);
+    useBattleV3Store.getState().hellRound();
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("revealed");
+    const satans = useProgressStore.getState().collection.satan ?? 0;
+    useBattleV3Store.getState().board!.battle.enemies.satanFoe.hp = 1;
+    useBattleV3Store.getState().basic("johnApostle", "satanFoe");
+    expect(useBattleV3Store.getState().drop).toBe("satan");
+    expect(useProgressStore.getState().collection.satan).toBe(satans + 1);
+    expect(useProgressStore.getState().cleared.temptation).toBe(cleared + 1);
   });
 
   it("Satan summons his guard, then his shooter, to the front line; with both standing the host closes ranks and he heals", () => {
-    expect(STAGE_ENEMIES.temptation).toEqual(["satanFoe"]);
+    expect(STAGE_ENEMIES.temptation).toEqual(["satanVeiled"]);
     const first = createBoard(["peter", "johnApostle", "holySpirit"], undefined, () => 0.5, "temptation", "table");
     const b = first.battle;
     expect(b.enemies.roaringLion.hp).toBe(0);
@@ -152,9 +171,9 @@ describe("the lions' den in two rounds", () => {
     one.intents[0] = { action: "summon", targets: [] };
     const two = resolveGoliath(one, () => 0.5);
     expect([two.enemies.roaringLion.hp, two.enemies.fieryDarts.hp]).toEqual([ENEMY_HP.roaringLion, ENEMY_HP.fieryDarts]);
-    two.enemies.satanFoe.hp = 100;
+    two.enemies.satanVeiled.hp = 100;
     two.intents[0] = { action: "summon", targets: [] };
     const three = resolveGoliath(two, () => 0.5);
-    expect(three.enemies.satanFoe.hp).toBe(100 + R.hostHeal);
+    expect(three.enemies.satanVeiled.hp).toBe(100 + R.hostHeal);
   });
 });

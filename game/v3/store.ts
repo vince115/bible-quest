@@ -45,6 +45,8 @@ interface BattleV3Store {
   interlude: StageId | null;
   /** Starts the second round of the stage with the same party. */
   nextRound: () => void;
+  /** After the stage is cleared: takes on its hell level with the same party (and the HP it has left). */
+  hellRound: () => void;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
   enter: (campaign: CampaignStageId | null) => void;
   start: (lineup: CharacterId[], slots: Slots, stage: StageId, mode?: PoolMode) => void;
@@ -75,6 +77,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       const stage = campaign ? campaignStage(campaign) : null;
       if (stage?.before && stage.battle && board.battle.stage === stage.before && board.battle.result === "victory") {
         set({ interlude: stage.battle, newAchievements: [], drop: null });
+        return;
+      }
+      // The hell level is played after the clear: winning gives its card, losing takes nothing away.
+      if (stage?.hell && board.battle.stage === stage.hell) {
+        const won = board.battle.result === "victory";
+        if (won && stage.hellDrop) useProgressStore.getState().grant(stage.hellDrop, stage.id);
+        set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)), drop: won ? (stage.hellDrop ?? null) : null });
         return;
       }
       set({
@@ -152,6 +161,12 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       const { board, interlude } = get();
       if (!board || !interlude || board.battle.result !== "victory") return;
       set((st) => ({ board: nextRoundBoard(board, interlude), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
+    },
+    hellRound: () => {
+      const { board, campaign } = get();
+      const stage = campaign ? campaignStage(campaign) : null;
+      if (!board || !stage?.hell || board.battle.stage !== stage.battle || board.battle.result !== "victory") return;
+      set((st) => ({ board: nextRoundBoard(board, stage.hell!), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
     },
     restart: () => get().start(get().lastLineup.lineup, get().lastLineup.slots, get().lastLineup.stage, get().lastLineup.mode),
     pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null, interlude: null })),

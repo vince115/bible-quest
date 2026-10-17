@@ -1213,7 +1213,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
 export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, enter, interlude, nextRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, enter, interlude, nextRound, hellRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
@@ -1236,7 +1236,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   useEffect(() => setAutoSpeed(savedSpeed()), [setAutoSpeed]);
   // The stage this battle belongs to, and whether it is played in two rounds (then which round this is)
   const resultStage = b ? stageOfBattle(b.stage) : stage ?? CAMPAIGN[0];
-  const inRounds = b && resultStage.before && (b.stage === resultStage.before || (b.stage === resultStage.battle && campaign)) ? resultStage : null;
+  const inRounds = b && resultStage.before && (b.stage === resultStage.before || b.stage === resultStage.hell || (b.stage === resultStage.battle && campaign)) ? resultStage : null;
+  // The hell level, offered once the stage is cleared (see CampaignStage.hell).
+  const inHell = !!b && b.stage === resultStage.hell;
+  const canHell = !!campaign && !!b && b.result === "victory" && !interlude && !!resultStage.hell && b.stage === resultStage.battle;
   const [showResult, setShowResult] = useState(true);
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
@@ -1409,7 +1412,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <section className="relative flex flex-col items-center gap-1 px-2 pt-3 sm:px-4">
           {inRounds && (
             <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
-              {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : "second"}`)}
+              {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : inHell ? "hell" : "second"}`)}
             </div>
           )}
           <FormationLane label={t("v3.ui.enemyBack")} tone="enemy">
@@ -1816,7 +1819,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           won={b.result === "victory"}
           title={interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}
           eyebrow={t(`v3.campaign.${resultStage.id}.name`)}
-          hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : undefined}
+          hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : canHell ? t(`v3.round.${resultStage.id}.hellHint`) : inHell && b.result === "defeat" ? t(`v3.round.${resultStage.id}.hellLost`) : undefined}
           facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
           art={resultStage.art}
           sections={!!drop || newAchievements.length > 0}
@@ -1831,6 +1834,17 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   className={resultButton(true)}
                 >
                   {t(`v3.round.${resultStage.id}.go`)} →
+                </button>
+              )}
+              {canHell && (
+                <button
+                  onClick={() => {
+                    setPending(null);
+                    hellRound();
+                  }}
+                  className={resultButton(false)}
+                >
+                  🔥 {t(`v3.round.${resultStage.id}.hellGo`)}
                 </button>
               )}
               {campaign && b.result === "victory" && !interlude && next && (

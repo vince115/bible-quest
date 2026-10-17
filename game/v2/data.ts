@@ -65,15 +65,16 @@ export const RULES_V2 = {
   decree: 40,
   /** Satan in the wilderness: the lure of the man he seems to be; his fiery darts and his devouring once he is shown for what he is. */
   lure: 80,
-  // He shows himself as he is, his final form: his blows are the strongest of the three Satans.
-  darts: 80,
-  devour: 180,
+  darts: 70,
+  devour: 150,
   /** The pinnacle of the temple picks off the weakest ally; the kingdoms of the world dazzle two allies. At half HP the demon rages. */
   pinnacle: 100,
   /** A boss that calls minions to the front line: when one already stands, the host closes ranks and the boss heals this much. */
   hostHeal: 40,
-  dartsRage: 120,
-  devourRage: 240,
+  dartsRage: 100,
+  devourRage: 200,
+  /** Satan in his true form (the hell level): every blow of his this much harder than the same blow in round 2. */
+  revealedBoost: 0.2,
   /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
   many: 20,
   manyTargets: 2,
@@ -873,7 +874,7 @@ const BASE_ELEMENT: Record<BaseEnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanFoe: "dark", roaringLion: "dark", fieryDarts: "dark",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanVeiled: "dark", satanFoe: "dark", roaringLion: "dark", fieryDarts: "dark",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -931,7 +932,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
   "lionRest", "lion", "lioness", "presidents", "princes",
-  "serpentTempter", "satanMan", "satanFoe", "roaringLion", "fieryDarts",
+  "serpentTempter", "satanMan", "satanVeiled", "satanFoe", "roaringLion", "fieryDarts",
   "uncleanSpirits", "legion", "swine",
   ...ALL_AIDES,
 ];
@@ -944,11 +945,11 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * Who fights in each stage: the boss, and (except in Eden) a guard who protects the boss while standing and a shooter
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
-export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter", temptation: "satanFoe", disguise: "satanMan" };
-export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits", temptation: "roaringLion" };
-export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" , temptation: "fieryDarts" };
+export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter", disguise: "satanMan", temptation: "satanVeiled", revealed: "satanFoe" };
+export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits", temptation: "roaringLion", revealed: "roaringLion" };
+export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" , temptation: "fieryDarts", revealed: "fieryDarts" };
 /** Stages whose guard and shooter are not there at the start: the boss summons them (the Summon action). */
-export const SUMMONED: ReadonlySet<StageId> = new Set<StageId>(["temptation"]);
+export const SUMMONED: ReadonlySet<StageId> = new Set<StageId>(["temptation", "revealed"]);
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
   (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [SUMMONED.has(st) ? undefined : STAGE_GUARD[st], STAGE_BOSS[st], SUMMONED.has(st) ? undefined : STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
 ) as Record<StageId, EnemyId[]>;
@@ -964,7 +965,7 @@ const BASE_HP: Record<BaseEnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanFoe: 320, roaringLion: 60, fieryDarts: 40,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanVeiled: 260, satanFoe: 320, roaringLion: 60, fieryDarts: 40,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 export const ENEMY_HP: Record<EnemyId, number> = { ...BASE_HP, ...Object.fromEntries(ALL_AIDES.map((a) => [a, BASE_HP[baseEnemy(a)] * RULES_V2.aideHpMult])) } as Record<EnemyId, number>;
@@ -1632,6 +1633,8 @@ export const DISGUISE_CYCLE: GoliathActionId[] = ["tempt", "pinnacle", "kingdoms
  * and he devours.
  */
 export const TEMPTATION_CYCLE: GoliathActionId[] = ["summon", "darts", "devour", "summon"];
+/** Satan in his true form (the hell level) strikes first and calls his own only once a round. */
+export const REVEALED_CYCLE: GoliathActionId[] = ["darts", "devour", "summon", "devour"];
 /** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
 export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
 /** Pharaoh's chariots keep one cycle; at half HP the wheels come off (Charge weakens). */

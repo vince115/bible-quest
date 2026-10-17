@@ -130,7 +130,7 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
   const aides = SUMMONED.has(stage) || !STAGE_GUARD[stage] ? [] : aidesOf(stage).slice(0, aideCount(chosen.length));
   for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
   // ...and a boss who hits harder for each ally past three.
-  battle.bossBoost = R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
+  battle.bossBoost = (battle.bossBoost ?? 0) + R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
   const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides };
   return aim(board, rng);
 }

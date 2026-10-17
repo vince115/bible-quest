@@ -31,6 +31,7 @@ import {
   TEMPTER_CYCLE,
   DISGUISE_CYCLE,
   TEMPTATION_CYCLE,
+  REVEALED_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -113,6 +114,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return DISGUISE_CYCLE;
     case "temptation":
       return TEMPTATION_CYCLE;
+    case "revealed":
+      return REVEALED_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -120,8 +123,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", revealed: "v2.log.startRevealed", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", revealed: "v2.log.victoryRevealed", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -427,7 +430,7 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
 /** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" ? "temptation" : s.stage) && s.lineup.includes(id);
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" || s.stage === "revealed" ? "temptation" : s.stage) && s.lineup.includes(id);
 
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
@@ -972,6 +975,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     coiled: null,
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },
     archerTarget: null,
+    // Satan in his true form hits harder than in round 2.
+    bossBoost: stage === "revealed" ? R.revealedBoost : 0,
     intents: [
       { action: "defy", targets: [] },
       { action: "defy", targets: [] },
@@ -1406,6 +1411,7 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         log(s, "v2.log.frenzy", "enemy");
         break;
       case "temptation":
+      case "revealed":
         // Half his HP gone, the demon stops pretending to be patient: his devouring hits harder.
         s.goliath.enraged = true;
         log(s, "v2.log.satanRage", "enemy");

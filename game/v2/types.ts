@@ -50,7 +50,7 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter" | "satanMan" | "satanFoe" | "roaringLion" | "fieryDarts"
+  | "serpentTempter" | "satanMan" | "satanVeiled" | "satanFoe" | "roaringLion" | "fieryDarts"
   | "legion" | "uncleanSpirits" | "swine"
   | AideId;
 
@@ -65,9 +65,10 @@ export type BaseEnemyId = Exclude<EnemyId, AideId>;
 /**
  * "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel) and "tempter" the first
  * round of Eden (the cunning serpent tempts Eve); "disguise" is the first round of the temptation in the wilderness (Satan
- * looks like a man) and "temptation" its second (he shows what he is). None of them is a stage of its own.
+ * looks like a man), "temptation" its second (Satan, his wings half seen) and "revealed" an optional third, the hell level
+ * (Satan in his true form). None of them is a stage of its own.
  */
-export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise";
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise" | "revealed";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
