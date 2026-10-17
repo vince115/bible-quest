@@ -15,6 +15,7 @@ import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import { CARD_BACK } from "@/components/cards/ScriptureCardFace";
 import { asset } from "@/game/assets";
 import { VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttons";
 
 export interface Pulled {
   card: CharacterId;
@@ -134,15 +135,15 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
         </section>
         {/* First the cards are put away into the collection; then another pack, or a look at the collection. */}
         {!stored ? (
-          <button onClick={store} disabled={!!fly} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400 disabled:opacity-60">
+          <button onClick={store} disabled={!!fly} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
             {t("v3.gacha.store")}
           </button>
         ) : (
           <div className="flex flex-wrap justify-center gap-3">
-            <button onClick={onAgain} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400">
+            <button onClick={onAgain} className={PRIMARY_BUTTON}>
               {t("v3.gacha.again")}
             </button>
-            <Link href="/collection" className="rounded-2xl border border-amber-300/70 px-6 py-3 text-lg font-bold text-amber-100 hover:bg-white/10">
+            <Link href="/collection" className={SECONDARY_BUTTON}>
               {t("nav.collection")} →
             </Link>
           </div>
@@ -182,7 +183,7 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {flipped && (
-          <button onClick={next} className="rounded-full bg-amber-500 px-5 py-1.5 text-sm font-bold text-stone-950 hover:bg-amber-400">
+          <button onClick={next} className={PRIMARY_BUTTON}>
             {at < results.length - 1 ? `${t("v3.demo.next")} →` : t("v3.gacha.showAll")}
           </button>
         )}
