@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
 import { translate } from "@/game/i18n";
-import type { CardId, CharacterId, EnemyId } from "@/game/v2/types";
+import type { BaseEnemyId as EnemyId, CardId, CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "./CharacterCardFace";
 import { EnemyCardFace } from "./EnemyCardFace";
@@ -22,7 +22,7 @@ const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
-const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id, enemy: true } : { id }));
+const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id: id as EnemyId, enemy: true } : { id: id as CharacterId }));
 
 type Viewed = { id: CharacterId | EnemyId | CardId; enemy?: boolean; scripture?: boolean; rarity?: Rarity };
 

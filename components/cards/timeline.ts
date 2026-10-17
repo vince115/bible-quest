@@ -31,7 +31,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   {
     era: "ministry",
     cards: [
-      "jesusUR", "holySpirit", "satanDisguised", "satan", "satanMan", "satanFoe", "roaringLion", "fieryDarts", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
+      "jesusUR", "holySpirit", "satanDisguised", "satan", "satanMan", "satanVeiled", "satanFoe", "roaringLion", "fieryDarts", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
       "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "uncleanSpirits", "legion", "swine", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
       "lazarus", "richRuler", "bartimaeus", "zacchaeus", "widow",
     ],

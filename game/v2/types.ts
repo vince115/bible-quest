@@ -50,16 +50,25 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter" | "satanMan" | "satanFoe" | "roaringLion" | "fieryDarts"
-  | "legion" | "uncleanSpirits" | "swine";
+  | "serpentTempter" | "satanMan" | "satanVeiled" | "satanFoe" | "roaringLion" | "fieryDarts"
+  | "legion" | "uncleanSpirits" | "swine"
+  | AideId;
+
+/** The front-row enemies a stage sends more of when a big party comes (see AIDE_BASE). */
+export type AideBase = "bearer" | "fountains" | "pharaohHost" | "wallGuard" | "ahabKing" | "lionRest" | "uncleanSpirits";
+/** A reinforcement: another of the stage's front-row enemies, `base#1` or `base#2` (same card, HP and element as the base). */
+export type AideId = `${AideBase}#${1 | 2}`;
+/** An enemy card of its own (not a reinforcement). */
+export type BaseEnemyId = Exclude<EnemyId, AideId>;
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
 /**
  * "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel) and "tempter" the first
  * round of Eden (the cunning serpent tempts Eve); "disguise" is the first round of the temptation in the wilderness (Satan
- * looks like a man) and "temptation" its second (he shows what he is). None of them is a stage of its own.
+ * looks like a man), "temptation" its second (Satan, his wings half seen) and "revealed" an optional third, the hell level
+ * (Satan in his true form). None of them is a stage of its own.
  */
-export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise";
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise" | "revealed";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
@@ -183,8 +192,14 @@ export interface BattleState {
   /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
   goliath: GoliathState;
   stage: StageId;
-  /** The ally the Serpent coiled around: they can't be swapped out of the front line this turn. */
+  /** The ally the Serpent coiled around: they can't move to another place this turn. */
   coiled: CharacterId | null;
+  /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
+  rows?: boolean;
+  /** How much harder the boss hits (0.2 = +20%): the v3 board, against a big party. */
+  bossBoost?: number;
+  /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
+  aideTargets?: Partial<Record<EnemyId, CharacterId>>;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
   /** Who the stage's shooter (the archer, the captain of the chariots, ...) will hit this turn. */

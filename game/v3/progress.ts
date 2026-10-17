@@ -27,6 +27,8 @@ interface ProgressStore {
   points: number;
   /** Records a clear, rolls the stage's drop, adds it to the collection and returns it. */
   clear: (stage: CampaignStageId, rng?: Rng) => CharacterId;
+  /** Adds a card the hell level gives (no clear is recorded and no points are paid: the stage was cleared already). */
+  grant: (card: CharacterId, stage: CampaignStageId) => void;
   /** Throws one copy of a card away (the last copy removes the card from the collection); false if there is none to throw. */
   discard: (card: CharacterId) => boolean;
   /** Spends the price of a pack and returns its cards in turn-over order, each marked new or a copy; null if the points do not cover it. */
@@ -51,6 +53,10 @@ export const useProgressStore = create<ProgressStore>()(
           points: points + (first ? CLEAR_POINTS.first : CLEAR_POINTS.repeat),
         });
         return card;
+      },
+      grant: (card, stage) => {
+        const { collection, history } = get();
+        set({ collection: { ...collection, [card]: (collection[card] ?? 0) + 1 }, history: [...history, { card, stage, at: Date.now() }] });
       },
       discard: (card) => {
         const { collection } = get();

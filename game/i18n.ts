@@ -429,7 +429,8 @@ const NAMED: Record<string, (id: string) => string> = {
   card: (id) => `v2.card.${id}.name`,
   skill: (id) => `v2.skill.${id}.name`,
   energy: (id) => `v2.energy.${id}.name`,
-  enemy: (id) => `v2.enemy.${id}.name`,
+  // A reinforcement (`bearer#1`) is named after its base card.
+  enemy: (id) => `v2.enemy.${id.split("#")[0]}.name`,
 };
 
 /** Looks up a message and fills {placeholders}; id params (see NAMED) become localized names. */

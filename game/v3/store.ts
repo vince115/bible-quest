@@ -8,7 +8,7 @@ import { earnedBy, useAchievementStore, type AchievementId } from "./achievement
 import { campaignStage, type CampaignStageId } from "./campaign";
 import { useProgressStore } from "./progress";
 import { nextBoardAutoAction } from "./auto";
-import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, swapFront, type Board } from "./engine";
+import { basicAttackOnBoard, canDrawOnBoard, castOnBoard, createBoard, drawOnBoard, moveTo, nextRoundBoard, playCardOnBoard, resolveBoard, startNextBoardTurn, type Board, type Slots } from "./engine";
 
 /** Auto battle's pauses at 1x (ms): between plays, and after the end of a turn while the enemy acts. 2x halves them. */
 const AUTO_STEP_DELAY = 1500;
@@ -28,7 +28,7 @@ interface BattleV3Store {
   /** null while the player picks a line-up. */
   board: Board | null;
   /** The last line-up, preselected when picking again. */
-  lastLineup: { lineup: CharacterId[]; front: CharacterId; stage: StageId; mode: PoolMode };
+  lastLineup: { lineup: CharacterId[]; slots: Slots; stage: StageId; mode: PoolMode };
   resolving: boolean;
   auto: boolean;
   /** How fast auto battle plays: 1x (a readable pace) or 2x. */
@@ -45,9 +45,11 @@ interface BattleV3Store {
   interlude: StageId | null;
   /** Starts the second round of the stage with the same party. */
   nextRound: () => void;
+  /** After the stage is cleared: takes on its hell level with the same party (and the HP it has left). */
+  hellRound: () => void;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
   enter: (campaign: CampaignStageId | null) => void;
-  start: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode?: PoolMode) => void;
+  start: (lineup: CharacterId[], slots: Slots, stage: StageId, mode?: PoolMode) => void;
   restart: () => void;
   pickLineup: () => void;
   play: (uid: number, target?: CharacterId) => void;
@@ -59,7 +61,8 @@ interface BattleV3Store {
   cast: (skill: SkillId, target?: Target) => void;
   /** The tabletop rules' free basic attack. */
   basic: (who: CharacterId, target: EnemyId) => void;
-  swap: (id: CharacterId) => void;
+  /** This turn's free move: `id` to place `to`. */
+  move: (id: CharacterId, to: number) => void;
   endTurn: () => void;
   setAuto: (on: boolean) => void;
 }
@@ -74,6 +77,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       const stage = campaign ? campaignStage(campaign) : null;
       if (stage?.before && stage.battle && board.battle.stage === stage.before && board.battle.result === "victory") {
         set({ interlude: stage.battle, newAchievements: [], drop: null });
+        return;
+      }
+      // The hell level is played after the clear: winning gives its card, losing takes nothing away.
+      if (stage?.hell && board.battle.stage === stage.hell) {
+        const won = board.battle.result === "victory";
+        if (won && stage.hellDrop) useProgressStore.getState().grant(stage.hellDrop, stage.id);
+        set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)), drop: won ? (stage.hellDrop ?? null) : null });
         return;
       }
       set({
@@ -101,8 +111,8 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         ? drawOnBoard(b)
         : action.type === "play"
         ? playCardOnBoard(b, action.uid, action.target)
-        : action.type === "front"
-          ? swapFront(b, action.id)
+        : action.type === "move"
+          ? moveTo(b, action.id, action.to)
           : action.type === "basic"
             ? basicAttackOnBoard(b, action.who, action.target)
             : castOnBoard(b, action.skill, action.target),
@@ -112,7 +122,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
 
   return {
     board: null,
-    lastLineup: { lineup: ["david", "samuel", "jonathan"], front: "david", stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
+    lastLineup: { lineup: ["david", "samuel", "jonathan"], slots: [], stage: "goliath", mode: MAGIC_VERSION_ENABLED ? "personal" : "table" },
     resolving: false,
     auto: false,
     autoSpeed: 1,
@@ -131,14 +141,14 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       if (get().campaign === campaign) return;
       set((st) => ({ campaign, board: null, drop: null, interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
     },
-    start: (lineup, front, stage, mode) =>
+    start: (lineup, slots, stage, mode) =>
       set((st) => {
         // A stage with a first round starts there; `stage` stays the last battle, so playing again starts over from the first round.
         const entry = st.campaign ? campaignStage(st.campaign) : null;
         const first = entry?.before && entry.battle === stage ? entry.before : stage;
         return {
-          board: createBoard(lineup, front, Math.random, first, mode ?? st.lastLineup.mode),
-          lastLineup: { lineup, front, stage, mode: mode ?? st.lastLineup.mode },
+          board: createBoard(lineup, slots, Math.random, first, mode ?? st.lastLineup.mode),
+          lastLineup: { lineup, slots, stage, mode: mode ?? st.lastLineup.mode },
           resolving: false,
           auto: false,
           runId: st.runId + 1,
@@ -152,7 +162,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       if (!board || !interlude || board.battle.result !== "victory") return;
       set((st) => ({ board: nextRoundBoard(board, interlude), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
     },
-    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.front, get().lastLineup.stage, get().lastLineup.mode),
+    hellRound: () => {
+      const { board, campaign } = get();
+      const stage = campaign ? campaignStage(campaign) : null;
+      if (!board || !stage?.hell || board.battle.stage !== stage.battle || board.battle.result !== "victory") return;
+      set((st) => ({ board: nextRoundBoard(board, stage.hell!), interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null }));
+    },
+    restart: () => get().start(get().lastLineup.lineup, get().lastLineup.slots, get().lastLineup.stage, get().lastLineup.mode),
     pickLineup: () => set((st) => ({ board: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [], drop: null, interlude: null })),
     play: (uid, target) => act((b) => playCardOnBoard(b, uid, target)),
     playAll: () => act((b) => b.battle.hand.reduce((x, c) => playCardOnBoard(x, c.uid), b)),
@@ -164,12 +180,11 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       }),
     cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
     basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
-    swap: (id) => act((b) => swapFront(b, id)),
+    move: (id, to) => act((b) => moveTo(b, id, to)),
     endTurn: () => {
       const { board, resolving, runId } = get();
       if (!board || resolving || board.battle.result !== "ongoing") return;
       const after = resolveBoard(board);
-      if (after === board) return; // the front line must be filled first
       commit(after);
       if (after.battle.result !== "ongoing") return;
       set({ resolving: true });

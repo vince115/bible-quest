@@ -1,9 +1,9 @@
 "use client";
 
 // Printed enemy card, in the same style as the character cards: frame, ornaments, art, moves, weakness, verse.
-import { ENEMY_ELEMENT, ENEMY_HP, RULES_V2 as R, SHOOTER_DAMAGE } from "@/game/v2/data";
+import { ENEMY_ELEMENT, ENEMY_HP, RULES_V2 as R, SHOOTER_DAMAGE, baseEnemy } from "@/game/v2/data";
 import { elementMultiplier } from "@/game/v2/engine";
-import type { EnemyId, GoliathActionId } from "@/game/v2/types";
+import type { BaseEnemyId, EnemyId, GoliathActionId } from "@/game/v2/types";
 import { useT } from "@/game/locale";
 import { CardFrame } from "./CardFrame";
 import { frameFigure, type Figure } from "./framing";
@@ -14,7 +14,7 @@ import { CARD_RARITY, lookOf } from "./rarity";
 import { RarityMark } from "./RarityMark";
 import { asset } from "@/game/assets";
 
-const PORTRAIT: Record<EnemyId, string> = {
+const PORTRAIT: Record<BaseEnemyId, string> = {
   goliath: "🗿",
   bearer: "🛡️",
   archer: "🏹",
@@ -23,6 +23,7 @@ const PORTRAIT: Record<EnemyId, string> = {
   satanMan: "🎭",
   roaringLion: "🦁",
   fieryDarts: "🔥",
+  satanVeiled: "🦇",
   satanFoe: "😈",
   flood: "🌊",
   chariots: "🐎",
@@ -45,7 +46,7 @@ const PORTRAIT: Record<EnemyId, string> = {
   uncleanSpirits: "👤",
   swine: "🐗",
 };
-const CARD_NO: Record<EnemyId, string> = {
+const CARD_NO: Record<BaseEnemyId, string> = {
   goliath: "E01",
   bearer: "E02",
   archer: "E03",
@@ -55,6 +56,7 @@ const CARD_NO: Record<EnemyId, string> = {
   roaringLion: "E38",
   fieryDarts: "E39",
   satanFoe: "E37",
+  satanVeiled: "E40",
   flood: "E05",
   chariots: "E06",
   walls: "E07",
@@ -77,7 +79,7 @@ const CARD_NO: Record<EnemyId, string> = {
   lioness: "E24",
 };
 /** Card illustrations in /public/cards and where the figure stands in each (see framing.ts). */
-const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
+const ART: Partial<Record<BaseEnemyId, { src: string; figure: Figure }>> = {
   goliath: { src: "/cards/goliath.jpg", figure: { cx: 0.385, head: 0.22, feet: 0.943, size: 1.15 } },
   archer: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
@@ -89,7 +91,8 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   roaringLion: { src: "/cards/lion.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fieryDarts: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
   satanMan: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
-  satanFoe: { src: "/cards/satan.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
+  satanVeiled: { src: "/cards/satanVeiled.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
+  satanFoe: { src: "/cards/satanRevealed.jpg", figure: { cx: 0.46, head: 0.12, feet: 0.92 } },
   serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   // Scenes with no figure (the sky, the flood): the whole picture is the frame.
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
@@ -127,11 +130,14 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
 /** A guard's and a shooter's printed moves. */
 const SHIELD = "shield"; // drawn as an icon, see MoveAmount
 const guardMoves = () => [{ key: "v3.ui.protects", amount: SHIELD }];
-const shooterMoves = (id: EnemyId) => [{ key: id === "archer" ? "v3.action.arrow" : "v3.action.strike", amount: String(SHOOTER_DAMAGE[id] ?? 0) }];
+const shooterMoves = (id: BaseEnemyId) => [{ key: id === "archer" ? "v3.action.arrow" : "v3.action.strike", amount: String(SHOOTER_DAMAGE[id] ?? 0) }];
+
+/** A blow of Satan in his true form (see RULES_V2.revealedBoost). */
+const revealed = (n: number) => Math.round((n * (1 + R.revealedBoost)) / 10) * 10;
 
 /** The moves printed on each enemy's card: [name key, amount]. */
 const MOVES: Record<
-  EnemyId,
+  BaseEnemyId,
   { action?: GoliathActionId; key: string; amount: string }[]
 > = {
   goliath: [
@@ -171,10 +177,16 @@ const MOVES: Record<
     { action: "kingdoms", key: "v2.action.kingdoms.name", amount: `😨×${R.accuseTargets}` },
     { action: "lure", key: "v2.action.lure.name", amount: String(R.lure) },
   ],
-  satanFoe: [
+  satanVeiled: [
     { action: "summon", key: "v2.action.summon.name", amount: "+1" },
     { action: "darts", key: "v2.action.darts.name", amount: `${R.darts}/${R.dartsRage}` },
     { action: "devour", key: "v2.action.devour.name", amount: `${R.devour}/${R.devourRage}` },
+  ],
+  // In his true form every blow is harder (the hell level).
+  satanFoe: [
+    { action: "summon", key: "v2.action.summon.name", amount: "+1" },
+    { action: "darts", key: "v2.action.darts.name", amount: `${revealed(R.darts)}/${revealed(R.dartsRage)}` },
+    { action: "devour", key: "v2.action.devour.name", amount: `${revealed(R.devour)}/${revealed(R.devourRage)}` },
   ],
   serpentTempter: [
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
@@ -212,7 +224,7 @@ const MOVES: Record<
   ],
 };
 
-function Header({ id, light }: { id: EnemyId; light?: boolean }) {
+function Header({ id, light }: { id: BaseEnemyId; light?: boolean }) {
   const t = useT();
   return (
     <div
@@ -259,7 +271,7 @@ function MoveAmount({ value, hint }: { value: string; hint: string }) {
   );
 }
 
-function Body({ id }: { id: EnemyId }) {
+function Body({ id }: { id: BaseEnemyId }) {
   const t = useT();
   const element = ENEMY_ELEMENT[id];
   const weak = ELEMENTS.filter((e) => elementMultiplier(e, element, true) > 1);
@@ -316,7 +328,9 @@ function Body({ id }: { id: EnemyId }) {
   );
 }
 
-export function EnemyCardFace({ id }: { id: EnemyId }) {
+/** A reinforcement shows its base card. */
+export function EnemyCardFace({ id: shown }: { id: EnemyId }) {
+  const id = baseEnemy(shown);
   const t = useT();
   const art = ART[id];
   const element = ENEMY_ELEMENT[id];

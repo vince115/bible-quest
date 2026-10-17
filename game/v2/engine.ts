@@ -10,6 +10,7 @@ import {
   ENEMY_ELEMENT,
   ENEMY_HP,
   ENEMY_ORDER,
+  aidesOf,
   APOSTLES,
   MAX_HP,
   basicDamage,
@@ -30,6 +31,7 @@ import {
   TEMPTER_CYCLE,
   DISGUISE_CYCLE,
   TEMPTATION_CYCLE,
+  REVEALED_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -112,6 +114,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return DISGUISE_CYCLE;
     case "temptation":
       return TEMPTATION_CYCLE;
+    case "revealed":
+      return REVEALED_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -119,8 +123,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", revealed: "v2.log.startRevealed", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", revealed: "v2.log.victoryRevealed", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -136,10 +140,16 @@ const randomAlly = (s: BattleState, rng: Rng) => {
   return alive.length ? alive[Math.floor(rng() * alive.length)] : null;
 };
 
-/** Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. */
+/**
+ * Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. On
+ * the v3 board the enemy stands in two rows, the guard in front and the boss and the shooter behind, and the guard
+ * shields the whole back row.
+ */
 export function attackableEnemies(s: BattleState): EnemyId[] {
-  const guard = guardOf(s);
-  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(id === bossOf(s) && guard && enemyAlive(s, guard)));
+  // Reinforcements stand in the front row beside the guard.
+  const front = [guardOf(s), ...(s.rows ? aidesOf(s.stage) : [])];
+  const shielded = front.some((e) => !!e && enemyAlive(s, e));
+  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(shielded && (id === bossOf(s) || (s.rows && id === shooterOf(s)))));
 }
 
 /** A standing, un-Shaken character who hasn't used a skill yet this turn. */
@@ -197,7 +207,13 @@ function makeIntent(s: BattleState, action: GoliathActionId, rng: Rng): Intent {
  * The damage an action deals per hit in the boss's current phase, before elements and defences
  * (Crushing Blow and Deluge as if charged). 0 for actions that don't deal damage.
  */
+/** What a boss action deals before elements and Shields: its printed amount, more against a big party (see bossBoost). */
 export function actionBase(s: BattleState, action: GoliathActionId): number {
+  const n = printedBase(s, action);
+  return s.bossBoost ? Math.round((n * (1 + s.bossBoost)) / 10) * 10 : n;
+}
+
+function printedBase(s: BattleState, action: GoliathActionId): number {
   const { enraged } = s.goliath;
   switch (action) {
     case "spear": return R.spear;
@@ -414,7 +430,7 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
 /** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" ? "temptation" : s.stage) && s.lineup.includes(id);
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" || s.stage === "revealed" ? "temptation" : s.stage) && s.lineup.includes(id);
 
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
@@ -959,6 +975,8 @@ export function createBattle(rng: Rng = Math.random, lineup: CharacterId[] = DEF
     coiled: null,
     goliath: { enraged: false, charging: false, stunned: false, cycle: 0 },
     archerTarget: null,
+    // Satan in his true form hits harder than in round 2.
+    bossBoost: stage === "revealed" ? R.revealedBoost : 0,
     intents: [
       { action: "defy", targets: [] },
       { action: "defy", targets: [] },
@@ -1393,6 +1411,7 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         log(s, "v2.log.frenzy", "enemy");
         break;
       case "temptation":
+      case "revealed":
         // Half his HP gone, the demon stops pretending to be patient: his devouring hits harder.
         s.goliath.enraged = true;
         log(s, "v2.log.satanRage", "enemy");
@@ -4116,6 +4135,15 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
     if (t) {
       log(s, "v2.log.archer", "enemy", { char: t, enemy: shooter });
       damageAlly(s, t, SHOOTER_DAMAGE[shooter] ?? 0, shooter);
+    }
+  }
+  // Reinforcements in the front row (the v3 board, against a big party) each strike the ally they were aimed at.
+  for (const [aide, aimed] of Object.entries(s.aideTargets ?? {}) as [EnemyId, CharacterId][]) {
+    if (s.result !== "ongoing" || !enemyAlive(s, aide)) continue;
+    const t = isAlive(s, aimed) ? aimed : randomAlly(s, rng);
+    if (t) {
+      log(s, "v2.log.archer", "enemy", { char: t, enemy: aide });
+      damageAlly(s, t, R.aideDamage, aide);
     }
   }
 

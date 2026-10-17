@@ -20,6 +20,7 @@ import {
   mpCap,
   MULTI_TARGETS,
   RULES_V2 as R,
+  HUNT_WEAKEST,
   SHAKES,
   SHOOTER_DAMAGE,
   SINGLE_TARGET,
@@ -30,10 +31,10 @@ import {
   STAGE_SHOOTER,
 } from "@/game/v2/data";
 import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
-import { MAGIC_VERSION_ENABLED, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
+import { MAGIC_VERSION_ENABLED, baseEnemy, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
-import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
+import { MAX_LINEUP, ROW, SLOTS, arrange, boardBlockReason, boardSkillTargets, canDrawOnBoard, canMove, isDuel, leader, slotOf, type Board, type Slots } from "@/game/v3/engine";
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, stageOfBattle, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
@@ -65,17 +66,15 @@ const ENERGY_RING: Record<EnergyKind, string> = {
   guard: "border-emerald-400 bg-emerald-600/25 text-emerald-100",
 };
 
-/** Card widths: phones get narrow cards so a whole side fits in one row. Every card uses the TCG ratio 63:88. */
 /**
- * Desktop: responsive card sizing fitting 3 rows (enemies, 4 skill cards, 3 character cards) without board scrolling.
+ * Every card uses the TCG ratio 63:88. Layout B: the enemy's back row, the enemy's front row, the table (deck and hand), our front row and our back row stand
+ * one above the other, so every card is sized from the height: five rows must fit without scrolling on a desktop.
  */
-const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-23rem)*0.26))]";
-/** Phones: 3 character cards across screen width in bottom row. */
-const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.26))]";
-const CARD_WIDTH = { large: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}`, small: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}` };
+const ROW_CARD = "w-[min(6.5rem,calc((100vw-2.5rem)/3.4),calc((100dvh-12rem)/6.6))] lg:w-[min(9rem,calc((100dvh-10rem)/7))]";
+
+const CARD_WIDTH = { large: ROW_CARD, small: ROW_CARD };
 const CHAR_WIDTH = CARD_WIDTH;
-/** Upper row: 4 skill/energy card slots across screen width. */
-const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
+
 const CARD_RATIO = "aspect-[63/88]";
 
 
@@ -107,10 +106,11 @@ function AttackRow({ label, name, tag, dim }: { label?: string; name: string; ta
 }
 
 function IntentRow({ label, intent, front, t, dim, b }: { label: string; intent: Intent; front: CharacterId; t: T; dim?: boolean; b: BattleState }) {
-  // Aimed at the front line, or (the lions' Maul) at its prey by name.
+  // Aimed at one member of the front row (named), or at its prey wherever it stands (the lions' Maul, the pinnacle).
   const single = SINGLE_TARGET.includes(intent.action);
-  const prey = intent.action === "maul" && intent.targets[0] ? t(`char.${intent.targets[0]}.name`) : null;
-  const name = `${t(`v2.action.${intent.action}.name`)}${single ? ` → ${t("v3.ui.front")}` : prey ? ` → ${prey}` : ""}`;
+  const hunts = HUNT_WEAKEST.includes(intent.action);
+  const who = intent.targets[0] ? t(`char.${intent.targets[0]}.name`) : null;
+  const name = `${t(`v2.action.${intent.action}.name`)}${single ? ` → ${who ?? t("v3.ui.front")}` : hunts && who ? ` → ${who}` : ""}`;
   return <AttackRow label={label} name={name} tag={actionTag(t, b, intent, front)} dim={dim} />;
 }
 
@@ -129,6 +129,7 @@ function EnemyCard({
   pending,
   onTarget,
   onView,
+  inFront,
 }: {
   b: BattleState;
   front: CharacterId;
@@ -136,6 +137,8 @@ function EnemyCard({
   t: T;
   size: "large" | "small";
   className?: string;
+  /** Stands in the enemy's front row: what it does goes under the card (three of them share the row). */
+  inFront?: boolean;
   pending: Pending | null;
   onTarget: () => void;
   onView: () => void;
@@ -151,14 +154,15 @@ function EnemyCard({
     isBoss && g.enraged && { text: t(`v3.ui.phase.${id}`), tone: "bg-red-700" },
     isBoss && g.stunned && { text: t("v2.ui.stunned"), tone: "bg-sky-600" },
     isBoss && g.charging && { text: t(`v3.ui.charging.${id}`) === `v3.ui.charging.${id}` ? t("v2.ui.charging") : t(`v3.ui.charging.${id}`), tone: "bg-orange-600" },
-    isBoss && STAGE_GUARD[b.stage] && enemyAlive(b, STAGE_GUARD[b.stage]!) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
+    isBoss && STAGE_GUARD[b.stage] && !attackableEnemies(b).includes(id) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
   const cardRef = useRef<HTMLButtonElement>(null);
   const lungeRef = useRef<HTMLDivElement>(null);
   useHitShake(id, cardRef);
   useStrikeLunge(alive, lungeRef);
   return (
-    <div ref={lungeRef} className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+    <div ref={lungeRef} className={`relative flex shrink-0 items-center gap-2 ${className}`}>
+      <div className={`relative ${CARD_WIDTH[size]}`}>
       <FxNumbers id={id} />
       <button
         ref={cardRef}
@@ -167,7 +171,7 @@ function EnemyCard({
           if (isTarget) onTarget();
           else if (!pending) onView();
         }}
-        aria-label={t(`v2.enemy.${id}.name`)}
+        aria-label={t(`v2.enemy.${baseEnemy(id)}.name`)}
         className={`relative z-10 w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
           isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
         }`}
@@ -205,9 +209,16 @@ function EnemyCard({
         )}
       </button>
 
-      {/* What this enemy will do */}
-      {alive && (
-        <div className="grid w-full gap-1">
+      {/* A reinforcement's strike, under its card */}
+      {inFront && alive && b.aideTargets?.[id] && (
+        <div className="mt-1">
+          <AttackRow name={`⚔ ${t(`char.${b.aideTargets[id]}.name`)}`} tag={String(enemyDamage(id, b.aideTargets[id]!, R.aideDamage, b.pools))} />
+        </div>
+      )}
+      </div>
+      {/* What this enemy will do, beside the card */}
+      {alive && !inFront && (
+        <div className="grid w-[9.5rem] gap-1 sm:w-[11rem]">
           {isBoss &&
             (g.stunned ? (
               <div className="rounded-md bg-black/50 px-2 py-1 text-[11px] font-semibold text-sky-200 sm:text-xs">{t("v2.ui.intentStunned")}</div>
@@ -220,11 +231,145 @@ function EnemyCard({
             </div>
           )}
           {id === STAGE_SHOOTER[b.stage] && b.archerTarget && (
-            <AttackRow name={`${t(id === "archer" ? "v3.action.arrow" : "v3.action.strike")} → ${t("v3.ui.front")}`} tag={String(enemyDamage(id, front, SHOOTER_DAMAGE[id] ?? 0, b.pools))} />
+            <AttackRow name={`${t(id === "archer" ? "v3.action.arrow" : "v3.action.strike")} → ${t(`char.${b.archerTarget}.name`)}`} tag={String(enemyDamage(id, b.archerTarget, SHOOTER_DAMAGE[id] ?? 0, b.pools))} />
           )}
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The energy deck on the table: one stack of cards (like a deck before the deal) with how many are left, tapped to draw;
+ * the cards drawn this turn lie fanned beside it, each tapped to look at it and play it.
+ */
+function TableDeck({
+  board,
+  t,
+  disabled,
+  onDraw,
+  onDrawAll,
+  onInspect,
+}: {
+  board: Board;
+  t: T;
+  disabled: boolean;
+  onDraw: () => void;
+  onDrawAll: () => void;
+  onInspect: (target: { uid: number; card: CardId }) => void;
+}) {
+  const b = board.battle;
+  const canDraw = !disabled && canDrawOnBoard(board);
+  return (
+    <div className="flex items-end justify-center gap-4">
+      {/* The deck */}
+      <div className="flex flex-col items-center gap-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canDraw) onDraw();
+          }}
+          disabled={!canDraw}
+          title={canDraw ? t("v3.deck.tapToDraw") : board.draws > 0 ? t("v3.deck.full") : t("v3.deck.done")}
+          aria-label={t("v3.deck.title")}
+          className={`relative w-[4.2rem] ${CARD_RATIO} sm:w-[4.8rem] ${canDraw ? "cursor-pointer" : "cursor-default opacity-70"}`}
+        >
+          {[2, 1, 0].map((k) => (
+            <span
+              key={k}
+              aria-hidden
+              className={`absolute inset-0 overflow-hidden rounded-xs shadow-lg ${canDraw && k === 0 ? "ring-2 ring-amber-300/80" : ""}`}
+              style={{ transform: `translate(${k * 2}px, ${k * -2}px)` }}
+            >
+              <ScriptureCardBack />
+            </span>
+          ))}
+          <span className="absolute -bottom-1 -right-2 z-10 rounded-full border border-white/60 bg-black/80 px-1.5 text-[10px] font-black text-amber-200">{b.deck.length}</span>
+        </button>
+        <span className="flex items-center gap-1">
+          {Array.from({ length: Math.max(0, board.draws) }, (_, i) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_4px] shadow-amber-300" />
+          ))}
+          {canDraw && board.draws > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDrawAll();
+              }}
+              className="ml-1 rounded-full border border-amber-300/60 bg-amber-500/10 px-1.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/25"
+            >
+              {t("v3.deck.drawFill")}
+            </button>
+          )}
+        </span>
+      </div>
+
+      {/* The hand, fanned */}
+      <div className="flex min-h-[5.9rem] items-end pl-2 sm:min-h-[6.7rem]">
+        {b.hand.map((inst, i) => {
+          const tilt = (i - (b.hand.length - 1) / 2) * 5;
+          return (
+            <button
+              key={inst.uid}
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspect({ uid: inst.uid, card: inst.card });
+              }}
+              title={t("v3.ui.viewCard")}
+              className={`relative -ml-6 w-[4.2rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:ml-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-ml-7 sm:w-[4.8rem]`}
+              style={{ transform: `rotate(${tilt}deg)` }}
+            >
+              <span className="absolute inset-0 overflow-hidden rounded-xs" style={{ fontSize: "4.67cqw" }}>
+                <ScriptureCardFace id={inst.card} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One row of a formation: a soft band of colour across the board (no outline) with its name at the left, the cards standing on it. The front
+ * row's band is warm (it takes the blows), the back row's cool.
+ */
+function FormationLane({ label, tone, children }: { label: string; tone: "front" | "back" | "enemy"; children: React.ReactNode }) {
+  return (
+    <div className="relative flex w-full max-w-3xl items-center justify-center">
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-1/2 h-[70%] -translate-y-1/2 rounded-2xl ${
+          tone === "front"
+            ? "bg-gradient-to-r from-transparent via-red-900/25 to-transparent"
+            : tone === "enemy"
+              ? "bg-gradient-to-r from-transparent via-black/30 to-transparent"
+              : "bg-gradient-to-r from-transparent via-sky-900/20 to-transparent"
+        }`}
+      />
+      <span
+        className={`absolute left-1 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-[10px] font-black tracking-widest [writing-mode:vertical-rl] sm:left-3 sm:text-xs ${
+          tone === "front" ? "bg-red-700/80 text-white" : tone === "enemy" ? "bg-stone-800/90 text-stone-200" : "bg-slate-600/80 text-slate-100"
+        }`}
+      >
+        {label}
+      </span>
+      <div className="relative flex items-start justify-center gap-2 sm:gap-4">{children}</div>
+    </div>
+  );
+}
+
+/** An empty place in our formation: a faint patch of the board, lit up while it is somewhere a character can move to. */
+function EmptyPlace({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      aria-label={label}
+      className={`shrink-0 rounded-md transition ${ROW_CARD} ${CARD_RATIO} ${active ? "animate-pulse bg-emerald-300/15 ring-4 ring-emerald-300" : "bg-black/20"}`}
+    />
   );
 }
 
@@ -382,231 +527,8 @@ function CharacterSlot({
         )}
       </button>
       {b.pools === "table" && alive && <PoolBars b={b} id={id} t={t} />}
-      {/* Front-line tag under the card */}
-      <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
-        {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
-      </div>
       {b.pools !== "team" && b.pools !== "table" && alive && <PoolBars b={b} id={id} t={t} />}
     </div>
-  );
-}
-
-/**
- * Upper row: 4 skill/energy card slots (上方技能四張卡, 參考地下城卡牌遊戲配置)
- * - 4 card slots in a horizontal row.
- * - Empty slots show stone/gold-bordered empty frames with "+ 抽卡" (if draws remain).
- * - Filled slots show the scripture energy card face-up with full art, title, energy value, and "打出" button!
- * - Clicking an empty slot draws a card; clicking a filled card plays it to gain energy!
- * - Extra cards (if hand > 4) stack on the 4th slot with a +N badge.
- */
-function SkillSlotsRow({
-  board,
-  t,
-  disabled,
-  onDraw,
-  onDrawAll,
-  onPlay,
-  onPlayAll,
-  onInspect,
-}: {
-  board: Board;
-  t: T;
-  disabled: boolean;
-  onDraw: () => void;
-  onDrawAll: () => void;
-  onPlay: (uid: number) => void;
-  onPlayAll: () => void;
-  onInspect?: (target: { uid: number; card: CardId }) => void;
-}) {
-  const b = board.battle;
-  const ready = !disabled && canDrawOnBoard(board);
-  const hand = b.hand;
-  const handLen = hand.length;
-  const slots = [0, 1, 2, 3];
-  const canDrawSlots = ready && handLen < 4;
-
-  return (
-    <section className="flex flex-col items-center gap-1 px-2 py-1">
-      {/* Header bar above the 4 slots */}
-      <div className="flex w-full max-w-2xl items-center justify-between gap-2 px-1 text-[11px] sm:text-xs">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="font-bold text-amber-200">
-            {t("v3.deck.slotTitle")}
-          </span>
-          <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-stone-300">
-            {t("v3.ui.deck")} {b.deck.length} · {t("v3.ui.discard")} {b.discard.length}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Draws left pips */}
-          <span className="flex items-center gap-1" title={board.draws > 0 ? t("v3.deck.left", { n: board.draws }) : t("v3.deck.done")}>
-            <span className="text-[10px] text-stone-400">{board.draws > 0 ? t("v3.deck.left", { n: board.draws }) : t("v3.deck.done")}</span>
-            <span className="flex gap-0.5">
-              {Array.from({ length: Math.max(0, board.draws) }, (_, i) => (
-                <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_4px] shadow-amber-300" />
-              ))}
-            </span>
-          </span>
-
-          {/* Quick Draw buttons */}
-          {canDrawSlots && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDraw();
-              }}
-              className="rounded-full border border-amber-300/80 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-200 hover:bg-amber-500/30 active:scale-95 sm:text-xs"
-            >
-              + {t("v3.deck.draw")}
-            </button>
-          )}
-
-          {canDrawSlots && board.draws > 1 && handLen < 3 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDrawAll();
-              }}
-              className="rounded-full border border-amber-300/60 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/25 sm:text-xs"
-            >
-              {t("v3.deck.drawFill")}
-            </button>
-          )}
-
-          {/* Play All button */}
-          {handLen > 1 && !disabled && b.pools === "team" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlayAll();
-              }}
-              className="rounded-full border border-red-400/80 bg-red-600/20 px-2 py-0.5 text-[10px] font-bold text-red-200 hover:bg-red-600/30 sm:text-xs"
-            >
-              {t("v3.deck.playAll", { n: handLen })}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 4 Card Slots */}
-      <div className="flex items-center justify-center gap-2 sm:gap-3 lg:gap-4">
-        {slots.map((idx) => {
-          const inst = hand[idx];
-          if (inst) {
-            const cardId = inst.card;
-            const { energy: kind, amount } = CARDS_V2[cardId];
-            const blocked = cardBlockReason(b, cardId);
-            const playable = !disabled && !blocked;
-            const extra = idx === 3 && handLen > 4 ? handLen - 4 : 0;
-
-            return (
-              <div key={inst.uid} className={`relative flex shrink-0 flex-col items-center ${SKILL_SLOT_WIDTH}`}>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onInspect?.({ uid: inst.uid, card: cardId });
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation();
-                      onInspect?.({ uid: inst.uid, card: cardId });
-                    }
-                  }}
-                  title={t("v3.ui.viewCard")}
-                  className={`group relative w-full ${CARD_RATIO} cursor-pointer rounded-xs text-left transition hover:-translate-y-1 [container-type:inline-size]`}
-                >
-                  {/* Extra cards stack indicator behind slot 3 if hand > 4 */}
-                  {extra > 0 && (
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-xs shadow-lg brightness-75"
-                      style={{ transform: "translate(3px, 3px)" }}
-                    >
-                      <ScriptureCardBack />
-                    </span>
-                  )}
-
-                  {/* Active Card Face (比照 CharacterSlot 等比例微縮文字，絕對不跑版) */}
-                  <span
-                    className="absolute inset-0 overflow-hidden rounded-xs shadow-2xl"
-                    style={{ fontSize: "4.67cqw" }}
-                  >
-                    <ScriptureCardFace id={cardId} />
-                  </span>
-
-                  {/* Top-Right: Energy Amount Badge */}
-                  <span className={`absolute -right-1 -top-2 z-20 flex items-center gap-0.5 sm:-right-1.5 sm:-top-2.5 ${b.pools === "team" ? "rounded-full border border-white bg-slate-900/90 px-1 py-0.2 shadow sm:px-1.5" : "[filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.9))]"}`}>
-                    {b.pools !== "team" ? (
-                      cardEffect(kind, amount, b.pools, cardId).disc ? (
-                        <EnergyDisc kind={cardEffect(kind, amount, b.pools, cardId).disc!} className="h-6 w-6 text-sm sm:h-7 sm:w-7 sm:text-base">
-                          {cardEffect(kind, amount, b.pools, cardId).text}
-                        </EnergyDisc>
-                      ) : (
-                        <span className="text-[10px] font-black text-amber-200 sm:text-[11px]">{cardEffect(kind, amount, b.pools, cardId).icon} {cardEffect(kind, amount, b.pools, cardId).text}</span>
-                      )
-                    ) : (
-                      <>
-                        <EnergyIcon kind={kind} className="h-3 w-3 sm:h-3.5 sm:w-3.5 object-contain" />
-                        <span className="text-[9px] font-black text-amber-200 sm:text-[11px]">+{amount}</span>
-                      </>
-                    )}
-                  </span>
-
-                  {/* Top-Left: Extra cards count if > 4 */}
-                  {extra > 0 && (
-                    <span className="absolute -left-1 -top-2 z-20 rounded-full bg-black/85 px-1.5 py-0.5 text-[9px] font-bold text-amber-200 shadow">
-                      +{extra}
-                    </span>
-                  )}
-
-                  {/* Playable glowing border */}
-                  {playable && (
-                    <span aria-hidden className="pointer-events-none absolute -inset-0.5 z-10 animate-pulse rounded-md ring-2 sm:ring-3 ring-amber-300/80 shadow-[0_0_12px] shadow-amber-300/50" />
-                  )}
-                </div>
-              </div>
-            );
-          }
-
-          // Empty Slot: Stone / antique gold dashed frame
-          return (
-            <div key={`empty-${idx}`} className={`relative flex shrink-0 flex-col items-center ${SKILL_SLOT_WIDTH}`}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (canDrawSlots) onDraw();
-                }}
-                disabled={!canDrawSlots}
-                title={canDrawSlots ? t("v3.deck.tapToDraw") : t("v3.deck.emptySlot")}
-                className={`group relative flex w-full ${CARD_RATIO} flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed transition ${
-                  canDrawSlots
-                    ? "cursor-pointer border-amber-400/50 bg-amber-500/10 hover:border-amber-300 hover:bg-amber-500/20 ring-1 ring-amber-300/30"
-                    : "cursor-default border-stone-600/40 bg-black/25 opacity-60"
-                }`}
-              >
-                {canDrawSlots ? (
-                  <>
-                    <span className="text-sm sm:text-base leading-none text-amber-300 group-hover:scale-110 transition-transform">
-                      +
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-amber-200/90 leading-tight">
-                      {t("v3.deck.draw")}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-[9px] sm:text-[10px] font-medium text-stone-500">
-                    {idx + 1}
-                  </span>
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -694,7 +616,7 @@ function SkillFocus({
   locked,
   onSkill,
   onBasic,
-  onSwap,
+  onMove,
   onClose,
 }: {
   board: Board;
@@ -703,7 +625,7 @@ function SkillFocus({
   locked: boolean;
   onSkill: (skill: SkillId) => void;
   onBasic: () => void;
-  onSwap: () => void;
+  onMove: () => void;
   onClose: () => void;
 }) {
   const b = board.battle;
@@ -716,7 +638,8 @@ function SkillFocus({
     playSfx("cast");
     setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
-  const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
+  // One tag per card (reinforcements are copies of their base card).
+  const tags = [...new Set(ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map(baseEnemy))].map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
   // The card size chosen in /card-demo; the story beside it is off until switched on here (remembered for later battles).
   const [scale] = useState(savedScale);
   const [showStory, setShowStory] = useState(() => savedShowStory(BATTLE_STORY_KEY, false));
@@ -909,14 +832,14 @@ function SkillFocus({
                 </button>
               );
             })}
-            {board.front !== id && alive && (
+            {alive && (
               <button
-                onClick={onSwap}
-                disabled={locked || !canSwap(board, id)}
+                onClick={onMove}
+                disabled={locked || !canMove(board, id)}
                 className="flex items-center justify-between gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
               >
-                <span className="text-[11px] font-bold text-slate-600">{needsFront(board) ? t("v3.focus.free") : b.coiled === board.front ? t("v3.ui.coiled") : board.swapped ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
-                <span className="text-sm font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
+                <span className="text-[11px] font-bold text-slate-600">{board.swapped ? t("v3.ui.moveUsed") : t("v3.focus.free")}</span>
+                <span className="text-sm font-black tracking-widest">{t("v3.ui.move")}</span>
               </button>
             )}
           </div>
@@ -928,8 +851,53 @@ function SkillFocus({
   );
 }
 
-/** How many characters can go to battle in free mode. */
-const MAX_LINEUP = 3;
+/** A small card in the line-up's formation. */
+const PLACE_CARD = "w-[min(4.6rem,calc((100vw-4rem)/3.6))] sm:w-[5.4rem]";
+
+/**
+ * Before battle, where everyone stands: the front row above the back row, three places each. Tap a card, then the place
+ * it should go to (whoever stands there swaps with it); auto-arrange puts the sturdiest in front.
+ */
+function FormationPicker({ t, slots, picked, onPlace, onAuto }: { t: T; slots: Slots; picked: CharacterId | null; onPlace: (to: number) => void; onAuto: () => void }) {
+  const row = (from: number, label: string) => (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <span className="w-8 shrink-0 text-right text-[10px] font-black tracking-widest text-stone-300 sm:w-10 sm:text-xs">{label}</span>
+      {slots.slice(from, from + ROW).map((id, k) => {
+        const i = from + k;
+        return (
+          <button
+            key={i}
+            onClick={() => onPlace(i)}
+            aria-label={id ? t(`char.${id}.name`) : t("v3.ui.emptySlot")}
+            aria-pressed={!!id && picked === id}
+            className={`relative ${PLACE_CARD} ${CARD_RATIO} shrink-0 rounded-md transition [container-type:inline-size] ${
+              id && picked === id ? "-translate-y-1 ring-4 ring-amber-300" : picked ? "ring-2 ring-amber-200/60 hover:bg-white/10" : id ? "hover:-translate-y-0.5" : "bg-black/30"
+            }`}
+          >
+            {id && (
+              <span className="absolute inset-0 overflow-hidden rounded-xs shadow-lg" style={{ fontSize: "4.67cqw" }}>
+                <CharacterCardFace id={id} />
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+  return (
+    <div className="flex flex-col items-center gap-2 px-4">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-bold text-amber-100">{t("v3.lineup.formation")}</span>
+        <button onClick={onAuto} className="rounded-full border border-amber-300/70 px-3 py-0.5 text-xs font-bold text-amber-100 hover:bg-white/10">
+          {t("v3.lineup.auto")}
+        </button>
+      </div>
+      {row(0, t("v3.ui.front"))}
+      {row(ROW, t("v3.ui.back"))}
+      <p className="text-center text-[11px] text-stone-400">{t("v3.lineup.formationHint")}</p>
+    </div>
+  );
+}
 
 /** The drop-down arrow of the phone selects, drawn as a background so it can sit a little in from the edge. */
 const SELECT_ARROW = {
@@ -942,7 +910,7 @@ const SELECT_ARROW = {
  * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
  * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
  */
-function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], front: CharacterId, stage: StageId, mode: PoolMode) => void; campaign?: CampaignStage }) {
+function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode) => void; campaign?: CampaignStage }) {
   const last = useBattleV3Store((st) => st.lastLineup);
   const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
   const [stage, setStage] = useState<StageId>(campaign?.battle ?? "goliath");
@@ -966,16 +934,32 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
     const kept = last.lineup.filter((id) => pool.includes(id));
     return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
   });
-  const [front, setFront] = useState<CharacterId>(last.front);
-  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id) && pool.includes(id));
-  const lead = chosen.includes(front) ? front : chosen[0];
-  // At most three characters go to battle, and one card per person: picking another card of the same person swaps it in.
+  const inPool = (ids: CharacterId[]) => PARTY_ORDER.filter((id) => ids.includes(id) && pool.includes(id));
+  const chosen = inPool(lineup);
+  // Where everyone stands: the last formation as far as it still fits, newcomers arranged into the empty places.
+  const [placement, setPlacement] = useState<Slots>(() => arrange(chosen, last.slots));
+  const slots = arrange(chosen, placement);
+  /** The card picked in the formation, waiting for the place it moves to. */
+  const [picked, setPicked] = useState<CharacterId | null>(null);
+  // Up to six characters go to battle, and one card per person: picking another card of the same person swaps it in.
   const full = chosen.length >= max;
   const twin = (id: CharacterId) => chosen.find((x) => x !== id && personOf(x) === personOf(id));
   const toggle = (id: CharacterId) => {
-    if (lineup.includes(id)) setLineup(lineup.filter((x) => x !== id));
-    else if (twin(id)) setLineup([...lineup.filter((x) => x !== twin(id)), id]);
-    else if (!full) setLineup([...lineup, id]);
+    const next = lineup.includes(id) ? lineup.filter((x) => x !== id) : twin(id) ? [...lineup.filter((x) => x !== twin(id)), id] : !full ? [...lineup, id] : lineup;
+    setLineup(next);
+    setPlacement(arrange(inPool(next), slots));
+    setPicked(null);
+  };
+  const place = (to: number) => {
+    const here = slots[to];
+    if (!picked) return setPicked(here);
+    if (picked !== here) {
+      const next = [...slots];
+      next[slots.indexOf(picked)] = here;
+      next[to] = picked;
+      setPlacement(next);
+    }
+    setPicked(null);
   };
   const stageArt = campaign?.art ?? STAGE_ART[stage];
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1087,11 +1071,6 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false} figure={figureArea(id)}>
                     <CharacterCardFace id={id} />
                   </HoloCard>
-                  {on && lead === id && (
-                    <span className="absolute -top-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow sm:text-xs sm:px-2.5">
-                      {t("v3.ui.front")}
-                    </span>
-                  )}
                 </button>
                 <div className="flex w-full flex-col items-center justify-center gap-1 sm:flex-row sm:gap-1.5">
                   <button
@@ -1100,13 +1079,6 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                     className={`w-full max-w-[90px] rounded-full px-1.5 py-0.5 text-[10px] font-bold sm:max-w-none sm:w-auto sm:px-3 sm:py-1 sm:text-xs disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
-                  </button>
-                  <button
-                    onClick={() => setFront(id)}
-                    disabled={!on || lead === id}
-                    className="w-full max-w-[90px] rounded-full border border-red-400/70 px-1.5 py-0.5 text-[10px] font-bold text-red-100 sm:max-w-none sm:w-auto sm:px-3 sm:py-1 sm:text-xs enabled:hover:bg-red-900/50 disabled:opacity-30"
-                  >
-                    {t("v3.lineup.setFront")}
                   </button>
                 </div>
               </div>
@@ -1170,11 +1142,6 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   <HoloCard element={CHARACTER_ELEMENT[id]} rarity={CARD_RARITY[id]} touchTilt={false} figure={figureArea(id)}>
                     <CharacterCardFace id={id} />
                   </HoloCard>
-                  {on && lead === id && (
-                    <span className="absolute -top-2.5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-700 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow sm:text-xs">
-                      {t("v3.ui.front")}
-                    </span>
-                  )}
                 </button>
                 <div className="flex gap-1.5">
                   <button
@@ -1183,13 +1150,6 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                     className={`rounded-full px-3 py-1 text-xs font-bold disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
-                  </button>
-                  <button
-                    onClick={() => setFront(id)}
-                    disabled={!on || lead === id}
-                    className="rounded-full border border-red-400/70 px-3 py-1 text-xs font-bold text-red-100 enabled:hover:bg-red-900/50 disabled:opacity-30"
-                  >
-                    {t("v3.lineup.setFront")}
                   </button>
                 </div>
               </div>
@@ -1218,8 +1178,10 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       )}
       <p className="max-w-md px-4 text-center text-xs text-stone-300">{t(`v3.mode.${mode}.desc`)}</p>
 
+      {chosen.length > 0 && <FormationPicker t={t} slots={slots} picked={picked} onPlace={place} onAuto={() => (setPlacement(arrange(chosen)), setPicked(null))} />}
+
       <button
-        onClick={() => onStart(chosen, lead, stage, mode)}
+        onClick={() => onStart(chosen, slots, stage, mode)}
         disabled={!chosen.length}
         className="rounded-full bg-red-700 px-8 py-2.5 text-lg font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40"
       >
@@ -1251,7 +1213,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
 export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, swap, endTurn, newAchievements, drop, enter, interlude, nextRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, enter, interlude, nextRound, hellRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
@@ -1261,6 +1223,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [pending, setPending] = useState<Pending | null>(null);
   /** The character whose skill view is open. */
   const [acting, setActing] = useState<CharacterId | null>(null);
+  /** A character using this turn's free move: the next tap on a place (or the card standing in it) is where they go. */
+  const [moving, setMoving] = useState<CharacterId | null>(null);
   /** Character whose full card is shown enlarged. */
   const [viewing, setViewing] = useState<CharacterId | null>(null);
   /** Enemy whose card is shown enlarged. */
@@ -1272,7 +1236,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   useEffect(() => setAutoSpeed(savedSpeed()), [setAutoSpeed]);
   // The stage this battle belongs to, and whether it is played in two rounds (then which round this is)
   const resultStage = b ? stageOfBattle(b.stage) : stage ?? CAMPAIGN[0];
-  const inRounds = b && resultStage.before && (b.stage === resultStage.before || (b.stage === resultStage.battle && campaign)) ? resultStage : null;
+  const inRounds = b && resultStage.before && (b.stage === resultStage.before || b.stage === resultStage.hell || (b.stage === resultStage.battle && campaign)) ? resultStage : null;
+  // The hell level, offered once the stage is cleared (see CampaignStage.hell).
+  const inHell = !!b && b.stage === resultStage.hell;
+  const canHell = !!campaign && !!b && b.result === "victory" && !interlude && !!resultStage.hell && b.stage === resultStage.battle;
   const [showResult, setShowResult] = useState(true);
   // Sound effects: whatever changed in the battle since the last look decides what is heard.
   const lastBattle = useRef<BattleState | null>(null);
@@ -1317,6 +1284,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       setViewingScripture(null);
       setActing(null);
       setPending(null);
+      setMoving(null);
     };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
@@ -1329,7 +1297,6 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   if (!board || !b) return <LineupPicker t={t} onStart={start} campaign={stage} />;
 
   const locked = resolving || auto || b.result !== "ongoing";
-  const promote = needsFront(board);
   const open = acting && board.lineup.includes(acting) && !pending ? acting : null;
   const onSkill = (skill: SkillId) => {
     setActing(null);
@@ -1352,22 +1319,35 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const onCharacter = (id: CharacterId) => {
     if (pending?.targets.includes(id)) return onTarget(id);
     if (pending) return setPending(null); // tapping a card that is not a target gives up choosing
-    if (promote && canSwap(board, id)) return swap(id);
+    if (moving) return moveInto(slotOf(board, id));
     setActing(open === id ? null : id);
   };
-  const slot = (id: CharacterId, size: "large" | "small", order: string) => (
-    <CharacterSlot
-      key={id}
-      board={board}
-      id={id}
-      t={t}
-      size={size}
-      className={order}
-      highlight={!!pending?.targets.includes(id) || (promote && canSwap(board, id))}
-      onClick={() => onCharacter(id)}
-    />
-  );
-  const bench = board.lineup.filter((id) => id !== board.front);
+  /** Where the moving character goes (tapping anywhere else gives up moving). */
+  const moveInto = (to: number) => {
+    const who = moving;
+    setMoving(null);
+    if (who && canMove(board, who, to)) move(who, to);
+  };
+  /** One place of our formation: the character standing there, or an empty place (a target while someone moves). */
+  const place = (i: number, order: string) => {
+    const id = board.slots[i];
+    if (!id)
+      return (
+        <EmptyPlace key={i} label={t("v3.ui.emptySlot")} active={!!moving && canMove(board, moving, i)} onClick={() => (moving ? moveInto(i) : setActing(null))} />
+      );
+    return (
+      <CharacterSlot
+        key={i}
+        board={board}
+        id={id}
+        t={t}
+        size="large"
+        className={order}
+        highlight={!!pending?.targets.includes(id) || (!!moving && canMove(board, moving, i))}
+        onClick={() => onCharacter(id)}
+      />
+    );
+  };
   const lastHit = [...b.log].reverse().find((l) => l.key === "v2.log.attack" || l.key === "v2.log.slingStone");
   const order: EnergyKind[] = ["faith", "attack", "guard"];
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1384,6 +1364,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       onClick={() => {
         setActing(null);
         setPending(null); // a tap on the empty table gives up choosing a target
+        setMoving(null);
       }}
       className="relative flex min-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-x-hidden bg-stone-950 sm:flex-row"
     >
@@ -1424,72 +1405,68 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       {/* 支援滑鼠滑過：區域周邊色點發光效果 */}
       <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
 
-      {/* ---------- Board: enemies, message, our characters, hand ---------- */}
-      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
+      {/* ---------- Board: enemies, message, our characters (and the hand on phones) ---------- */}
+      <main className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 py-2">
 
-        <section className="relative flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
+        {/* The enemy's formation: its back row (the boss, and the shooter) above, its front row (the guard) below */}
+        <section className="relative flex flex-col items-center gap-1 px-2 pt-3 sm:px-4">
           {inRounds && (
             <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
-              {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : "second"}`)}
+              {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : inHell ? "hell" : "second"}`)}
             </div>
           )}
-          <div className="flex items-start justify-center gap-2 sm:gap-5">
-            {/* The stage's shooter and guard flank the boss; in a duel they stand aside (Eden has only the Serpent). */}
+          <FormationLane label={t("v3.ui.enemyBack")} tone="enemy">
             {!isDuel(board) && STAGE_SHOOTER[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_SHOOTER[b.stage]!)) && (
-              <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
+              <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
-            {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
-              <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
-            )}
-            <EnemyCard b={b} front={board.front} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
-          </div>
+            <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
+          </FormationLane>
+          {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
+            <FormationLane label={t("v3.ui.enemyFront")} tone="enemy">
+              {[STAGE_GUARD[b.stage]!, ...board.aides].map((e) => (
+                <EnemyCard key={e} b={b} front={leader(board)} id={e} t={t} size="small" inFront pending={pending} onTarget={() => onTarget(e)} onView={() => setViewingEnemy(e)} />
+              ))}
+            </FormationLane>
+          )}
         </section>
 
-        {/* What is happening / what to do next */}
-        <div className="mx-auto my-1 min-h-6 max-w-xl px-3 text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
-          {promote ? (
-            <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
-          ) : pending ? (
-            <span className="text-emerald-200">
-              {pending.basic ? t("v3.basic.name") : t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPending(null);
-                }}
-                className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
-              >
-                ✕ {t("v2.ui.cancel")}
-              </button>
-            </span>
-          ) : lastHit ? (
-            t(lastHit.key, lastHit.params)
-          ) : !b.hand.length && canDrawOnBoard(board) ? (
-            <span className="text-amber-200">{t("v3.deck.hint")}</span>
-          ) : (
-            <span className="text-stone-300">{t("v3.ui.tapCharacter")}</span>
-          )}
-        </div>
-
-        {/* Upper row: 4 skill/energy card slots (上方技能四張卡) */}
-        <SkillSlotsRow
-          board={board}
-          t={t}
-          disabled={locked || !!pending || promote}
-          onDraw={draw}
-          onDrawAll={drawAll}
-          onPlay={play}
-          onPlayAll={playAll}
-          onInspect={(target) => setViewingScripture(target)}
-        />
-
-        {/* Lower row: 3 character cards (下方三張角色卡) */}
-        <section className="flex flex-1 items-center justify-center px-2 pb-2 sm:px-4">
-          <div className="flex items-start justify-center gap-2 sm:gap-5">
-            {/* The front line stands forward; the bench stands back. */}
-            {slot(board.front, "large", "order-2 z-10 -translate-y-3")}
-            {bench.map((id, i) => slot(id, "small", `${i === 0 ? "order-1" : "order-3"} brightness-90`))}
+        {/* The table between the two sides: what is happening, the energy deck as one stack, the hand fanned beside it */}
+        <section className="flex flex-col items-center gap-1 px-3 py-1 lg:flex-row lg:justify-center lg:gap-6">
+          <div className="min-h-5 max-w-xl text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm lg:w-64 lg:text-right">
+            {moving ? (
+              <span className="text-emerald-200">{t("v3.ui.chooseSlot")}</span>
+            ) : pending ? (
+              <span className="text-emerald-200">
+                {pending.basic ? t("v3.basic.name") : t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPending(null);
+                  }}
+                  className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
+                >
+                  ✕ {t("v2.ui.cancel")}
+                </button>
+              </span>
+            ) : lastHit ? (
+              t(lastHit.key, lastHit.params)
+            ) : !b.hand.length && canDrawOnBoard(board) ? (
+              <span className="text-amber-200">{t("v3.deck.hint")}</span>
+            ) : (
+              <span className="text-stone-300">{t("v3.ui.tapCharacter")}</span>
+            )}
           </div>
+          <TableDeck board={board} t={t} disabled={locked || !!pending} onDraw={draw} onDrawAll={drawAll} onInspect={(target) => setViewingScripture(target)} />
+        </section>
+
+        {/* Our formation: the front row faces the enemy, the back row stands behind it */}
+        <section className="flex flex-col items-center gap-2 px-2 pb-2 sm:px-4">
+          <FormationLane label={t("v3.ui.front")} tone="front">
+            {Array.from({ length: ROW }, (_, i) => place(i, "z-10"))}
+          </FormationLane>
+          <FormationLane label={t("v3.ui.back")} tone="back">
+            {Array.from({ length: SLOTS - ROW }, (_, i) => place(ROW + i, "brightness-95"))}
+          </FormationLane>
         </section>
 
       </main>
@@ -1556,7 +1533,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             setActing(null);
             endTurn();
           }}
-          disabled={locked || promote}
+          disabled={locked}
           className="shrink-0 whitespace-nowrap rounded-full bg-red-700 px-4 py-1.5 text-sm font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40 sm:py-2.5 sm:text-base"
         >
           {resolving ? t("v2.ui.resolving") : t("v2.ui.endTurn")}
@@ -1608,9 +1585,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           locked={locked}
           onSkill={onSkill}
           onBasic={() => onBasic(open)}
-          onSwap={() => {
+          onMove={() => {
             setActing(null);
-            swap(open);
+            setMoving(open);
           }}
           onClose={() => setActing(null)}
         />
@@ -1801,10 +1778,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             className={`relative shrink-0 ${VIEWER_WIDTH}`}
             style={viewerStyle(scale)}
           >
-            <HoloCard element={ENEMY_ELEMENT[viewingEnemy]} rarity={CARD_RARITY[viewingEnemy]}>
+            <HoloCard element={ENEMY_ELEMENT[viewingEnemy]} rarity={CARD_RARITY[baseEnemy(viewingEnemy)]}>
               <EnemyCardFace id={viewingEnemy} />
             </HoloCard>
-            {lookOf(viewingEnemy).shine && <CardShine />}
+            {lookOf(baseEnemy(viewingEnemy)).shine && <CardShine />}
             <div className="absolute -right-4 -top-6 z-30">
               <HpBadge hp={b.enemies[viewingEnemy].hp} max={ENEMY_HP[viewingEnemy]} big />
             </div>
@@ -1842,7 +1819,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           won={b.result === "victory"}
           title={interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}
           eyebrow={t(`v3.campaign.${resultStage.id}.name`)}
-          hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : undefined}
+          hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : canHell ? t(`v3.round.${resultStage.id}.hellHint`) : inHell && b.result === "defeat" ? t(`v3.round.${resultStage.id}.hellLost`) : undefined}
           facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
           art={resultStage.art}
           sections={!!drop || newAchievements.length > 0}
@@ -1857,6 +1834,17 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   className={resultButton(true)}
                 >
                   {t(`v3.round.${resultStage.id}.go`)} →
+                </button>
+              )}
+              {canHell && (
+                <button
+                  onClick={() => {
+                    setPending(null);
+                    hellRound();
+                  }}
+                  className={resultButton(false)}
+                >
+                  🔥 {t(`v3.round.${resultStage.id}.hellGo`)}
                 </button>
               )}
               {campaign && b.result === "victory" && !interlude && next && (
