@@ -201,18 +201,19 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
             ref={(el) => {
               slotRefs.current[i] = el;
             }}
-            className={`relative w-[60px] rounded-md sm:w-[100px] ${i < placed ? GLOW[CARD_RARITY[pulled.card]] : "bg-black/20"}`}
+            className={`relative w-[60px] rounded-md transition-shadow duration-500 sm:w-[100px] ${i < placed ? GLOW[CARD_RARITY[pulled.card]] : "bg-black/20"}`}
             style={{ aspectRatio: "63/88" }}
           >
             {i < placed && (
-              <>
+              // A card just placed settles in with a small give.
+              <motion.div initial={{ scale: 1.06, y: -3 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 380, damping: 18 }}>
                 <button type="button" onClick={() => setViewing(i)} aria-label={t("v3.demo.view")} className="block w-full cursor-zoom-in">
                   <HoloCard element={CHARACTER_ELEMENT[pulled.card]} rarity={CARD_RARITY[pulled.card]} effects touchTilt={false} figure={figureArea(pulled.card)} className="w-full text-[2.8px] sm:text-[4.7px]">
                     <CharacterCardFace id={pulled.card} />
                   </HoloCard>
                 </button>
                 <Badge pulled={pulled} />
-              </>
+              </motion.div>
             )}
           </div>
         ))}
@@ -231,9 +232,18 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
             className="absolute top-0 z-40"
             style={{ left: (PACK_W - CARD_W) / 2 }}
             initial={pack ? { y: CARD_H } : { opacity: 0, y: -30, scale: 0.92 }}
-            // Drawn out: up out of the pack first, turning over, then across into its place in the row.
-            animate={leaving ? { x: [0, 0, leaving.x], y: [0, -CARD_H * 0.55, leaving.y], scale: [1, 1.04, leaving.scale] } : { opacity: 1, x: 0, y: 0, scale: 1 }}
-            transition={leaving ? { duration: 0.95, times: [0, 0.4, 1], ease: "easeInOut" } : { type: "spring", stiffness: 160, damping: 22, delay: at === 0 ? 0.75 : 0.1 }}
+            // Drawn out: up out of the pack, tilting a little while it turns over, then gliding along a curve into its place
+            // in the row, slowing as it settles.
+            animate={
+              leaving
+                ? { x: [0, leaving.x * 0.12, leaving.x], y: [0, -CARD_H * 0.5, leaving.y], scale: [1, 1.08, leaving.scale], rotate: [0, -5, 0] }
+                : { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }
+            }
+            transition={
+              leaving
+                ? { duration: 1.05, times: [0, 0.42, 1], ease: ["easeOut", [0.45, 0, 0.15, 1]] }
+                : { type: "spring", stiffness: 160, damping: 22, delay: at === 0 ? 0.75 : 0.1 }
+            }
             onAnimationComplete={() => leaving && placedOne()}
           >
             <button
@@ -243,7 +253,8 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
               className="relative block [perspective:1000px]"
               style={{ width: CARD_W, aspectRatio: "63/88", fontSize: `${(10.3 * CARD_W) / 220}px` }}
             >
-              <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? "rotateY(180deg)" : "none" }}>
+              {/* The turn, timed with the lift out of the pack */}
+              <motion.div className="relative h-full w-full [transform-style:preserve-3d]" animate={{ rotateY: flipped ? 180 : 0 }} transition={{ duration: 0.44, ease: [0.4, 0, 0.2, 1] }}>
                 {/* The back: the card face down */}
                 <div className="absolute inset-0 overflow-hidden rounded-md shadow-xl [backface-visibility:hidden]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- card art is a plain file */}
@@ -256,7 +267,7 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
                   </HoloCard>
                   <Badge pulled={current} />
                 </div>
-              </div>
+              </motion.div>
             </button>
           </motion.div>
           {pack && (
