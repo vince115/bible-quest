@@ -22,7 +22,7 @@ function incoming(b: Board, id: CharacterId): number {
   const { action, targets } = s.intents[0];
   if (!s.goliath.stunned) {
     const charged = (action !== "crush" && action !== "deluge") || s.goliath.charging;
-    const hits = SINGLE_TARGET.includes(action) || hitsEveryone(s, action) || (!!MULTI_TARGETS[action] && targets.includes(id)) || (action === "maul" && targets.includes(id));
+    const hits = SINGLE_TARGET.includes(action) || hitsEveryone(s, action) || (!!MULTI_TARGETS[action] && targets.includes(id)) || ((action === "maul" || action === "pinnacle") && targets.includes(id));
     if (charged && hits) n += enemyDamage(bossOf(s), id, actionBase(s, action), s.pools);
   }
   return n;

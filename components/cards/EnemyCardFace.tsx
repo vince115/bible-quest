@@ -19,6 +19,11 @@ const PORTRAIT: Record<EnemyId, string> = {
   bearer: "🛡️",
   archer: "🏹",
   serpent: "🐍",
+  serpentTempter: "🐍",
+  satanMan: "🎭",
+  roaringLion: "🦁",
+  fieryDarts: "🔥",
+  satanFoe: "😈",
   flood: "🌊",
   chariots: "🐎",
   walls: "🧱",
@@ -45,6 +50,11 @@ const CARD_NO: Record<EnemyId, string> = {
   bearer: "E02",
   archer: "E03",
   serpent: "E04",
+  serpentTempter: "E35",
+  satanMan: "E36",
+  roaringLion: "E38",
+  fieryDarts: "E39",
+  satanFoe: "E37",
   flood: "E05",
   chariots: "E06",
   walls: "E07",
@@ -73,6 +83,14 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
   // The serpent is coiled up the tree: frame the head and the tree, looking left.
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  // The cunning serpent of the first round has the picture of the serpent card the player draws.
+  // Satan in the wilderness has the pictures of the two Satan cards the player can draw.
+  // The two he summons have borrowed pictures (the lion of the den, the archer) until they have their own.
+  roaringLion: { src: "/cards/lion.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
+  fieryDarts: { src: "/cards/archer.jpg", figure: { cx: 0.48, head: 0.151, feet: 0.947 } },
+  satanMan: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
+  satanFoe: { src: "/cards/satan.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
+  serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   // Scenes with no figure (the sky, the flood): the whole picture is the frame.
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
@@ -144,6 +162,23 @@ const MOVES: Record<
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
     { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
     { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
+  ],
+  roaringLion: guardMoves(),
+  fieryDarts: shooterMoves("fieryDarts"),
+  satanMan: [
+    { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "pinnacle", key: "v2.action.pinnacle.name", amount: String(R.pinnacle) },
+    { action: "kingdoms", key: "v2.action.kingdoms.name", amount: `😨×${R.accuseTargets}` },
+    { action: "lure", key: "v2.action.lure.name", amount: String(R.lure) },
+  ],
+  satanFoe: [
+    { action: "summon", key: "v2.action.summon.name", amount: "+1" },
+    { action: "darts", key: "v2.action.darts.name", amount: `${R.darts}/${R.dartsRage}` },
+    { action: "devour", key: "v2.action.devour.name", amount: `${R.devour}/${R.devourRage}` },
+  ],
+  serpentTempter: [
+    { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "fang", key: "v2.action.fang.name", amount: String(R.fang) },
   ],
   flood: [
     { action: "rain", key: "v2.action.rain.name", amount: `${R.rain}/${R.rain + R.prevailBonus}` },

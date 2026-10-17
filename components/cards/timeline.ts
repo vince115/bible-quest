@@ -7,7 +7,7 @@ type Card = CharacterId | EnemyId;
 
 /** Each period in story order; within a period, roughly in the order the people appear. */
 export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
-  { era: "creation", cards: ["adam", "eve", "serpent", "serpentP", "cain", "abel", "seth", "enoch", "noah", "fountains", "flood", "windows"] },
+  { era: "creation", cards: ["father", "adam", "eve", "serpent", "serpentTempter", "serpentP", "cain", "abel", "seth", "enoch", "noah", "fountains", "flood", "windows"] },
   {
     era: "patriarchs",
     // Job is usually placed in the patriarchs' time.
@@ -27,11 +27,11 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
     cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah"],
   },
   { era: "exile", cards: ["ezekiel", "daniel", "presidents", "princes", "lionRest", "lion", "lioness", "nebuchadnezzar", "threeFriends", "belshazzar", "cyrus", "zerubbabel", "vashti", "esther", "mordecai", "haman", "ezra", "nehemiah"] },
-  { era: "nativity", cards: ["zechariah", "elizabeth", "mary", "josephNaz", "shepherds", "magi", "herodGreat", "simeon", "anna", "johnBaptist", "romanSoldier", "herodias"] },
+  { era: "nativity", cards: ["gabriel", "zechariah", "elizabeth", "mary", "josephNaz", "shepherds", "magi", "herodGreat", "simeon", "anna", "johnBaptist", "romanSoldier", "herodias"] },
   {
     era: "ministry",
     cards: [
-      "jesusUR", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
+      "jesusUR", "holySpirit", "satanDisguised", "satan", "satanMan", "satanFoe", "roaringLion", "fieryDarts", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
       "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "uncleanSpirits", "legion", "swine", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
       "lazarus", "richRuler", "bartimaeus", "zacchaeus", "widow",
     ],
@@ -44,7 +44,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
       "loisEunice", "timothy", "priscilla", "aquila", "apollos", "luke", "titus", "phoebe", "philemon", "onesimus",
     ],
   },
-  { era: "revelation", cards: ["johnPatmos"] },
+  { era: "revelation", cards: ["johnPatmos", "michael"] },
 ];
 
 /** Every card in story order. */
