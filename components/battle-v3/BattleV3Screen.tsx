@@ -963,6 +963,8 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
     setPicked(null);
   };
   const stageArt = campaign?.art ?? STAGE_ART[stage];
+  // Which part of the art the background shows (the wilderness keeps Satan's head in view).
+  const artFocus = campaign?.artFocus ?? stageOfBattle(stage)?.artFocus;
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     // The background is fixed to the screen (the picker page is very long in free mode), so the spotlight follows the pointer on screen.
     e.currentTarget.style.setProperty("--mouse-x", `${e.clientX}px`);
@@ -983,6 +985,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter transition-all duration-700"
+            style={{ objectPosition: artFocus }}
           />
         </div>
       )}
@@ -1001,6 +1004,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter brightness-105"
+            style={{ objectPosition: artFocus }}
           />
         </div>
       )}
@@ -1220,6 +1224,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const stage = campaign ? campaignStage(campaign) : undefined;
   const b = board?.battle;
   const stageArt = stage?.art ?? (b ? STAGE_ART[b.stage] : undefined);
+  const artFocus = stage?.artFocus ?? (b ? stageOfBattle(b.stage)?.artFocus : undefined);
   const next = campaign ? (CAMPAIGN[CAMPAIGN_IDS.indexOf(campaign) + 1]?.id ?? null) : null;
   const [pending, setPending] = useState<Pending | null>(null);
   /** The character whose skill view is open. */
@@ -1378,6 +1383,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter transition-all duration-700"
+            style={{ objectPosition: artFocus }}
           />
         </div>
       )}
@@ -1396,6 +1402,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             src={asset(stageArt)}
             alt=""
             className="h-full w-full object-cover scale-110 filter brightness-105"
+            style={{ objectPosition: artFocus }}
           />
         </div>
       )}
@@ -1823,6 +1830,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : canHell ? t(`v3.round.${resultStage.id}.hellHint`) : inHell && b.result === "defeat" ? t(`v3.round.${resultStage.id}.hellLost`) : undefined}
           facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
           art={resultStage.art}
+          artFocus={resultStage.artFocus}
           sections={!!drop || newAchievements.length > 0}
           actions={
             <>
