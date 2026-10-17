@@ -50,7 +50,7 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter" | "satanMan" | "satanFoe"
+  | "serpentTempter" | "satanMan" | "satanFoe" | "demon"
   | "legion" | "uncleanSpirits" | "swine";
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
@@ -134,7 +134,7 @@ export type GoliathActionId =
   | "cry" | "leap" | "cut"
   | "roar" | "pounce" | "maul"
   | "accuse" | "decree"
-  | "lure" | "darts" | "devour" | "pinnacle" | "kingdoms"
+  | "lure" | "darts" | "devour" | "pinnacle" | "kingdoms" | "summon"
   | "many" | "chains" | "torment";
 
 export interface Intent {

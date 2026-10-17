@@ -4263,6 +4263,19 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
           }
         });
         break;
+      case "summon": {
+        // He calls his angels to the front line (Revelation 12:9); if one already stands, the host closes ranks round the boss.
+        const guard = guardOf(s);
+        if (guard && !enemyAlive(s, guard)) {
+          s.enemies[guard].hp = ENEMY_HP[guard];
+          log(s, "v2.log.summon", "enemy", { enemy: guard, hp: ENEMY_HP[guard] });
+        } else {
+          const e = s.enemies[boss];
+          e.hp = Math.min(ENEMY_HP[boss], e.hp + R.hostHeal);
+          log(s, "v2.log.hostCloses", "enemy", { n: R.hostHeal, hp: e.hp });
+        }
+        break;
+      }
       case "maul":
       case "pinnacle": {
         const t = intent.targets[0] && isAlive(s, intent.targets[0]) ? intent.targets[0] : weakestAlly(s);

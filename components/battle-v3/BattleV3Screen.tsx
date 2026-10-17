@@ -25,6 +25,7 @@ import {
   SINGLE_TARGET,
   SKILLS,
   STAGE_GUARD,
+  SUMMONED_GUARD,
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
@@ -1437,7 +1438,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
               <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
-            {!isDuel(board) && STAGE_GUARD[b.stage] && (
+            {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED_GUARD.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
               <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
             )}
             <EnemyCard b={b} front={board.front} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />

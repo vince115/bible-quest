@@ -64,6 +64,8 @@ export const RULES_V2 = {
   devour: 180,
   /** The pinnacle of the temple picks off the weakest ally; the kingdoms of the world dazzle two allies. At half HP the demon rages. */
   pinnacle: 100,
+  /** A boss that calls minions to the front line: when one already stands, the host closes ranks and the boss heals this much. */
+  hostHeal: 40,
   dartsRage: 110,
   devourRage: 250,
   /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
@@ -865,7 +867,7 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanFoe: "dark",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanFoe: "dark", demon: "dark",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -909,7 +911,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
   "lionRest", "lion", "lioness", "presidents", "princes",
-  "serpentTempter", "satanMan", "satanFoe",
+  "serpentTempter", "satanMan", "satanFoe", "demon",
   "uncleanSpirits", "legion", "swine",
 ];
 
@@ -922,10 +924,12 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
 export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter", temptation: "satanFoe", disguise: "satanMan" };
-export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
+export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits", temptation: "demon" };
 export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" };
+/** Stages whose guard is not there at the start: the boss summons it (the Summon action). */
+export const SUMMONED_GUARD: ReadonlySet<StageId> = new Set<StageId>(["temptation"]);
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
-  (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [STAGE_GUARD[st], STAGE_BOSS[st], STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
+  (Object.keys(STAGE_BOSS) as StageId[]).map((st) => [st, [SUMMONED_GUARD.has(st) ? undefined : STAGE_GUARD[st], STAGE_BOSS[st], STAGE_SHOOTER[st]].filter((e): e is EnemyId => !!e)]),
 ) as Record<StageId, EnemyId[]>;
 /** What each shooter's hit on the front line does. */
 export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, lioness: 30, princes: 20, swine: 20 };
@@ -939,7 +943,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanFoe: 340,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanFoe: 280, demon: 70,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
@@ -1600,7 +1604,8 @@ export const TEMPTER_CYCLE: GoliathActionId[] = ["tempt", "fang", "fang", "tempt
 /** Satan in the wilderness: first the man who asks (lure, tempt, accuse), then the demon (darts, devour, accuse). */
 /** The three temptations of Matthew 4 (stones to bread, the pinnacle, the kingdoms), then the question that opened them all. */
 export const DISGUISE_CYCLE: GoliathActionId[] = ["tempt", "pinnacle", "kingdoms", "lure"];
-export const TEMPTATION_CYCLE: GoliathActionId[] = ["darts", "devour", "accuse", "devour"];
+/** The demon calls his angels to the front line first (Revelation 12:9), then burns, devours and accuses. */
+export const TEMPTATION_CYCLE: GoliathActionId[] = ["summon", "darts", "devour", "accuse"];
 /** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
 export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
 /** Pharaoh's chariots keep one cycle; at half HP the wheels come off (Charge weakens). */

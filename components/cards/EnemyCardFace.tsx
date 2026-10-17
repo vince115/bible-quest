@@ -21,6 +21,7 @@ const PORTRAIT: Record<EnemyId, string> = {
   serpent: "🐍",
   serpentTempter: "🐍",
   satanMan: "🎭",
+  demon: "👹",
   satanFoe: "😈",
   flood: "🌊",
   chariots: "🐎",
@@ -50,6 +51,7 @@ const CARD_NO: Record<EnemyId, string> = {
   serpent: "E04",
   serpentTempter: "E35",
   satanMan: "E36",
+  demon: "E38",
   satanFoe: "E37",
   flood: "E05",
   chariots: "E06",
@@ -81,6 +83,8 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
   // The cunning serpent of the first round has the picture of the serpent card the player draws.
   // Satan in the wilderness has the pictures of the two Satan cards the player can draw.
+  // The summoned demon has the picture of the unclean spirits until it has one of its own.
+  demon: { src: "/cards/uncleanSpirits.jpg", figure: { cx: 0.35, head: 0.02, feet: 0.98 } },
   satanMan: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
   satanFoe: { src: "/cards/satan.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
   serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
@@ -156,6 +160,7 @@ const MOVES: Record<
     { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
     { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
   ],
+  demon: guardMoves(),
   satanMan: [
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
     { action: "pinnacle", key: "v2.action.pinnacle.name", amount: String(R.pinnacle) },
@@ -165,6 +170,7 @@ const MOVES: Record<
   satanFoe: [
     { action: "darts", key: "v2.action.darts.name", amount: `${R.darts}/${R.dartsRage}` },
     { action: "devour", key: "v2.action.devour.name", amount: `${R.devour}/${R.devourRage}` },
+    { action: "summon", key: "v2.action.summon.name", amount: "+1" },
     { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
   ],
   serpentTempter: [
