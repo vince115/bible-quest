@@ -9,11 +9,11 @@ describe("same person on several cards", () => {
     expect(all.filter((id, i) => all.indexOf(id) !== i), "in two groups").toEqual([]);
   });
 
-  it("stacks the same person's cards together, the serpent apart from Satan", () => {
+  it("piles the same person's cards together, except Jesus' and Satan's, who have sections of their own", () => {
     expect(stackOf("moses")).toBe(stackOf("mosesSinai"));
-    expect(stackOf("satan")).toBe(stackOf("satanFoe"));
-    expect(stackOf("serpent")).toBe(stackOf("serpentP"));
-    expect(stackOf("serpent")).not.toBe(stackOf("satan"));
+    expect(stackOf("moses")).toBeDefined();
+    expect(stackOf("satan")).toBeUndefined();
+    expect(stackOf("jesusUR")).toBeUndefined();
     expect(stackOf("david")).toBeUndefined();
   });
 

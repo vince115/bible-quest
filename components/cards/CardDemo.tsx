@@ -15,18 +15,28 @@ import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE, TIMELINE_ERAS } from "./timeline";
-import { samePersonAs, stackOf } from "./samePerson";
+import { samePersonAs, sectionOf, stackOf } from "./samePerson";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
-/** All the cards in one grid, grouped along the Bible timeline, or only Jesus' disciples; remembered in this browser. */
-type Layout = "grid" | "timeline" | "disciples";
-const LAYOUTS: Layout[] = ["grid", "timeline", "disciples"];
-/** The twelve in the order Matthew 10:2–4 names them (both of John's cards together), then Matthias, chosen in Judas' place (Acts 1:26). */
-const DISCIPLES: CharacterId[] = [...APOSTLES];
+/**
+ * All the cards in one grid, grouped along the Bible timeline, or one section: Jesus, his disciples, or Satan; remembered
+ * in this browser.
+ */
+type Section = "jesus" | "disciples" | "satan";
+type Layout = "grid" | "timeline" | Section;
+const LAYOUTS: Layout[] = ["grid", "timeline", "jesus", "disciples", "satan"];
+const SECTIONS: Record<Section, string[]> = {
+  // Jesus' cards and Satan's (every form, the old serpent first) in story order.
+  jesus: TIMELINE.filter((id) => (sectionOf("jesus") as string[]).includes(id)),
+  // The twelve in the order Matthew 10:2–4 names them (both of John's cards together), then Matthias, chosen in Judas' place (Acts 1:26).
+  disciples: [...APOSTLES],
+  satan: TIMELINE.filter((id) => (sectionOf("satan") as string[]).includes(id)),
+};
+const isSection = (l: Layout): l is Section => l in SECTIONS;
 const LAYOUT_KEY = "bq-card-demo-layout";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
@@ -326,9 +336,9 @@ export function CardDemo() {
     </div>
   );
 
-  // The disciples, in the order they are named (search and the rarity tab still apply).
-  const disciples = DISCIPLES.map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c);
-  const onScreen = layout === "disciples" ? disciples : shown;
+  // A section's cards, in its order (search and the rarity tab still apply).
+  const section = isSection(layout) ? SECTIONS[layout].map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c) : [];
+  const onScreen = isSection(layout) ? section : shown;
 
   // Flip through the cards on screen (the current search and rarity tab), wrapping at either end.
   const at = viewing ? onScreen.findIndex((c) => c.id === viewing.id) : -1;
@@ -394,12 +404,12 @@ export function CardDemo() {
         ))}
       </div>
       {onScreen.length === 0 && <p className="py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
-      {layout === "disciples" ? (
+      {isSection(layout) ? (
         onScreen.length > 0 && (
           <section className="w-full max-w-7xl overflow-x-clip px-2">
-            <h2 className="text-lg font-black text-amber-100">{t("v3.demo.disciples")}</h2>
-            <p className="text-sm text-stone-400">{t("v3.demo.disciplesHint")}</p>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(disciples, "disciples")}</div>
+            <h2 className="text-lg font-black text-amber-100">{t(`v3.demo.${layout}`)}</h2>
+            <p className="text-sm text-stone-400">{t(`v3.demo.${layout}Hint`)}</p>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(section, layout)}</div>
           </section>
         )
       ) : layout === "grid" ? (
