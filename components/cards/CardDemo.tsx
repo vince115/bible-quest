@@ -1,6 +1,7 @@
 "use client";
 
-// /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size.
+// /card-demo: every card in a grid, to compare frames and effects. Click a card to view it full size. The Bible timeline
+// layout groups the same cards by the period of the story they belong to.
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { CARDS_V2, CHARACTER_ELEMENT, CHARACTER_SKILLS, ENEMY_ELEMENT, ENEMY_ORDER } from "@/game/v2/data";
@@ -13,13 +14,16 @@ import { FlipCard } from "./FlipCard";
 import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
-import { TIMELINE } from "./timeline";
+import { TIMELINE, TIMELINE_ERAS } from "./timeline";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
+/** All the cards in one grid, or grouped along the Bible timeline; remembered in this browser. */
+type Layout = "grid" | "timeline";
+const LAYOUT_KEY = "bq-card-demo-layout";
 
 /** Every card in story order (see timeline.ts); the four opponent cards render with the enemy face. */
 const CARDS: { id: CharacterId | EnemyId; enemy?: boolean }[] = TIMELINE.map((id) => ((ENEMY_ORDER as string[]).includes(id) ? { id: id as EnemyId, enemy: true } : { id: id as CharacterId }));
@@ -208,6 +212,15 @@ export function CardDemo() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
     if (saved && (RARITY_TABS as string[]).includes(saved)) setFilter(saved as Rarity);
   }, []);
+  const [layout, setLayout] = useState<Layout>("grid");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of a saved preference
+    if (safeStorage.getItem(LAYOUT_KEY) === "timeline") setLayout("timeline");
+  }, []);
+  const arrange = (l: Layout) => {
+    setLayout(l);
+    safeStorage.setItem(LAYOUT_KEY, l);
+  };
   const choose = (f: Rarity | "all") => {
     setFilter(f);
     safeStorage.setItem(FILTER_KEY, f);
@@ -231,6 +244,19 @@ export function CardDemo() {
       safeStorage.setItem(SCALE_KEY, String(clamped));
       return clamped;
     });
+
+  // The cards on screen, period by period (the timeline keeps the story order, so it matches `shown`).
+  const eras = TIMELINE_ERAS.map(({ era, cards }) => ({ era, cards: shown.filter((c) => (cards as string[]).includes(c.id)) })).filter((e) => e.cards.length > 0);
+  const cardTile = (card: (typeof CARDS)[number]) => (
+    <div key={card.id} className="flex flex-col items-center gap-2">
+      <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
+        <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-[220px] text-[10.3px]">
+          <CardFace {...card} />
+        </HoloCard>
+      </button>
+      <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[card.id]}</span>
+    </div>
+  );
 
   // Flip through the cards on screen (the current search and rarity tab), wrapping at either end.
   const at = viewing ? shown.findIndex((c) => c.id === viewing.id) : -1;
@@ -282,19 +308,47 @@ export function CardDemo() {
           );
         })}
       </div>
-      <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-        {shown.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
-        {shown.map((card) => (
-          <div key={card.id} className="flex flex-col items-center gap-2">
-            <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
-              <HoloCard element={elementOf(card)} effects={effects} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-[220px] text-[10.3px]">
-                <CardFace {...card} />
-              </HoloCard>
-            </button>
-            <span className="text-sm font-black tracking-widest text-amber-200">{CARD_RARITY[card.id]}</span>
-          </div>
+      <div role="radiogroup" aria-label={t("v3.demo.layout")} className="flex gap-2">
+        {(["grid", "timeline"] as const).map((l) => (
+          <button
+            key={l}
+            role="radio"
+            aria-checked={layout === l}
+            onClick={() => arrange(l)}
+            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${layout === l ? "border-sky-300 bg-sky-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+          >
+            {t(`v3.demo.${l}`)}
+          </button>
         ))}
       </div>
+      {shown.length === 0 && <p className="py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
+      {layout === "grid" ? (
+        <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
+          {shown.map((card) => cardTile(card))}
+        </div>
+      ) : (
+        <>
+          {/* The periods in story order: a tap jumps to one (periods with no card under the current search are skipped). */}
+          <nav aria-label={t("v3.demo.timeline")} className="sticky top-12 z-20 flex w-full max-w-7xl gap-2 overflow-x-auto bg-stone-950/85 px-2 py-2 backdrop-blur [scrollbar-width:none]">
+            {eras.map(({ era, cards }, i) => (
+              <a key={era} href={`#era-${era}`} className="shrink-0 rounded-full border border-stone-500 px-3 py-1 text-xs font-bold text-stone-200 hover:bg-white/10">
+                {i + 1}. {t(`v3.era.${era}.name`)} <span className="opacity-60">{cards.length}</span>
+              </a>
+            ))}
+          </nav>
+          {eras.map(({ era, cards }, i) => (
+            <section key={era} id={`era-${era}`} className="w-full max-w-7xl scroll-mt-28 overflow-x-clip px-2">
+              <h2 className="text-lg font-black text-amber-100">
+                {i + 1}. {t(`v3.era.${era}.name`)}
+              </h2>
+              <p className="text-sm text-stone-400">
+                {t(`v3.era.${era}.books`)} · {t(`v3.era.${era}.date`)}
+              </p>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{cards.map((card) => cardTile(card))}</div>
+            </section>
+          ))}
+        </>
+      )}
       {/* Scripture (energy) cards, printed at the same size */}
       <section className="w-full max-w-7xl px-2">
         <h2 className="text-center text-lg font-bold">{t("v3.scripture.title")}</h2>
