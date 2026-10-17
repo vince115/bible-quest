@@ -1,6 +1,6 @@
 // Auto-battle for the v3 board: the v2 heuristic plus where everyone stands.
 import { cardsLeftToPlay, nextAutoAction as nextV2Action } from "../v2/auto";
-import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, SHOOTER_DAMAGE, SINGLE_TARGET } from "../v2/data";
+import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, RULES_V2 as R, SHOOTER_DAMAGE, SINGLE_TARGET } from "../v2/data";
 import { actionBase, bossOf, enemyAlive, enemyDamage, hitsEveryone, isAlive, shooterOf } from "../v2/engine";
 import type { CharacterId, EnemyId, SkillId } from "../v2/types";
 import { boardBlockReason, canDrawOnBoard, canMove, frontLiving, ROW, SLOTS, slotOf, type Board } from "./engine";
@@ -19,6 +19,9 @@ function incoming(b: Board, id: CharacterId): number {
   const s = b.battle;
   const shooter = shooterOf(s);
   let n = shooter && enemyAlive(s, shooter) && s.archerTarget === id ? enemyDamage(shooter, id, SHOOTER_DAMAGE[shooter] ?? 0, s.pools) : 0;
+  for (const [aide, aimed] of Object.entries(s.aideTargets ?? {}) as [EnemyId, CharacterId][]) {
+    if (aimed === id && enemyAlive(s, aide)) n += enemyDamage(aide, id, R.aideDamage, s.pools);
+  }
   const { action, targets } = s.intents[0];
   if (!s.goliath.stunned) {
     const charged = (action !== "crush" && action !== "deluge") || s.goliath.charging;

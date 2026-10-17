@@ -3,7 +3,7 @@
 // /campaign: the main stages in Bible order, which are open, and the cards collected so far.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CHARACTER_ELEMENT, ENEMY_ELEMENT } from "@/game/v2/data";
+import { CHARACTER_ELEMENT, ENEMY_ELEMENT, baseEnemy } from "@/game/v2/data";
 import { useT } from "@/game/locale";
 import { CAMPAIGN, TESTAMENTS, campaignBoss } from "@/game/v3/campaign";
 import { ownedCards, useProgressStore } from "@/game/v3/progress";
@@ -56,7 +56,7 @@ export function CampaignScreen() {
                 <div className="aspect-square h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-800 sm:h-28 sm:w-28 shadow-md">
                   {boss ? (
                     <div className="origin-top-left scale-[0.364] sm:scale-[0.436]">
-                      <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[boss]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
+                      <HoloCard element={ENEMY_ELEMENT[boss]} rarity={CARD_RARITY[baseEnemy(boss)]} effects={false} touchTilt={false} className="w-[220px] text-[10.3px]">
                         <EnemyCardFace id={boss} />
                       </HoloCard>
                     </div>

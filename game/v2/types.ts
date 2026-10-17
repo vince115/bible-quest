@@ -51,7 +51,15 @@ export type EnemyId =
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
   | "serpentTempter" | "satanMan" | "satanFoe" | "roaringLion" | "fieryDarts"
-  | "legion" | "uncleanSpirits" | "swine";
+  | "legion" | "uncleanSpirits" | "swine"
+  | AideId;
+
+/** The front-row enemies a stage sends more of when a big party comes (see AIDE_BASE). */
+export type AideBase = "bearer" | "fountains" | "pharaohHost" | "wallGuard" | "ahabKing" | "lionRest" | "uncleanSpirits";
+/** A reinforcement: another of the stage's front-row enemies, `base#1` or `base#2` (same card, HP and element as the base). */
+export type AideId = `${AideBase}#${1 | 2}`;
+/** An enemy card of its own (not a reinforcement). */
+export type BaseEnemyId = Exclude<EnemyId, AideId>;
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
 /**
@@ -187,6 +195,8 @@ export interface BattleState {
   coiled: CharacterId | null;
   /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
   rows?: boolean;
+  /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
+  aideTargets?: Partial<Record<EnemyId, CharacterId>>;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
   /** Who the stage's shooter (the archer, the captain of the chariots, ...) will hit this turn. */

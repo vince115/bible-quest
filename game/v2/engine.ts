@@ -10,6 +10,7 @@ import {
   ENEMY_ELEMENT,
   ENEMY_HP,
   ENEMY_ORDER,
+  aidesOf,
   APOSTLES,
   MAX_HP,
   basicDamage,
@@ -142,8 +143,9 @@ const randomAlly = (s: BattleState, rng: Rng) => {
  * shields the whole back row.
  */
 export function attackableEnemies(s: BattleState): EnemyId[] {
-  const guard = guardOf(s);
-  const shielded = !!guard && enemyAlive(s, guard);
+  // Reinforcements stand in the front row beside the guard.
+  const front = [guardOf(s), ...(s.rows ? aidesOf(s.stage) : [])];
+  const shielded = front.some((e) => !!e && enemyAlive(s, e));
   return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(shielded && (id === bossOf(s) || (s.rows && id === shooterOf(s)))));
 }
 
@@ -4121,6 +4123,15 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
     if (t) {
       log(s, "v2.log.archer", "enemy", { char: t, enemy: shooter });
       damageAlly(s, t, SHOOTER_DAMAGE[shooter] ?? 0, shooter);
+    }
+  }
+  // Reinforcements in the front row (the v3 board, against a big party) each strike the ally they were aimed at.
+  for (const [aide, aimed] of Object.entries(s.aideTargets ?? {}) as [EnemyId, CharacterId][]) {
+    if (s.result !== "ongoing" || !enemyAlive(s, aide)) continue;
+    const t = isAlive(s, aimed) ? aimed : randomAlly(s, rng);
+    if (t) {
+      log(s, "v2.log.archer", "enemy", { char: t, enemy: aide });
+      damageAlly(s, t, R.aideDamage, aide);
     }
   }
 

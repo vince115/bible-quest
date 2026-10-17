@@ -1,13 +1,13 @@
 // Card rarity decides how a card looks (frame, ornaments, foil, light effects) and the band its HP sits in
 // (N 60–110, R 100–140, SR 120–190, SSR 160–250, UR 220–330; see MAX_HP in game/v2/data.ts). Skill damage does not
 // depend on it, and it is not tied to draws or drop rates.
-import type { CharacterId, EnemyId } from "@/game/v2/types";
+import type { BaseEnemyId, CharacterId } from "@/game/v2/types";
 import type { Ornament } from "./CardFrame";
 
 export type Rarity = "N" | "R" | "SR" | "SSR" | "UR" | "GR";
 
 /** Which rarity each card is printed at. R and UR are kept for later cards (common soldiers, special editions). */
-export const CARD_RARITY: Record<CharacterId | EnemyId, Rarity> = {
+export const CARD_RARITY: Record<CharacterId | BaseEnemyId, Rarity> = {
   archer: "N",
   bearer: "N",
   samuel: "SR",
@@ -272,5 +272,5 @@ export const RARITY: Record<Rarity, RarityLook> = {
 /** The tiers that have at least one card, highest first (a tier with no card yet, like GR, stays out of the filters). */
 export const USED_TIERS: Rarity[] = (["GR", "UR", "SSR", "SR", "R", "N"] as Rarity[]).filter((r) => Object.values(CARD_RARITY).includes(r));
 
-export const lookOf = (id: CharacterId | EnemyId) => RARITY[CARD_RARITY[id]];
+export const lookOf = (id: CharacterId | BaseEnemyId) => RARITY[CARD_RARITY[id]];
 

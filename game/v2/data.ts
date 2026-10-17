@@ -1,5 +1,5 @@
 import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
-import type { CardDef, CardId, CharacterId, Element, EnemyId, GoliathActionId, SkillDef, SkillId, StageId } from "./types";
+import type { AideBase, AideId, BaseEnemyId, CardDef, CardId, CharacterId, Element, EnemyId, GoliathActionId, SkillDef, SkillId, StageId } from "./types";
 
 // Prototype v2 (energy-card version) numbers. Change only with the designer's approval.
 export const RULES_V2 = {
@@ -16,6 +16,8 @@ export const RULES_V2 = {
 
   /** Victory when Goliath falls; the others flee (1 Sam 17:51). */
   archerDamage: 30,
+  /** What a reinforcement's strike on the front row does. */
+  aideDamage: 20,
   spear: 30,
   crush: 90,
   swing: 50,
@@ -861,7 +863,7 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   serpentP: "dark",
   father: "light", holySpirit: "light", gabriel: "light", michael: "light", satanDisguised: "dark", satan: "dark",
 };
-export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
+const BASE_ELEMENT: Record<BaseEnemyId, Element> = {
   bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark",
   flood: "water", fountains: "water", windows: "water",
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
@@ -870,6 +872,20 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanFoe: "dark", roaringLion: "dark", fieryDarts: "dark",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
+
+/**
+ * Reinforcements: when more than three allies come, the stage sends more of its front-row enemies (more of Goliath's
+ * shield bearers, of Pharaoh's host, ...), one for each ally past three, up to two. Each is a copy of its base card.
+ */
+export const AIDE_BASE: Partial<Record<StageId, AideBase>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "wallGuard", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
+export const aidesOf = (stage: StageId): AideId[] => {
+  const base = AIDE_BASE[stage];
+  return base ? [`${base}#1`, `${base}#2`] : [];
+};
+const ALL_AIDES: AideId[] = [...new Set(Object.values(AIDE_BASE))].flatMap((b) => [`${b}#1`, `${b}#2`] as AideId[]);
+/** The card an enemy is (a reinforcement is a copy of its base). */
+export const baseEnemy = (id: EnemyId): BaseEnemyId => id.split("#")[0] as BaseEnemyId;
+export const ENEMY_ELEMENT: Record<EnemyId, Element> = { ...BASE_ELEMENT, ...Object.fromEntries(ALL_AIDES.map((a) => [a, BASE_ELEMENT[baseEnemy(a)]])) } as Record<EnemyId, Element>;
 
 /** Cards that show the same person: a line-up holds only one of them. */
 export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "moses", jesusUR: "jesus", jesusCross: "jesus", johnPatmos: "johnApostle" };
@@ -913,6 +929,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "lionRest", "lion", "lioness", "presidents", "princes",
   "serpentTempter", "satanMan", "satanFoe", "roaringLion", "fieryDarts",
   "uncleanSpirits", "legion", "swine",
+  ...ALL_AIDES,
 ];
 
 /** Each character's own Bible story: fighting in that stage turns on their story bonus. */
@@ -937,7 +954,7 @@ export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_
 export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "temptation", "gerasa"];
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
-export const ENEMY_HP: Record<EnemyId, number> = {
+const BASE_HP: Record<BaseEnemyId, number> = {
   bearer: 60, goliath: 280, archer: 40, serpent: 320,
   flood: 80, fountains: 50, windows: 40,
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
@@ -946,6 +963,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanFoe: 240, roaringLion: 60, fieryDarts: 40,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
+export const ENEMY_HP: Record<EnemyId, number> = { ...BASE_HP, ...Object.fromEntries(ALL_AIDES.map((a) => [a, BASE_HP[baseEnemy(a)]])) } as Record<EnemyId, number>;
 
 export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 260, satan: 400 };
 

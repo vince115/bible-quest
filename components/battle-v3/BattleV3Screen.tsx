@@ -31,7 +31,7 @@ import {
   STAGE_SHOOTER,
 } from "@/game/v2/data";
 import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target } from "@/game/v2/engine";
-import { MAGIC_VERSION_ENABLED, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
+import { MAGIC_VERSION_ENABLED, baseEnemy, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { MAX_LINEUP, ROW, SLOTS, arrange, boardBlockReason, boardSkillTargets, canDrawOnBoard, canMove, isDuel, leader, slotOf, type Board, type Slots } from "@/game/v3/engine";
@@ -129,6 +129,7 @@ function EnemyCard({
   pending,
   onTarget,
   onView,
+  inFront,
 }: {
   b: BattleState;
   front: CharacterId;
@@ -136,6 +137,8 @@ function EnemyCard({
   t: T;
   size: "large" | "small";
   className?: string;
+  /** Stands in the enemy's front row: what it does goes under the card (three of them share the row). */
+  inFront?: boolean;
   pending: Pending | null;
   onTarget: () => void;
   onView: () => void;
@@ -151,7 +154,7 @@ function EnemyCard({
     isBoss && g.enraged && { text: t(`v3.ui.phase.${id}`), tone: "bg-red-700" },
     isBoss && g.stunned && { text: t("v2.ui.stunned"), tone: "bg-sky-600" },
     isBoss && g.charging && { text: t(`v3.ui.charging.${id}`) === `v3.ui.charging.${id}` ? t("v2.ui.charging") : t(`v3.ui.charging.${id}`), tone: "bg-orange-600" },
-    isBoss && STAGE_GUARD[b.stage] && enemyAlive(b, STAGE_GUARD[b.stage]!) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
+    isBoss && STAGE_GUARD[b.stage] && !attackableEnemies(b).includes(id) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
   const cardRef = useRef<HTMLButtonElement>(null);
   const lungeRef = useRef<HTMLDivElement>(null);
@@ -168,7 +171,7 @@ function EnemyCard({
           if (isTarget) onTarget();
           else if (!pending) onView();
         }}
-        aria-label={t(`v2.enemy.${id}.name`)}
+        aria-label={t(`v2.enemy.${baseEnemy(id)}.name`)}
         className={`relative z-10 w-full ${CARD_RATIO} rounded-xs text-left transition [container-type:inline-size] ${
           isTarget ? "animate-pulse cursor-pointer ring-4 ring-amber-300" : "cursor-zoom-in hover:-translate-y-1"
         }`}
@@ -206,9 +209,15 @@ function EnemyCard({
         )}
       </button>
 
+      {/* A reinforcement's strike, under its card */}
+      {inFront && alive && b.aideTargets?.[id] && (
+        <div className="mt-1">
+          <AttackRow name={`⚔ ${t(`char.${b.aideTargets[id]}.name`)}`} tag={String(enemyDamage(id, b.aideTargets[id]!, R.aideDamage, b.pools))} />
+        </div>
+      )}
       </div>
       {/* What this enemy will do, beside the card */}
-      {alive && (
+      {alive && !inFront && (
         <div className="grid w-[9.5rem] gap-1 sm:w-[11rem]">
           {isBoss &&
             (g.stunned ? (
@@ -629,7 +638,8 @@ function SkillFocus({
     playSfx("cast");
     setTimeout(() => onSkill(skill), SKILL_ART[skill] ? ART_FX_MS : CAST_FX_MS);
   };
-  const tags = ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
+  // One tag per card (reinforcements are copies of their base card).
+  const tags = [...new Set(ENEMY_ORDER.filter((e) => enemyAlive(b, e)).map(baseEnemy))].map((e) => ({ e, mult: elementMultiplier(CHARACTER_ELEMENT[id], ENEMY_ELEMENT[e]) })).filter((x) => x.mult !== 1);
   // The card size chosen in /card-demo; the story beside it is off until switched on here (remembered for later battles).
   const [scale] = useState(savedScale);
   const [showStory, setShowStory] = useState(() => savedShowStory(BATTLE_STORY_KEY, false));
@@ -1410,7 +1420,9 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           </FormationLane>
           {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
             <FormationLane label={t("v3.ui.enemyFront")} tone="enemy">
-              <EnemyCard b={b} front={leader(board)} id={STAGE_GUARD[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
+              {[STAGE_GUARD[b.stage]!, ...board.aides].map((e) => (
+                <EnemyCard key={e} b={b} front={leader(board)} id={e} t={t} size="small" inFront pending={pending} onTarget={() => onTarget(e)} onView={() => setViewingEnemy(e)} />
+              ))}
             </FormationLane>
           )}
         </section>
@@ -1763,10 +1775,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             className={`relative shrink-0 ${VIEWER_WIDTH}`}
             style={viewerStyle(scale)}
           >
-            <HoloCard element={ENEMY_ELEMENT[viewingEnemy]} rarity={CARD_RARITY[viewingEnemy]}>
+            <HoloCard element={ENEMY_ELEMENT[viewingEnemy]} rarity={CARD_RARITY[baseEnemy(viewingEnemy)]}>
               <EnemyCardFace id={viewingEnemy} />
             </HoloCard>
-            {lookOf(viewingEnemy).shine && <CardShine />}
+            {lookOf(baseEnemy(viewingEnemy)).shine && <CardShine />}
             <div className="absolute -right-4 -top-6 z-30">
               <HpBadge hp={b.enemies[viewingEnemy].hp} max={ENEMY_HP[viewingEnemy]} big />
             </div>

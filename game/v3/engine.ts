@@ -6,11 +6,14 @@
 // - Single-target blows and the shooter's arrow fall on the front row, one of its members a turn (telegraphed). When
 //   nobody stands in the front row, they fall on the back row. A blow that hunts the weakest, and every blow that hits
 //   all, reach the back row too.
+// - The enemy stands in two rows too: the guard in front, the boss and the shooter behind, and nothing behind can be hit
+//   while anyone stands in front. Against more than three allies the stage sends more of its guards (one for each ally
+//   past three, up to two); each strikes one member of the front row a turn (telegraphed like the arrow).
 // - Once per turn one character may move to another place for free (swapping with whoever stands there).
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
 // Everything else is the v2 engine, unchanged.
-import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, STAGE_SHOOTER } from "../v2/data";
+import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, ENEMY_HP, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, STAGE_SHOOTER, SUMMONED, aidesOf } from "../v2/data";
 import {
   canDraw,
   basicAttack,
@@ -44,7 +47,12 @@ export interface Board {
   swapped: boolean;
   /** Cards still to be drawn from the deck this turn. */
   draws: number;
+  /** The reinforcements that joined the enemy's front row (they stay on the board when they fall). */
+  aides: EnemyId[];
 }
+
+/** How many reinforcements a party of `n` meets: one for each ally past three, up to two. */
+export const aideCount = (n: number) => Math.max(0, Math.min(2, n - ROW));
 
 /** Places in a row, and in the whole formation. */
 export const ROW = 3;
@@ -117,7 +125,10 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
     battle.archerTarget = null;
     log(battle, "v3.log.duel", { char: chosen[0] });
   }
-  const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand };
+  // A big party meets reinforcements in the enemy's front row (not where the guard is summoned, nor where there is none).
+  const aides = SUMMONED.has(stage) || !STAGE_GUARD[stage] ? [] : aidesOf(stage).slice(0, aideCount(chosen.length));
+  for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
+  const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides };
   return aim(board, rng);
 }
 
@@ -194,9 +205,15 @@ function aim(b: Board, rng: Rng): Board {
     }
   });
   const shooter = STAGE_SHOOTER[s.stage];
-  // The arrow goes to the member of the row beside the one the boss's blow falls on this turn.
+  // The arrow goes to the member of the row beside the one the boss's blow falls on this turn, and each reinforcement's
+  // strike to the next one along.
   const arrow = pick(1);
   s.archerTarget = shooter && enemyAlive(s, shooter) && arrow ? arrow : null;
+  s.aideTargets = {};
+  b.aides.forEach((e, k) => {
+    const t = pick(2 + k);
+    if (enemyAlive(s, e) && t) s.aideTargets![e] = t;
+  });
   return b;
 }
 

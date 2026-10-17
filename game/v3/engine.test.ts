@@ -215,6 +215,25 @@ describe("formation", () => {
     expect(attackableEnemies(b.battle).sort()).toEqual(["archer", "goliath"]);
   });
 
+  it("a big party meets more of the stage's guards in the enemy's front row: one for each ally past three, up to two", () => {
+    const six: CharacterId[] = ["david", "samuel", "jonathan", "peter", "moses", "daniel"];
+    expect(createBoard(six.slice(0, 3), undefined, seeded()).aides).toEqual([]);
+    expect(createBoard(six.slice(0, 4), undefined, seeded()).aides).toEqual(["bearer#1"]);
+    const b = createBoard(six, undefined, seeded());
+    expect(b.aides).toEqual(["bearer#1", "bearer#2"]);
+    expect(b.battle.enemies["bearer#2"].hp).toBe(b.battle.enemies.bearer.hp);
+    // While any of them stands, the back row can't be hit.
+    b.battle.enemies.bearer.hp = 0;
+    expect(attackableEnemies(b.battle).sort()).toEqual(["bearer#1", "bearer#2"]);
+    // Each strikes a member of the front row, telegraphed.
+    const aimed = b.battle.aideTargets!["bearer#1"]!;
+    expect(frontRow(b)).toContain(aimed);
+    b.battle.intents[0] = { action: "cry", targets: [] };
+    b.battle.archerTarget = null;
+    const before = b.battle.party[aimed].hp;
+    expect(resolveBoard(b).battle.party[aimed].hp).toBeLessThan(before);
+  });
+
   it("losing the only character is a defeat", () => {
     const b = createBoard(["jonathan"], undefined, seeded());
     b.battle.party.jonathan.hp = 10;
