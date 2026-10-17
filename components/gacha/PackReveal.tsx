@@ -21,10 +21,16 @@ import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
 import { STRIP } from "./PackTear";
 
-/** The torn pack the cards are drawn from, one at a time: how much of it shows (its open top), and how far a card sits in it. */
-const POUCH_SHOWN = 120;
-const TUCKED = 40;
-const CARD_H = (220 * 88) / 63;
+/**
+ * Drawing the cards one at a time out of the torn pack: the pack as wide as on the tearing screen, whole but for its torn
+ * strip; the card a little narrower, its lower part tucked inside the pack until it is drawn.
+ */
+const PACK_W = 220;
+const PACK_BODY_H = ((PACK_W * 14) / 9) * (1 - STRIP / 100);
+const CARD_W = 200;
+const CARD_H = (CARD_W * 88) / 63;
+const TUCKED = 70;
+const STAGE_H = CARD_H + PACK_BODY_H - TUCKED;
 
 export interface Pulled {
   card: CharacterId;
@@ -188,79 +194,23 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
-      <div className="text-sm font-bold tabular-nums text-stone-400">
-        {at + 1} / {results.length}
-      </div>
-      {/* The card is drawn up out of the torn pack, which stays in front of its lower edge; while a card flies to the row,
-          nothing clips it. */}
-      <div className={`relative flex w-[260px] justify-center ${leaving ? "" : "overflow-hidden"}`} style={{ height: pack ? CARD_H + POUCH_SHOWN - TUCKED : undefined }}>
-      <motion.div
-        key={at}
-        ref={oneRef}
-        className="relative z-40 self-start"
-        initial={pack ? { y: CARD_H } : { opacity: 0, y: -30, scale: 0.92 }}
-        animate={leaving ? { x: leaving.x, y: leaving.y, scale: leaving.scale } : { opacity: 1, x: 0, y: 0, scale: 1 }}
-        transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 160, damping: 22, delay: 0.1 }}
-        onAnimationComplete={() => leaving && placedOne()}
-      >
-      <button
-        type="button"
-        onClick={() => !leaving && tap()}
-        aria-label={flipped ? t("v3.demo.view") : t("v3.gacha.tap")}
-        className="relative block w-[220px] text-[10.3px] [perspective:1000px]"
-        style={{ aspectRatio: "63/88" }}
-      >
-        <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? "rotateY(180deg)" : "none" }}>
-          {/* The back: the card face down */}
-          <div className="absolute inset-0 overflow-hidden rounded-md shadow-xl [backface-visibility:hidden]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- card art is a plain file */}
-            <img src={asset(CARD_BACK)} alt="" draggable={false} className="h-full w-full select-none object-cover" />
-          </div>
-          {/* The front */}
-          <div className={`absolute inset-0 rounded-md [backface-visibility:hidden] [transform:rotateY(180deg)] ${flipped ? GLOW[CARD_RARITY[current.card]] : ""}`}>
-            <HoloCard element={CHARACTER_ELEMENT[current.card]} rarity={CARD_RARITY[current.card]} effects touchTilt={false} figure={figureArea(current.card)} className="w-full text-[10.3px]">
-              <CharacterCardFace id={current.card} />
-            </HoloCard>
-            <Badge pulled={current} />
-          </div>
-        </div>
-      </button>
-      </motion.div>
-      {pack && (
-        <div aria-hidden className={`pointer-events-none absolute bottom-0 left-0 w-[260px] overflow-hidden text-[16.5px] ${leaving ? "z-30" : "z-50"}`} style={{ height: POUCH_SHOWN }}>
-          <div style={{ clipPath: `inset(${STRIP}% 0 0 0)`, transform: `translateY(-${STRIP}%)` }}>
-            <PackArt pack={pack} />
-          </div>
-        </div>
-      )}
-      </div>
-      <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
-      <div className="flex flex-wrap justify-center gap-2">
-        {flipped && (
-          <button onClick={next} disabled={!!leaving} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
-            {at < results.length - 1 ? `${t("v3.demo.next")} →` : t("v3.gacha.showAll")}
-          </button>
-        )}
-        <button onClick={() => setAll(true)} disabled={!!leaving} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10 disabled:opacity-60">
-          {t("v3.gacha.skip")}
-        </button>
-      </div>
-      {/* The row of five the turned cards go into, the first at the left end; a placed card can be viewed close up. */}
-      <section aria-label={t("v3.gacha.result")} className="grid w-full max-w-4xl grid-cols-[repeat(auto-fill,minmax(130px,1fr))] justify-items-center gap-x-3 gap-y-5">
+    // On a wide screen the row of five stands to the left of the pack (a turned card flies left into it); on a phone, below.
+    <div className="flex w-full flex-col-reverse items-center gap-6 lg:flex-row lg:items-center lg:justify-center lg:gap-12">
+      {/* The row of five the turned cards go into, the first at the start; a placed card can be viewed close up. */}
+      <section aria-label={t("v3.gacha.result")} className="grid grid-cols-5 gap-2 lg:grid-cols-3 lg:gap-3">
         {results.map((pulled, i) => (
           <div
             key={i}
             ref={(el) => {
               slotRefs.current[i] = el;
             }}
-            className={`relative w-[130px] rounded-md ${i < placed ? GLOW[CARD_RARITY[pulled.card]] : "bg-black/20"}`}
+            className={`relative w-[60px] rounded-md sm:w-[100px] ${i < placed ? GLOW[CARD_RARITY[pulled.card]] : "bg-black/20"}`}
             style={{ aspectRatio: "63/88" }}
           >
             {i < placed && (
               <>
-                <button type="button" onClick={() => setViewing(i)} aria-label={t("v3.demo.view")} className="block cursor-zoom-in">
-                  <HoloCard element={CHARACTER_ELEMENT[pulled.card]} rarity={CARD_RARITY[pulled.card]} effects touchTilt={false} figure={figureArea(pulled.card)} className="w-[130px] text-[6.1px]">
+                <button type="button" onClick={() => setViewing(i)} aria-label={t("v3.demo.view")} className="block w-full cursor-zoom-in">
+                  <HoloCard element={CHARACTER_ELEMENT[pulled.card]} rarity={CARD_RARITY[pulled.card]} effects touchTilt={false} figure={figureArea(pulled.card)} className="w-full text-[2.8px] sm:text-[4.7px]">
                     <CharacterCardFace id={pulled.card} />
                   </HoloCard>
                 </button>
@@ -270,6 +220,68 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
           </div>
         ))}
       </section>
+
+      <div className="flex flex-col items-center gap-3">
+        <div className="text-sm font-bold tabular-nums text-stone-400">
+          {at + 1} / {results.length}
+        </div>
+        {/* The torn pack moves down from where it was torn and stays whole on the table; each card is drawn up out of it, the
+            pack in front of the card's lower edge. While a card flies to the row nothing clips it. */}
+        <div className={`relative ${leaving ? "" : "overflow-hidden"}`} style={{ width: PACK_W, height: STAGE_H }}>
+          <motion.div
+            key={at}
+            ref={oneRef}
+            className="absolute top-0 z-40"
+            style={{ left: (PACK_W - CARD_W) / 2 }}
+            initial={pack ? { y: CARD_H } : { opacity: 0, y: -30, scale: 0.92 }}
+            animate={leaving ? { x: leaving.x, y: leaving.y, scale: leaving.scale } : { opacity: 1, x: 0, y: 0, scale: 1 }}
+            transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 160, damping: 22, delay: at === 0 ? 0.75 : 0.1 }}
+            onAnimationComplete={() => leaving && placedOne()}
+          >
+            <button
+              type="button"
+              onClick={() => !leaving && tap()}
+              aria-label={flipped ? t("v3.demo.view") : t("v3.gacha.tap")}
+              className="relative block [perspective:1000px]"
+              style={{ width: CARD_W, aspectRatio: "63/88", fontSize: `${(10.3 * CARD_W) / 220}px` }}
+            >
+              <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? "rotateY(180deg)" : "none" }}>
+                {/* The back: the card face down */}
+                <div className="absolute inset-0 overflow-hidden rounded-md shadow-xl [backface-visibility:hidden]">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- card art is a plain file */}
+                  <img src={asset(CARD_BACK)} alt="" draggable={false} className="h-full w-full select-none object-cover" />
+                </div>
+                {/* The front */}
+                <div className={`absolute inset-0 rounded-md [backface-visibility:hidden] [transform:rotateY(180deg)] ${flipped ? GLOW[CARD_RARITY[current.card]] : ""}`}>
+                  <HoloCard element={CHARACTER_ELEMENT[current.card]} rarity={CARD_RARITY[current.card]} effects touchTilt={false} figure={figureArea(current.card)} className="w-full">
+                    <CharacterCardFace id={current.card} />
+                  </HoloCard>
+                  <Badge pulled={current} />
+                </div>
+              </div>
+            </button>
+          </motion.div>
+          {pack && (
+            // The same pack as on the tearing screen (layoutId): it glides down here from where it was torn.
+            <motion.div layoutId="torn-pack" aria-hidden className={`pointer-events-none absolute bottom-0 left-0 text-[14px] ${leaving ? "z-30" : "z-50"}`} style={{ width: PACK_W }}>
+              <div style={{ clipPath: `inset(${STRIP}% 0 0 0)` }}>
+                <PackArt pack={pack} />
+              </div>
+            </motion.div>
+          )}
+        </div>
+        <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {flipped && (
+            <button onClick={next} disabled={!!leaving} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
+              {at < results.length - 1 ? `${t("v3.demo.next")} →` : t("v3.gacha.showAll")}
+            </button>
+          )}
+          <button onClick={() => setAll(true)} disabled={!!leaving} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10 disabled:opacity-60">
+            {t("v3.gacha.skip")}
+          </button>
+        </div>
+      </div>
       {viewer}
     </div>
   );
