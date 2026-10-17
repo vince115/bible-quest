@@ -72,12 +72,15 @@ const ENERGY_RING: Record<EnergyKind, string> = {
 const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-23rem)*0.26))]";
 /** Phones: 3 character cards across screen width in bottom row. */
 const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.26))]";
-const CARD_WIDTH = { large: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}`, small: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}` };
-/** Our characters: the front row at full size, the back row (behind it) a little smaller, so both rows fit under the enemies. */
-const CHAR_WIDTH = {
-  large: `w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.22))] sm:w-28 lg:w-[min(13rem,calc((100dvh-14rem)*0.21))]`,
-  small: `w-[min(7rem,calc((100vw-2.5rem)/3.2),calc((100dvh-23rem)*0.19))] sm:w-24 lg:w-[min(11rem,calc((100dvh-14rem)*0.18))]`,
-};
+/**
+ * Layout B: the enemy's back row, the enemy's front row, the table (deck and hand), our front row and our back row stand
+ * one above the other, so every card is sized from the height: five rows must fit without scrolling on a desktop.
+ */
+const ROW_CARD = "w-[min(6.5rem,calc((100vw-2.5rem)/3.4),calc((100dvh-12rem)/6.6))] lg:w-[min(9rem,calc((100dvh-10rem)/7))]";
+
+const CARD_WIDTH = { large: ROW_CARD, small: ROW_CARD };
+const CHAR_WIDTH = CARD_WIDTH;
+
 /** Upper row: 4 skill/energy card slots across screen width. */
 const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
 /** The four slots in the side panel (desktop). */
@@ -166,7 +169,8 @@ function EnemyCard({
   useHitShake(id, cardRef);
   useStrikeLunge(alive, lungeRef);
   return (
-    <div ref={lungeRef} className={`relative flex shrink-0 flex-col items-center gap-1.5 ${CARD_WIDTH[size]} ${className}`}>
+    <div ref={lungeRef} className={`relative flex shrink-0 items-center gap-2 ${className}`}>
+      <div className={`relative ${CARD_WIDTH[size]}`}>
       <FxNumbers id={id} />
       <button
         ref={cardRef}
@@ -213,9 +217,10 @@ function EnemyCard({
         )}
       </button>
 
-      {/* What this enemy will do */}
+      </div>
+      {/* What this enemy will do, beside the card */}
       {alive && (
-        <div className="grid w-full gap-1">
+        <div className="grid w-[9.5rem] gap-1 sm:w-[11rem]">
           {isBoss &&
             (g.stunned ? (
               <div className="rounded-md bg-black/50 px-2 py-1 text-[11px] font-semibold text-sky-200 sm:text-xs">{t("v2.ui.intentStunned")}</div>
@@ -237,21 +242,116 @@ function EnemyCard({
 }
 
 /**
- * One row of our formation: a faint band across the board with its name at the left, the cards standing on it. The front
+ * The energy deck on the table: one stack of cards (like a deck before the deal) with how many are left, tapped to draw;
+ * the cards drawn this turn lie fanned beside it, each tapped to look at it and play it.
+ */
+function TableDeck({
+  board,
+  t,
+  disabled,
+  onDraw,
+  onDrawAll,
+  onInspect,
+}: {
+  board: Board;
+  t: T;
+  disabled: boolean;
+  onDraw: () => void;
+  onDrawAll: () => void;
+  onInspect: (target: { uid: number; card: CardId }) => void;
+}) {
+  const b = board.battle;
+  const canDraw = !disabled && canDrawOnBoard(board);
+  return (
+    <div className="flex items-end justify-center gap-4">
+      {/* The deck */}
+      <div className="flex flex-col items-center gap-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canDraw) onDraw();
+          }}
+          disabled={!canDraw}
+          title={canDraw ? t("v3.deck.tapToDraw") : board.draws > 0 ? t("v3.deck.full") : t("v3.deck.done")}
+          aria-label={t("v3.deck.title")}
+          className={`relative w-[3.2rem] ${CARD_RATIO} sm:w-[3.6rem] ${canDraw ? "cursor-pointer" : "cursor-default opacity-70"}`}
+        >
+          {[2, 1, 0].map((k) => (
+            <span
+              key={k}
+              aria-hidden
+              className={`absolute inset-0 overflow-hidden rounded-xs shadow-lg ${canDraw && k === 0 ? "ring-2 ring-amber-300/80" : ""}`}
+              style={{ transform: `translate(${k * 2}px, ${k * -2}px)` }}
+            >
+              <ScriptureCardBack />
+            </span>
+          ))}
+          <span className="absolute -bottom-1 -right-2 z-10 rounded-full border border-white/60 bg-black/80 px-1.5 text-[10px] font-black text-amber-200">{b.deck.length}</span>
+        </button>
+        <span className="flex items-center gap-1">
+          {Array.from({ length: Math.max(0, board.draws) }, (_, i) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_4px] shadow-amber-300" />
+          ))}
+          {canDraw && board.draws > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDrawAll();
+              }}
+              className="ml-1 rounded-full border border-amber-300/60 bg-amber-500/10 px-1.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/25"
+            >
+              {t("v3.deck.drawFill")}
+            </button>
+          )}
+        </span>
+      </div>
+
+      {/* The hand, fanned */}
+      <div className="flex min-h-[4.5rem] items-end pl-2 sm:min-h-[5.1rem]">
+        {b.hand.map((inst, i) => {
+          const tilt = (i - (b.hand.length - 1) / 2) * 5;
+          return (
+            <button
+              key={inst.uid}
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspect({ uid: inst.uid, card: inst.card });
+              }}
+              title={t("v3.ui.viewCard")}
+              className={`relative -ml-5 w-[3.6rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:ml-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-ml-6 sm:w-[3.6rem]`}
+              style={{ transform: `rotate(${tilt}deg)` }}
+            >
+              <span className="absolute inset-0 overflow-hidden rounded-xs" style={{ fontSize: "4.67cqw" }}>
+                <ScriptureCardFace id={inst.card} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One row of a formation: a soft band of colour across the board (no outline) with its name at the left, the cards standing on it. The front
  * row's band is warm (it takes the blows), the back row's cool.
  */
-function FormationLane({ label, tone, children }: { label: string; tone: "front" | "back"; children: React.ReactNode }) {
+function FormationLane({ label, tone, children }: { label: string; tone: "front" | "back" | "enemy"; children: React.ReactNode }) {
   return (
     <div className="relative flex w-full max-w-3xl items-center justify-center">
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-x-0 top-1/2 h-[70%] -translate-y-1/2 rounded-2xl border ${
-          tone === "front" ? "border-red-400/25 bg-gradient-to-r from-transparent via-red-900/25 to-transparent" : "border-sky-300/15 bg-gradient-to-r from-transparent via-sky-900/20 to-transparent"
+        className={`pointer-events-none absolute inset-x-0 top-1/2 h-[70%] -translate-y-1/2 rounded-2xl ${
+          tone === "front"
+            ? "bg-gradient-to-r from-transparent via-red-900/25 to-transparent"
+            : tone === "enemy"
+              ? "bg-gradient-to-r from-transparent via-black/30 to-transparent"
+              : "bg-gradient-to-r from-transparent via-sky-900/20 to-transparent"
         }`}
       />
       <span
         className={`absolute left-1 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-[10px] font-black tracking-widest [writing-mode:vertical-rl] sm:left-3 sm:text-xs ${
-          tone === "front" ? "bg-red-700/80 text-white" : "bg-slate-600/80 text-slate-100"
+          tone === "front" ? "bg-red-700/80 text-white" : tone === "enemy" ? "bg-stone-800/90 text-stone-200" : "bg-slate-600/80 text-slate-100"
         }`}
       >
         {label}
@@ -1461,86 +1561,62 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       {/* 支援滑鼠滑過：區域周邊色點發光效果 */}
       <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
 
-      {/* ---------- Hand: a side panel on desktop (on phones it stays a row above the characters) ---------- */}
-      <aside onClick={(e) => e.stopPropagation()} className="relative z-10 hidden w-[10.5rem] shrink-0 flex-col justify-center border-r border-white/10 bg-black/30 py-3 lg:flex xl:w-[11.5rem]">
-        <SkillSlotsRow
-          board={board}
-          t={t}
-          side
-          disabled={locked || !!pending || promote}
-          onDraw={draw}
-          onDrawAll={drawAll}
-          onPlay={play}
-          onPlayAll={playAll}
-          onInspect={(target) => setViewingScripture(target)}
-        />
-      </aside>
-
       {/* ---------- Board: enemies, message, our characters (and the hand on phones) ---------- */}
-      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
+      <main className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 py-2">
 
-        <section className="relative flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
+        {/* The enemy's formation: its back row (the boss, and the shooter) above, its front row (the guard) below */}
+        <section className="relative flex flex-col items-center gap-1 px-2 pt-3 sm:px-4">
           {(b.stage === "plot" || (b.stage === "lions" && campaign && campaignStage(campaign).before)) && (
             <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
               {b.stage === "plot" ? t("v3.round.first") : t("v3.round.second")}
             </div>
           )}
-          <div className="flex items-start justify-center gap-2 sm:gap-5">
-            {/* The stage's shooter and guard flank the boss; in a duel they stand aside (Eden has only the Serpent). */}
+          <FormationLane label={t("v3.ui.enemyBack")} tone="enemy">
             {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
-              <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
+              <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
-            {!isDuel(board) && STAGE_GUARD[b.stage] && (
-              <EnemyCard b={b} front={leader(board)} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
-            )}
-            <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
-          </div>
+            <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
+          </FormationLane>
+          {!isDuel(board) && STAGE_GUARD[b.stage] && (
+            <FormationLane label={t("v3.ui.enemyFront")} tone="enemy">
+              <EnemyCard b={b} front={leader(board)} id={STAGE_GUARD[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
+            </FormationLane>
+          )}
         </section>
 
-        {/* What is happening / what to do next */}
-        <div className="mx-auto my-1 min-h-6 max-w-xl px-3 text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
-          {swapIn ? (
-            <span className="text-emerald-200">{t("v3.ui.chooseOut")}</span>
-          ) : promote ? (
-            <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
-          ) : pending ? (
-            <span className="text-emerald-200">
-              {pending.basic ? t("v3.basic.name") : t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPending(null);
-                }}
-                className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
-              >
-                ✕ {t("v2.ui.cancel")}
-              </button>
-            </span>
-          ) : lastHit ? (
-            t(lastHit.key, lastHit.params)
-          ) : !b.hand.length && canDrawOnBoard(board) ? (
-            <span className="text-amber-200">{t("v3.deck.hint")}</span>
-          ) : (
-            <span className="text-stone-300">{t("v3.ui.tapCharacter")}</span>
-          )}
-        </div>
+        {/* The table between the two sides: what is happening, the energy deck as one stack, the hand fanned beside it */}
+        <section className="flex flex-col items-center gap-1 px-3 py-1">
+          <div className="min-h-5 max-w-xl text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
+            {swapIn ? (
+              <span className="text-emerald-200">{t("v3.ui.chooseOut")}</span>
+            ) : promote ? (
+              <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
+            ) : pending ? (
+              <span className="text-emerald-200">
+                {pending.basic ? t("v3.basic.name") : t(`v2.skill.${pending.skill}.name`)} · {t("v2.ui.chooseTarget")}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPending(null);
+                  }}
+                  className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
+                >
+                  ✕ {t("v2.ui.cancel")}
+                </button>
+              </span>
+            ) : lastHit ? (
+              t(lastHit.key, lastHit.params)
+            ) : !b.hand.length && canDrawOnBoard(board) ? (
+              <span className="text-amber-200">{t("v3.deck.hint")}</span>
+            ) : (
+              <span className="text-stone-300">{t("v3.ui.tapCharacter")}</span>
+            )}
+          </div>
+          <TableDeck board={board} t={t} disabled={locked || !!pending || promote} onDraw={draw} onDrawAll={drawAll} onInspect={(target) => setViewingScripture(target)} />
+        </section>
 
-        {/* Upper row: 4 skill/energy card slots (上方技能四張卡), on phones only: the desktop has them in the side panel */}
-        <div className="lg:hidden">
-        <SkillSlotsRow
-          board={board}
-          t={t}
-          disabled={locked || !!pending || promote}
-          onDraw={draw}
-          onDrawAll={drawAll}
-          onPlay={play}
-          onPlayAll={playAll}
-          onInspect={(target) => setViewingScripture(target)}
-        />
-        </div>
-
-        {/* Our characters in two rows: the front row faces the enemy, the back row stands behind it */}
-        <section className="flex flex-1 flex-col items-center justify-center gap-2 px-2 pb-2 pt-3 sm:px-4">
+        {/* Our formation: the front row faces the enemy, the back row stands behind it */}
+        <section className="flex flex-col items-center gap-2 px-2 pb-2 sm:px-4">
           <FormationLane label={t("v3.ui.front")} tone="front">
             {board.front.map((id) => slot(id, "large", "z-10"))}
           </FormationLane>
