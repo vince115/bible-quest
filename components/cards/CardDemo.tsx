@@ -15,6 +15,7 @@ import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE, TIMELINE_ERAS } from "./timeline";
+import { samePersonAs } from "./samePerson";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
@@ -461,6 +462,29 @@ export function CardDemo() {
           </motion.div>
           {showStory && !viewing.scripture && <StoryPanel id={viewing.id as CharacterId | EnemyId} enemy={viewing.enemy} />}
           </div>
+          {/* The same person on other cards (another period of their life, or the other side of the table): a tap shows that card. */}
+          {!viewing.scripture && samePersonAs(viewing.id as CharacterId | EnemyId).length > 0 && (
+            <div onClick={(e) => e.stopPropagation()} className="flex max-w-xl flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
+              <span className="text-stone-400">{t("v3.demo.samePerson")}</span>
+              {samePersonAs(viewing.id as CharacterId | EnemyId).map(({ card, via }) => {
+                const other = CARDS.find((c) => c.id === card)!;
+                return (
+                  <button key={card} onClick={() => setViewing(other)} className="rounded-full border border-amber-300/70 px-3 py-1 text-xs font-bold text-amber-100 hover:bg-white/10">
+                    {t(other.enemy ? `v2.enemy.${card}.name` : `char.${card}.name`)}
+                    {/* Some people have a card on each side under the same name: say which is the enemy's. */}
+                    {other.enemy && <span className="ml-1 font-normal text-stone-400">{t("v3.demo.enemyCard")}</span>}
+                    {via && <span className="ml-0.5 font-normal text-stone-400">*</span>}
+                  </button>
+                );
+              })}
+              {/* The verse behind a link that is not plain, written once */}
+              {[...new Set(samePersonAs(viewing.id as CharacterId | EnemyId).flatMap(({ via }) => (via ? [via] : [])))].map((via) => (
+                <span key={via} className="text-xs text-stone-400">
+                  * {t(via)}
+                </span>
+              ))}
+            </div>
+          )}
           <div onClick={(e) => e.stopPropagation()} className="mb-auto flex flex-wrap items-center justify-center gap-2 text-sm text-stone-200">
             {at >= 0 && <span className="tabular-nums text-stone-400">{at + 1} / {onScreen.length}</span>}
             {!viewing.scripture && !viewing.enemy && CARD_RARITY[viewing.id as CharacterId] === "GR" && (
