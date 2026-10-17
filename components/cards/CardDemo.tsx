@@ -344,8 +344,9 @@ export function CardDemo() {
         </div>
       ) : (
         <>
-          {/* The periods in story order: a tap jumps to one (periods with no card under the current search are skipped). */}
-          <nav aria-label={t("v3.demo.timeline")} className="sticky top-12 z-20 flex w-full max-w-7xl gap-2 overflow-x-auto bg-stone-950/85 px-2 py-2 backdrop-blur [scrollbar-width:none]">
+          {/* The periods in story order: a tap jumps to one (periods with no card under the current search are skipped). One row that
+              scrolls sideways on a phone; on wider screens the chips wrap onto as many lines as they need. */}
+          <nav aria-label={t("v3.demo.timeline")} className="flex w-full max-w-7xl gap-2 overflow-x-auto px-2 py-2 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible">
             {eras.map(({ era, cards }, i) => (
               <a key={era} href={`#era-${era}`} className="shrink-0 rounded-full border border-stone-500 px-3 py-1 text-xs font-bold text-stone-200 hover:bg-white/10">
                 {i + 1}. {t(`v3.era.${era}.name`)} <span className="opacity-60">{cards.length}</span>
