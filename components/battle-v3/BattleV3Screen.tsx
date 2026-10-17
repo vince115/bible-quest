@@ -81,7 +81,8 @@ const CHAR_WIDTH = {
 /** Upper row: 4 skill/energy card slots across screen width. */
 const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
 /** The four slots in the side panel (desktop). */
-const SIDE_SLOT_WIDTH = "w-[min(7.5rem,calc((100dvh-16rem)/4.2))] xl:w-[min(8.5rem,calc((100dvh-16rem)/4.2))]";
+/** The cards in the side panel overlap like a held hand: each shows its top (name and energy) until hovered. */
+const SIDE_SLOT_WIDTH = "w-[7.5rem] xl:w-[8.5rem]";
 const CARD_RATIO = "aspect-[63/88]";
 
 
@@ -521,8 +522,8 @@ function SkillSlotsRow({
       </div>
 
       {/* 4 Card Slots */}
-      <div className={side ? "grid grid-cols-2 gap-2" : "flex items-center justify-center gap-2 sm:gap-3 lg:gap-4"}>
-        {slots.map((idx) => {
+      <div className={side ? "flex flex-col items-center [&>*+*]:-mt-[7.6rem] xl:[&>*+*]:-mt-[8.6rem]" : "flex items-center justify-center gap-2 sm:gap-3 lg:gap-4"}>
+        {(side ? slots.filter((idx) => idx < Math.max(1, Math.min(4, handLen + (canDrawSlots ? 1 : 0)))) : slots).map((idx) => {
           const inst = hand[idx];
           if (inst) {
             const cardId = inst.card;
@@ -532,7 +533,7 @@ function SkillSlotsRow({
             const extra = idx === 3 && handLen > 4 ? handLen - 4 : 0;
 
             return (
-              <div key={inst.uid} className={`relative flex shrink-0 flex-col items-center ${side ? SIDE_SLOT_WIDTH : SKILL_SLOT_WIDTH}`}>
+              <div key={inst.uid} className={`relative flex shrink-0 flex-col items-center ${side ? `${SIDE_SLOT_WIDTH} transition-transform hover:z-20 hover:-translate-y-2 hover:translate-x-3` : SKILL_SLOT_WIDTH}`}>
                 <div
                   role="button"
                   tabIndex={0}
@@ -1461,7 +1462,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
 
       {/* ---------- Hand: a side panel on desktop (on phones it stays a row above the characters) ---------- */}
-      <aside onClick={(e) => e.stopPropagation()} className="relative z-10 hidden w-[17rem] shrink-0 flex-col justify-center border-r border-white/10 bg-black/30 py-3 lg:flex xl:w-[19rem]">
+      <aside onClick={(e) => e.stopPropagation()} className="relative z-10 hidden w-[10.5rem] shrink-0 flex-col justify-center border-r border-white/10 bg-black/30 py-3 lg:flex xl:w-[11.5rem]">
         <SkillSlotsRow
           board={board}
           t={t}
