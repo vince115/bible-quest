@@ -35,6 +35,8 @@ export interface CampaignStage {
   drops?: CharacterId[];
   /** Stage art in public/stages, when there is some. */
   art?: string;
+  /** Which part of the art the stage list's wide strip shows (CSS object-position); the middle when left out. */
+  artFocus?: string;
   /** The scripture (energy) deck the stage lends, once decks are built per stage; the standard deck until then. */
   deck?: CardId[];
   /** Custom background music for this stage. */
@@ -49,7 +51,7 @@ export const CAMPAIGN: CampaignStage[] = [
   { id: "goliath", testament: "old", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 6, art: "/stages/goliath.jpg", bgm: "/audio/bgm/goliath.mp3" },
   { id: "carmel", testament: "old", era: "prophets", battle: "carmel", pool: ["elijah", "elisha", "naaman", "jehu", "zarephath", "shunammite"], pick: 6, art: "/stages/carmel.jpg", bgm: "/audio/bgm/carmel.mp3" },
   { id: "lions", testament: "old", era: "exile", battle: "lions", before: "plot", pool: ["daniel", "threeFriends", "nebuchadnezzar", "esther", "haman", "nehemiah"], pick: 6, art: "/stages/lions.jpg", bgm: "/audio/bgm/lions.mp3" },
-  { id: "temptation", testament: "new", era: "ministry", battle: "temptation", before: "disguise", hell: "revealed", hellDrop: "satan", pool: ["jesusUR", "holySpirit", "peter", "johnApostle", "satanDisguised", "satan"], drops: ["satanDisguised", "satan"], pick: 6, art: "/stages/temptation.jpg", bgm: "/audio/bgm/battle.mp3" },
+  { id: "temptation", testament: "new", era: "ministry", battle: "temptation", before: "disguise", hell: "revealed", hellDrop: "satan", pool: ["jesusUR", "holySpirit", "peter", "johnApostle", "satanDisguised", "satan"], drops: ["satanDisguised", "satan"], pick: 6, art: "/stages/temptation.jpg", artFocus: "center 12%", bgm: "/audio/bgm/battle.mp3" },
   { id: "gerasa", testament: "new", era: "ministry", battle: "gerasa", pool: ["jesusUR", "peter", "jamesZeb", "johnApostle", "simonZealot", "legionFreed"], pick: 6, art: "/stages/legion.jpg", bgm: "/audio/bgm/gerasa.mp3" },
 ];
 

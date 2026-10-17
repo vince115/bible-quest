@@ -98,7 +98,7 @@ export function CampaignScreen() {
                     style={{ WebkitMaskImage: STAGE_FADE, maskImage: STAGE_FADE }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
-                    <img src={asset(stage.art)} alt="" className="h-full w-full object-cover" />
+                    <img src={asset(stage.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: stage.artFocus }} />
                   </div>
                 )}
                 <OrnateFrame size={22} />
