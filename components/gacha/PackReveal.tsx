@@ -1,7 +1,8 @@
 "use client";
 
-// Turning the five cards of an opened pack over, one at a time, then all five together. A tap on a turned card views it
-// close up; the next card comes with the Next button.
+// Turning the five cards of an opened pack over, one at a time: a tap on a turned card views it close up, and Next sends it
+// flying down into its place in the row of five below (the first to the left end), until the row is full. Turning all over
+// lays the five out at once. From the row, the five are put away into the collection together.
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -56,12 +57,19 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
   const [fly, setFly] = useState<{ x: number; y: number }[] | null>(null);
   const [stored, setStored] = useState(false);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /** One at a time: how the card on show flies down into its place in the row, while it does; and how many are in the row. */
+  const [leaving, setLeaving] = useState<{ x: number; y: number; scale: number } | null>(null);
+  const [placed, setPlaced] = useState(0);
+  const oneRef = useRef<HTMLDivElement | null>(null);
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /** The row was filled one card at a time, so the laid-out five need not land again. */
+  const [landed, setLanded] = useState(false);
 
   const current = results[at];
   const rare = (i: number) => ["SR", "SSR", "UR", "GR"].includes(CARD_RARITY[results[i].card]);
   // The cards land on the table one after another: a soft thud for each, as it arrives.
   useEffect(() => {
-    if (!all) return;
+    if (!all || landed) return;
     const timers = results.map((_, i) => window.setTimeout(() => playSfx(rare(i) ? "rare" : "land"), 220 * i + 380));
     return () => timers.forEach((t) => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- results never change while the pack is shown
@@ -73,35 +81,60 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       playSfx(rare(at) ? "rare" : "flip");
     } else setViewing(at);
   };
+  // Cards fly into the collection: its link in the side menu, or the menu button on a phone. How far an element must go.
+  const toCollection = (el: Element | null | undefined) => {
+    const visible = (e: Element | null) => !!e && e.getBoundingClientRect().width > 0;
+    const target = [...document.querySelectorAll('a[href="/collection"], header button')].find(visible);
+    const to = target?.getBoundingClientRect() ?? new DOMRect(16, 16, 0, 0);
+    const r = el?.getBoundingClientRect();
+    return r ? { x: to.left + to.width / 2 - (r.left + r.width / 2), y: to.top + to.height / 2 - (r.top + r.height / 2) } : { x: 0, y: 0 };
+  };
+  // The collection answers each arrival with a little bounce.
+  const bounce = () => {
+    playSfx("land");
+    const link = [...document.querySelectorAll('a[href="/collection"]')].find((el) => el.getBoundingClientRect().width > 0);
+    link?.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 420, easing: "ease-out" });
+  };
+  // One at a time: Next sends the card on show down into its place in the row, then the next card comes; the last one fills
+  // the row, and the five lie laid out.
   const next = () => {
+    const from = oneRef.current?.getBoundingClientRect();
+    const to = slotRefs.current[at]?.getBoundingClientRect();
+    setViewing(null);
+    setLeaving(from && to ? { x: to.left + to.width / 2 - (from.left + from.width / 2), y: to.top + to.height / 2 - (from.top + from.height / 2), scale: to.width / from.width } : { x: 0, y: 0, scale: 1 });
+  };
+  const placedOne = () => {
+    playSfx(rare(at) ? "rare" : "land");
+    setLeaving(null);
+    setPlaced(at + 1);
     if (at < results.length - 1) {
       setAt(at + 1);
       setFlipped(false);
-    } else setAll(true);
+    } else {
+      setLanded(true);
+      setAll(true);
+    }
   };
-  // The cards fly one after another into the collection: its link in the side menu, or the menu button on a phone.
+  // All five on the table fly in one after another.
   const store = () => {
-    const visible = (el: Element | null) => !!el && el.getBoundingClientRect().width > 0;
-    const target = [...document.querySelectorAll('a[href="/collection"], header button')].find(visible);
-    const to = target?.getBoundingClientRect() ?? new DOMRect(16, 16, 0, 0);
-    const toX = to.left + to.width / 2;
-    const toY = to.top + to.height / 2;
     setViewing(null);
-    setFly(
-      results.map((_, i) => {
-        const r = cardRefs.current[i]?.getBoundingClientRect();
-        return r ? { x: toX - (r.left + r.width / 2), y: toY - (r.top + r.height / 2) } : { x: 0, y: 0 };
-      }),
-    );
+    setFly(results.map((_, i) => toCollection(cardRefs.current[i])));
     playSfx("flip");
   };
   const arrived = () => {
     setStored(true);
-    playSfx("land");
-    // The collection answers with a little bounce.
-    const link = [...document.querySelectorAll('a[href="/collection"]')].find((el) => el.getBoundingClientRect().width > 0);
-    link?.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 420, easing: "ease-out" });
+    bounce();
   };
+  const after = (
+    <div className="flex flex-wrap justify-center gap-3">
+      <button onClick={onAgain} className={PRIMARY_BUTTON}>
+        {t("v3.gacha.again")}
+      </button>
+      <Link href="/collection" className={SECONDARY_BUTTON}>
+        {t("nav.collection")} →
+      </Link>
+    </div>
+  );
   const viewer = viewing !== null && <PulledViewer results={all ? results : [results[viewing]]} start={all ? viewing : 0} onClose={() => setViewing(null)} />;
 
   if (all) {
@@ -117,7 +150,7 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
               ref={(el) => {
                 cardRefs.current[i] = el;
               }}
-              initial={{ opacity: 0, y: 260, scale: 0.4, rotate: i % 2 ? 14 : -14 }}
+              initial={landed ? false : { opacity: 0, y: 260, scale: 0.4, rotate: i % 2 ? 14 : -14 }}
               animate={fly ? { opacity: 0, x: fly[i].x, y: fly[i].y, scale: 0.12, rotate: i % 2 ? 20 : -20 } : { opacity: 1, y: 0, scale: 1, rotate: 0 }}
               transition={fly ? { delay: i * 0.12, duration: 0.65, ease: [0.5, 0, 0.75, 0] } : { delay: i * 0.22, type: "spring", stiffness: 170, damping: 17 }}
               onAnimationComplete={() => fly && i === results.length - 1 && arrived()}
@@ -139,14 +172,7 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
             {t("v3.gacha.store")}
           </button>
         ) : (
-          <div className="flex flex-wrap justify-center gap-3">
-            <button onClick={onAgain} className={PRIMARY_BUTTON}>
-              {t("v3.gacha.again")}
-            </button>
-            <Link href="/collection" className={SECONDARY_BUTTON}>
-              {t("nav.collection")} →
-            </Link>
-          </div>
+          after
         )}
         {viewer}
       </div>
@@ -158,11 +184,20 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
       <div className="text-sm font-bold tabular-nums text-stone-400">
         {at + 1} / {results.length}
       </div>
+      <motion.div
+        key={at}
+        ref={oneRef}
+        className="relative z-40"
+        initial={{ opacity: 0, y: -30, scale: 0.92 }}
+        animate={leaving ? { x: leaving.x, y: leaving.y, scale: leaving.scale } : { opacity: 1, x: 0, y: 0, scale: 1 }}
+        transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 220, damping: 22 }}
+        onAnimationComplete={() => leaving && placedOne()}
+      >
       <button
         type="button"
-        onClick={tap}
+        onClick={() => !leaving && tap()}
         aria-label={flipped ? t("v3.demo.view") : t("v3.gacha.tap")}
-        className="relative w-[220px] text-[10.3px] [perspective:1000px]"
+        className="relative block w-[220px] text-[10.3px] [perspective:1000px]"
         style={{ aspectRatio: "63/88" }}
       >
         <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d]" style={{ transform: flipped ? "rotateY(180deg)" : "none" }}>
@@ -180,17 +215,42 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
           </div>
         </div>
       </button>
+      </motion.div>
       <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {flipped && (
-          <button onClick={next} className={PRIMARY_BUTTON}>
+          <button onClick={next} disabled={!!leaving} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
             {at < results.length - 1 ? `${t("v3.demo.next")} →` : t("v3.gacha.showAll")}
           </button>
         )}
-        <button onClick={() => setAll(true)} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+        <button onClick={() => setAll(true)} disabled={!!leaving} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10 disabled:opacity-60">
           {t("v3.gacha.skip")}
         </button>
       </div>
+      {/* The row of five the turned cards go into, the first at the left end; a placed card can be viewed close up. */}
+      <section aria-label={t("v3.gacha.result")} className="grid w-full max-w-4xl grid-cols-[repeat(auto-fill,minmax(130px,1fr))] justify-items-center gap-x-3 gap-y-5">
+        {results.map((pulled, i) => (
+          <div
+            key={i}
+            ref={(el) => {
+              slotRefs.current[i] = el;
+            }}
+            className={`relative w-[130px] rounded-md ${i < placed ? GLOW[CARD_RARITY[pulled.card]] : "bg-black/20"}`}
+            style={{ aspectRatio: "63/88" }}
+          >
+            {i < placed && (
+              <>
+                <button type="button" onClick={() => setViewing(i)} aria-label={t("v3.demo.view")} className="block cursor-zoom-in">
+                  <HoloCard element={CHARACTER_ELEMENT[pulled.card]} rarity={CARD_RARITY[pulled.card]} effects touchTilt={false} figure={figureArea(pulled.card)} className="w-[130px] text-[6.1px]">
+                    <CharacterCardFace id={pulled.card} />
+                  </HoloCard>
+                </button>
+                <Badge pulled={pulled} />
+              </>
+            )}
+          </div>
+        ))}
+      </section>
       {viewer}
     </div>
   );
