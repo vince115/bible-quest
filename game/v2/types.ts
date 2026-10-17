@@ -183,8 +183,10 @@ export interface BattleState {
   /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
   goliath: GoliathState;
   stage: StageId;
-  /** The ally the Serpent coiled around: they can't be swapped out of the front line this turn. */
+  /** The ally the Serpent coiled around: they can't move to another place this turn. */
   coiled: CharacterId | null;
+  /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
+  rows?: boolean;
   /** Goliath's [current intent, next intent]; both are always shown. */
   intents: [Intent, Intent];
   /** Who the stage's shooter (the archer, the captain of the chariots, ...) will hit this turn. */

@@ -136,10 +136,15 @@ const randomAlly = (s: BattleState, rng: Rng) => {
   return alive.length ? alive[Math.floor(rng() * alive.length)] : null;
 };
 
-/** Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. */
+/**
+ * Enemies a normal attack can hit: the boss is protected while the stage's guard (Goliath's shield bearer, ...) stands. On
+ * the v3 board the enemy stands in two rows, the guard in front and the boss and the shooter behind, and the guard
+ * shields the whole back row.
+ */
 export function attackableEnemies(s: BattleState): EnemyId[] {
   const guard = guardOf(s);
-  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(id === bossOf(s) && guard && enemyAlive(s, guard)));
+  const shielded = !!guard && enemyAlive(s, guard);
+  return ENEMY_ORDER.filter((id) => enemyAlive(s, id) && !(shielded && (id === bossOf(s) || (s.rows && id === shooterOf(s)))));
 }
 
 /** A standing, un-Shaken character who hasn't used a skill yet this turn. */
