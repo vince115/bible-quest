@@ -1540,7 +1540,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </div>
 
         {/* Our characters in two rows: the front row faces the enemy, the back row stands behind it */}
-        <section className="flex flex-1 flex-col items-center justify-center gap-3 px-2 pb-2 pt-3 sm:px-4">
+        <section className="flex flex-1 flex-col items-center justify-center gap-2 px-2 pb-2 pt-3 sm:px-4">
           <FormationLane label={t("v3.ui.front")} tone="front">
             {board.front.map((id) => slot(id, "large", "z-10"))}
           </FormationLane>
