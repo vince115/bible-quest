@@ -518,6 +518,14 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "mark") return R.markRetaliate;
   if (skill === "firstlings") return R.firstlingsHeal;
   if (skill === "anotherSeed") return 40;
+  if (skill === "letThereBeLight") return R.lightHeal;
+  if (skill === "lordMyShield") return R.fatherShield;
+  if (skill === "likeADove") return R.doveFaith;
+  if (skill === "comforter") return R.comforterHeal;
+  if (skill === "heraldNews") return R.heraldFaith;
+  if (skill === "fearNot") return R.fearNotShield;
+  if (skill === "heavenlyHost") return R.hostShield;
+  if (skill === "angelOfLight") return R.lightFaith;
   if (skill === "ark") return R.arkShield;
   if (skill === "rainbow") return R.rainbowHeal;
   if (skill === "stars") return R.starsFaith;
@@ -1222,9 +1230,9 @@ function dryBonesFallen(s: BattleState): CharacterId[] {
 
 export function skillTargetKind(skill: SkillId): TargetKind {
   if (skill === "comeOut" || skill === "greatFlood" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
-  if (skill === "bash" || skill === "spearThrust" || skill === "venom") return "enemy";
+  if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
-  if (skill === "heal" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
+  if (skill === "heal" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
   if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
   if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim" || skill === "lotFell" || skill === "talithaCumi" || skill === "itIsWell") return "fallenAlly";
   if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord" || skill === "underAuthority") return "actedAlly";
@@ -2899,6 +2907,59 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       log(s, "v2.log.inTheSpirit", "player", { n: R.patmosFaith });
       draw(s, 1, rng);
       break;
+    case "letThereBeLight":
+      // And God said, Let there be light: and there was light (Genesis 1:3).
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        c.hp += Math.min(R.lightHeal, MAX_HP[id] - c.hp);
+        c.shaken = false;
+      });
+      gainAttack(s, def.owner, R.lightAttack);
+      log(s, "v2.log.letThereBeLight", "player", { n: R.lightHeal });
+      break;
+    case "lordMyShield":
+    case "heavenlyHost": {
+      // But thou, O LORD, art a shield for me (Psalm 3:3); the angel of the LORD encampeth round about them that fear him (Psalm 34:7).
+      const n = skill === "lordMyShield" ? R.fatherShield : R.hostShield;
+      living(s).forEach((id) => addShield(s, id, n));
+      log(s, skill === "lordMyShield" ? "v2.log.lordMyShield" : "v2.log.heavenlyHost", "player", { n });
+      break;
+    }
+    case "likeADove":
+    case "heraldNews": {
+      // The Spirit of God descending like a dove (Matthew 3:16); I am sent to shew thee these glad tidings (Luke 1:19).
+      const n = skill === "likeADove" ? R.doveFaith : R.heraldFaith;
+      gainFaith(s, def.owner, n);
+      log(s, skill === "likeADove" ? "v2.log.likeADove" : "v2.log.heraldNews", "player", { n });
+      draw(s, 1, rng);
+      break;
+    }
+    case "comforter": {
+      // The Comforter, which is the Holy Ghost, shall teach you all things (John 14:26).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(R.comforterHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      c.shaken = false;
+      log(s, "v2.log.comforter", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "fearNot": {
+      // Fear not, Mary: for thou hast found favour with God (Luke 1:30).
+      const ally = target as CharacterId;
+      s.party[ally].shaken = false;
+      addShield(s, ally, R.fearNotShield);
+      log(s, "v2.log.fearNot", "player", { char: ally, n: R.fearNotShield });
+      break;
+    }
+    case "angelOfLight": {
+      // Satan himself is transformed into an angel of light (2 Corinthians 11:14): the lie has a price.
+      gainFaith(s, def.owner, R.lightFaith);
+      const c = s.party[def.owner];
+      c.hp = Math.max(1, c.hp - R.lightCost);
+      log(s, "v2.log.angelOfLight", "player", { n: R.lightFaith, cost: R.lightCost });
+      break;
+    }
     case "newHeaven":
       // And God shall wipe away all tears from their eyes; and there shall be no more death (Revelation 21:4).
       living(s).forEach((id) => {

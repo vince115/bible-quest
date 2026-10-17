@@ -552,6 +552,17 @@ export const RULES_V2 = {
   rejoicingHeal: 20,
   /** John on Patmos: In the Spirit gives Faith and a card; a New Heaven heals and steadies every ally. */
   patmosFaith: 2,
+  /** The Father, the Holy Spirit, Gabriel, Michael and Satan's disguise. */
+  lightHeal: 40,
+  lightAttack: 2,
+  fatherShield: 40,
+  doveFaith: 3,
+  comforterHeal: 50,
+  heraldFaith: 2,
+  fearNotShield: 30,
+  hostShield: 20,
+  lightFaith: 3,
+  lightCost: 30,
   newHeavenHeal: 30,
   /** Ehud: the left-handed dagger strikes harder at an enemy still unhurt; his trumpet gives Attack and covers him. */
   ehudSurprise: 20,
@@ -838,6 +849,7 @@ export const CHARACTER_ELEMENT: Record<CharacterId, Element> = {
   bearerP: "wood",
   goliathP: "metal",
   serpentP: "dark",
+  father: "light", holySpirit: "light", gabriel: "light", michael: "light", satanDisguised: "dark", satan: "dark",
 };
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   bearer: "wood", goliath: "metal", archer: "fire", serpent: "dark",
@@ -878,7 +890,7 @@ export const basicDamage = (id: CharacterId): number => RULES_V2.table.basicDama
 export const energyCap = (id: CharacterId): number => RULES_V2.table.cap[CARD_RARITY[id]];
 
 /** Every playable character, in display order. */
-export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "seth", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "zarephath", "shunammite", "naaman", "maid", "bathsheba", "mephibosheth", "sheba", "leah", "esau", "hagar", "lot", "jochebed", "pharaohDaughter", "jethro", "zipporah", "loisEunice", "balaam", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "ahab", "absalom", "sapphira", "pilate", "caiaphas", "herod", "barabbas", "herodias", "romanSoldier", "romanSpearman", "romanArcher", "romanCavalry", "romanCenturion", "sennacherib", "belshazzar", "korah", "achan", "sisera", "herodGreat", "legionFreed", "prodigal", "ethiopian", "johnPatmos", "ehud", "jephthah", "joab", "uriah", "cyrus", "zerubbabel", "vashti", "michal", "gehazi", "jehu", "canaanite", "richRuler", "cleopas", "malchus", "jailer", "rhoda", "simonMagus", "herodAgrippa", "goliathP", "serpentP", "bearerP", "archerP"];
+export const PARTY_ORDER: CharacterId[] = ["david", "samuel", "jonathan", "adam", "eve", "cain", "abel", "seth", "noah", "abraham", "isaac", "jacob", "joseph", "moses", "aaron", "miriam", "mosesSinai", "joshua", "rahab", "deborah", "gideon", "samson", "ruth", "naomi", "boaz", "hannah", "saul", "abigail", "solomon", "elijah", "elisha", "jonah", "isaiah", "esther", "daniel", "nehemiah", "zechariah", "mary", "josephNaz", "johnBaptist", "jesus", "jesusUR", "peter", "andrew", "johnApostle", "matthew", "jamesZeb", "thomas", "maryMagdalene", "martha", "zacchaeus", "maryBethany", "lazarus", "stephen", "philip", "paul", "barnabas", "silas", "timothy", "lydia", "priscilla", "eli", "aquila", "dorcas", "cornelius", "apollos", "phoebe", "luke", "johnMark", "titus", "philemon", "onesimus", "nicodemus", "samaritan", "simeon", "anna", "loavesBoy", "judas", "philipApostle", "nathanael", "jamesAlph", "thaddaeus", "simonZealot", "matthias", "elizabeth", "mordecai", "sarah", "rebekah", "rachel", "barak", "jael", "josephArimathea", "ananias", "threeFriends", "job", "enoch", "melchizedek", "caleb", "jeremiah", "ezekiel", "ezra", "nathan", "hezekiah", "josiah", "magi", "shepherds", "bartimaeus", "centurion", "jairus", "simonCyrene", "thief", "jamesJust", "jesusCross", "widow", "fisherman", "fourFriends", "goodSamaritan", "zarephath", "shunammite", "naaman", "maid", "bathsheba", "mephibosheth", "sheba", "leah", "esau", "hagar", "lot", "jochebed", "pharaohDaughter", "jethro", "zipporah", "loisEunice", "balaam", "mockingThief", "pharaoh", "charioteer", "jezebel", "baalProphet", "haman", "delilah", "nebuchadnezzar", "ahab", "absalom", "sapphira", "pilate", "caiaphas", "herod", "barabbas", "herodias", "romanSoldier", "romanSpearman", "romanArcher", "romanCavalry", "romanCenturion", "sennacherib", "belshazzar", "korah", "achan", "sisera", "herodGreat", "legionFreed", "prodigal", "ethiopian", "johnPatmos", "ehud", "jephthah", "joab", "uriah", "cyrus", "zerubbabel", "vashti", "michal", "gehazi", "jehu", "canaanite", "richRuler", "cleopas", "malchus", "jailer", "rhoda", "simonMagus", "herodAgrippa", "goliathP", "serpentP", "bearerP", "archerP", "father", "holySpirit", "gabriel", "michael", "satanDisguised", "satan"];
 /** Who fights when no line-up is chosen (the v2 battle). */
 export const DEFAULT_LINEUP: CharacterId[] = ["david", "samuel", "jonathan"];
 
@@ -922,7 +934,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160 };
+export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 170, satan: 280 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -1301,6 +1313,24 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   taunt: { id: "taunt", owner: "goliathP", kind: "attack", cost: 2, damage: 10 },
   venom: { id: "venom", owner: "serpentP", kind: "attack", cost: 1, damage: 30 },
   beguile: { id: "beguile", owner: "serpentP", kind: "guard", cost: 3 },
+  // The Father: "Let there be light" (Genesis 1:3) and "the LORD is a shield for me" (Psalm 3:3)
+  letThereBeLight: { id: "letThereBeLight", owner: "father", kind: "faith", cost: 2 },
+  lordMyShield: { id: "lordMyShield", owner: "father", kind: "guard", cost: 1 },
+  // The Holy Spirit descends like a dove (Matthew 3:16) and is the Comforter (John 14:26)
+  likeADove: { id: "likeADove", owner: "holySpirit", kind: "faith", cost: 1 },
+  comforter: { id: "comforter", owner: "holySpirit", kind: "guard", cost: 2 },
+  // Gabriel brings good news (Luke 1:19) and says "Fear not" (Luke 1:30)
+  heraldNews: { id: "heraldNews", owner: "gabriel", kind: "faith", cost: 1 },
+  fearNot: { id: "fearNot", owner: "gabriel", kind: "guard", cost: 1 },
+  // Michael and his angels fought against the dragon (Revelation 12:7)
+  whoIsLikeGod: { id: "whoIsLikeGod", owner: "michael", kind: "attack", cost: 2, damage: 80 },
+  heavenlyHost: { id: "heavenlyHost", owner: "michael", kind: "guard", cost: 1 },
+  // Satan tempts: "If thou be the Son of God" (Matthew 4:3); Satan transformed into an angel of light (2 Corinthians 11:14)
+  ifThouBeSon: { id: "ifThouBeSon", owner: "satanDisguised", kind: "attack", cost: 1, damage: 30 },
+  angelOfLight: { id: "angelOfLight", owner: "satanDisguised", kind: "faith", cost: 2 },
+  // The fiery darts of the wicked (Ephesians 6:16); a roaring lion seeking whom he may devour (1 Peter 5:8)
+  fieryDarts: { id: "fieryDarts", owner: "satan", kind: "attack", cost: 2, damage: 70 },
+  roaringLion: { id: "roaringLion", owner: "satan", kind: "attack", cost: 3, damage: 100 },
 };
 
 /**
@@ -1325,6 +1355,7 @@ const TABLE_BLUE = new Set<SkillId>([
   "swiftToHear", "swordDown", "takeTooMuch", "taunt", "tenthOfAll", "theirFaith", "thirtySilver", "toiledAllNight",
   "trulySonOfGod", "twoPence", "twoTalents", "walkedWithGod", "washedHands", "waterCamels", "watered", "whither",
   "whomTrust", "withYouAlway", "wouldNotGoHome", "writingOnWall", "zealForLord",
+  "letThereBeLight", "likeADove", "heraldNews", "angelOfLight", "heavenlyHost", "roaringLion",
 ]);
 /** A skill's kind in the tabletop rules (decides which colour of energy card pays for it). */
 export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" => (TABLE_BLUE.has(skill) ? "faith" : SKILLS[skill].kind);
@@ -1517,6 +1548,12 @@ export const CHARACTER_SKILLS: Record<CharacterId, SkillId[]> = {
   bearerP: ["shieldUp", "bash"],
   goliathP: ["spearThrust", "taunt"],
   serpentP: ["venom", "beguile"],
+  father: ["letThereBeLight", "lordMyShield"],
+  holySpirit: ["likeADove", "comforter"],
+  gabriel: ["heraldNews", "fearNot"],
+  michael: ["whoIsLikeGod", "heavenlyHost"],
+  satanDisguised: ["ifThouBeSon", "angelOfLight"],
+  satan: ["fieryDarts", "roaringLion"],
 };
 
 /**
