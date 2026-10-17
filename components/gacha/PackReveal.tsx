@@ -1,8 +1,8 @@
 "use client";
 
-// Turning the five cards of an opened pack over, one at a time: a tap on a turned card views it close up, and Next sends it
-// flying down into its place in the row of five below (the first to the left end), until the row is full. Turning all over
-// lays the five out at once. From the row, the five are put away into the collection together.
+// Drawing the five cards of an opened pack, one at a time: a tap on the card in the pack draws it out, and it turns over in
+// the air as it flies into its place in the row of five; then the next card comes up. A card in the row views close up.
+// Turning all over lays the five out at once. From the row, the five are put away into the collection together.
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -88,13 +88,7 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
     return () => timers.forEach((t) => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- results never change while the pack is shown
   }, [all]);
-  // A tap turns the card over; once it is turned, a tap views it close up.
-  const tap = () => {
-    if (!flipped) {
-      setFlipped(true);
-      playSfx(rare(at) ? "rare" : "flip");
-    } else setViewing(at);
-  };
+
   // Cards fly into the collection: its link in the side menu, or the menu button on a phone. How far an element must go.
   const toCollection = (el: Element | null | undefined) => {
     const visible = (e: Element | null) => !!e && e.getBoundingClientRect().width > 0;
@@ -109,12 +103,15 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
     const link = [...document.querySelectorAll('a[href="/collection"]')].find((el) => el.getBoundingClientRect().width > 0);
     link?.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 420, easing: "ease-out" });
   };
-  // One at a time: Next sends the card on show down into its place in the row, then the next card comes; the last one fills
-  // the row, and the five lie laid out.
-  const next = () => {
+  // One at a time: a tap draws the card out of the pack; it turns over in the air and flies into its place in the row, then
+  // the next card comes up. The last one fills the row, and the five lie laid out.
+  const draw = () => {
+    if (leaving) return;
     const from = oneRef.current?.getBoundingClientRect();
     const to = slotRefs.current[at]?.getBoundingClientRect();
     setViewing(null);
+    setFlipped(true);
+    playSfx(rare(at) ? "rare" : "flip");
     setLeaving(from && to ? { x: to.left + to.width / 2 - (from.left + from.width / 2), y: to.top + to.height / 2 - (from.top + from.height / 2), scale: to.width / from.width } : { x: 0, y: 0, scale: 1 });
   };
   const placedOne = () => {
@@ -234,14 +231,15 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
             className="absolute top-0 z-40"
             style={{ left: (PACK_W - CARD_W) / 2 }}
             initial={pack ? { y: CARD_H } : { opacity: 0, y: -30, scale: 0.92 }}
-            animate={leaving ? { x: leaving.x, y: leaving.y, scale: leaving.scale } : { opacity: 1, x: 0, y: 0, scale: 1 }}
-            transition={leaving ? { duration: 0.5, ease: [0.4, 0, 0.2, 1] } : { type: "spring", stiffness: 160, damping: 22, delay: at === 0 ? 0.75 : 0.1 }}
+            // Drawn out: up out of the pack first, turning over, then across into its place in the row.
+            animate={leaving ? { x: [0, 0, leaving.x], y: [0, -CARD_H * 0.55, leaving.y], scale: [1, 1.04, leaving.scale] } : { opacity: 1, x: 0, y: 0, scale: 1 }}
+            transition={leaving ? { duration: 0.95, times: [0, 0.4, 1], ease: "easeInOut" } : { type: "spring", stiffness: 160, damping: 22, delay: at === 0 ? 0.75 : 0.1 }}
             onAnimationComplete={() => leaving && placedOne()}
           >
             <button
               type="button"
-              onClick={() => !leaving && tap()}
-              aria-label={flipped ? t("v3.demo.view") : t("v3.gacha.tap")}
+              onClick={draw}
+              aria-label={t("v3.gacha.draw")}
               className="relative block [perspective:1000px]"
               style={{ width: CARD_W, aspectRatio: "63/88", fontSize: `${(10.3 * CARD_W) / 220}px` }}
             >
@@ -270,13 +268,8 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
             </motion.div>
           )}
         </div>
-        <p className="h-5 text-sm text-stone-300">{flipped ? t("v3.gacha.tapToView") : t("v3.gacha.tap")}</p>
+        <p className="h-5 text-center text-sm text-stone-300">{placed > 0 ? t("v3.gacha.drawMore") : t("v3.gacha.draw")}</p>
         <div className="flex flex-wrap justify-center gap-2">
-          {flipped && (
-            <button onClick={next} disabled={!!leaving} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
-              {at < results.length - 1 ? `${t("v3.demo.next")} →` : t("v3.gacha.showAll")}
-            </button>
-          )}
           <button onClick={() => setAll(true)} disabled={!!leaving} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10 disabled:opacity-60">
             {t("v3.gacha.skip")}
           </button>
