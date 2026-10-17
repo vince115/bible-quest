@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STAGE_ENEMIES } from "../v2/data";
+import { MAX_HP, STAGE_ENEMIES } from "../v2/data";
 import { isAlive } from "../v2/engine";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { campaignStage, stageBgm, stageOfBattle } from "./campaign";
@@ -110,5 +110,27 @@ describe("the lions' den in two rounds", () => {
     expect(useBattleV3Store.getState().interlude).toBe("eden");
     useBattleV3Store.getState().nextRound();
     expect(useBattleV3Store.getState().board!.battle.stage).toBe("eden");
+  });
+
+  it("the wilderness: a tempter who looks like a man, then Satan shown for what he is; the player's Satan cards have more HP than before", () => {
+    expect(STAGE_ENEMIES.disguise).toEqual(["satanMan"]);
+    expect(STAGE_ENEMIES.temptation).toEqual(["satanFoe"]);
+    const stage = campaignStage("temptation");
+    expect(stage.before).toBe("disguise");
+    expect(stage.drops).toEqual(["satanDisguised", "satan"]);
+    expect(stageOfBattle("disguise")).toBe(stage);
+    expect(CARD_RARITY.satanMan).toBe("SSR");
+    expect(CARD_RARITY.satanFoe).toBe("UR");
+    expect(MAX_HP.satanDisguised).toBeGreaterThanOrEqual(250);
+    expect(MAX_HP.satan).toBeGreaterThanOrEqual(400);
+    const store = useBattleV3Store.getState();
+    store.enter("temptation");
+    store.start(["peter", "johnApostle", "holySpirit"], "peter", "temptation", "table");
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("disguise");
+    useBattleV3Store.getState().board!.battle.enemies.satanMan.hp = 1;
+    useBattleV3Store.getState().basic("peter", "satanMan");
+    expect(useBattleV3Store.getState().interlude).toBe("temptation");
+    useBattleV3Store.getState().nextRound();
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("temptation");
   });
 });

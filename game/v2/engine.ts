@@ -28,6 +28,8 @@ import {
   LIONS_CYCLE,
   PLOT_CYCLE,
   TEMPTER_CYCLE,
+  DISGUISE_CYCLE,
+  TEMPTATION_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -106,6 +108,10 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return PLOT_CYCLE;
     case "tempter":
       return TEMPTER_CYCLE;
+    case "disguise":
+      return DISGUISE_CYCLE;
+    case "temptation":
+      return TEMPTATION_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -113,8 +119,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", disguise: "v2.log.startDisguise", temptation: "v2.log.startTemptation", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", disguise: "v2.log.victoryDisguise", temptation: "v2.log.victoryTemptation", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -211,6 +217,9 @@ export function actionBase(s: BattleState, action: GoliathActionId): number {
     case "cut": return enraged ? R.cutFrenzy : R.cut;
     case "pounce": return R.pounce;
     case "decree": return R.decree;
+    case "lure": return R.lure;
+    case "darts": return R.darts;
+    case "devour": return R.devour;
     case "maul": return R.maul;
     case "many": return R.many;
     case "chains": return R.chains;
@@ -220,7 +229,7 @@ export function actionBase(s: BattleState, action: GoliathActionId): number {
 
 /** Does this action hit every ally in the boss's current phase? (We Are Many does once Legion is unleashed.) */
 export const hitsEveryone = (s: BattleState, action: GoliathActionId): boolean =>
-  ["swing", "coil", "rain", "deluge", "arrows", "leap"].includes(action) || (action === "many" && s.goliath.enraged);
+  ["swing", "coil", "rain", "deluge", "arrows", "leap", "darts"].includes(action) || (action === "many" && s.goliath.enraged);
 
 function checkVictory(s: BattleState) {
   const boss = bossOf(s);
@@ -404,7 +413,7 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
 /** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage) && s.lineup.includes(id);
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage === "disguise" ? "temptation" : s.stage) && s.lineup.includes(id);
 
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
@@ -4171,6 +4180,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       // ---- The Flood (Noah's ark) ----
       case "rain":
       case "arrows":
+      case "darts":
       case "leap":
         living(s).forEach((id) => damageAlly(s, id, actionBase(s, intent.action), boss));
         break;
@@ -4190,6 +4200,8 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       case "boulder":
       case "pounce":
       case "decree":
+      case "lure":
+      case "devour":
       case "chains": {
         const t = target();
         if (t) damageAlly(s, t, actionBase(s, intent.action), boss);

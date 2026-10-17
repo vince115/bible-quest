@@ -50,15 +50,16 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter"
+  | "serpentTempter" | "satanMan" | "satanFoe"
   | "legion" | "uncleanSpirits" | "swine";
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
 /**
  * "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel) and "tempter" the first
- * round of Eden (the cunning serpent tempts Eve); neither is a stage of its own.
+ * round of Eden (the cunning serpent tempts Eve); "disguise" is the first round of the temptation in the wilderness (Satan
+ * looks like a man) and "temptation" its second (he shows what he is). None of them is a stage of its own.
  */
-export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter";
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter" | "temptation" | "disguise";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */
@@ -122,7 +123,7 @@ export type PoolMode = "team" | "personal" | "table";
 /**
  * The boss's actions: Goliath's; the Serpent's (tempt, fang, coil); the Flood's (rain, surge, rise, deluge);
  * the chariots' (pursue, charge, arrows); the walls' (stones, arrows, repair, boulder); the prophets of Baal's
- * (cry, leap, cut); the lions' (roar, pounce, maul); the presidents' (accuse, decree); Legion's (many, chains, torment).
+ * (cry, leap, cut); the lions' (roar, pounce, maul); the presidents' (accuse, decree); the tempter's (lure, darts, devour); Legion's (many, chains, torment).
  */
 export type GoliathActionId =
   | "defy" | "spear" | "raise" | "crush" | "swing"
@@ -133,6 +134,7 @@ export type GoliathActionId =
   | "cry" | "leap" | "cut"
   | "roar" | "pounce" | "maul"
   | "accuse" | "decree"
+  | "lure" | "darts" | "devour"
   | "many" | "chains" | "torment";
 
 export interface Intent {

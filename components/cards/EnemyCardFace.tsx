@@ -20,6 +20,8 @@ const PORTRAIT: Record<EnemyId, string> = {
   archer: "🏹",
   serpent: "🐍",
   serpentTempter: "🐍",
+  satanMan: "🎭",
+  satanFoe: "😈",
   flood: "🌊",
   chariots: "🐎",
   walls: "🧱",
@@ -47,6 +49,8 @@ const CARD_NO: Record<EnemyId, string> = {
   archer: "E03",
   serpent: "E04",
   serpentTempter: "E35",
+  satanMan: "E36",
+  satanFoe: "E37",
   flood: "E05",
   chariots: "E06",
   walls: "E07",
@@ -76,6 +80,9 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   // The serpent is coiled up the tree: frame the head and the tree, looking left.
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
   // The cunning serpent of the first round has the picture of the serpent card the player draws.
+  // Satan in the wilderness has the pictures of the two Satan cards the player can draw.
+  satanMan: { src: "/cards/satanDisguised.jpg", figure: { cx: 0.5, head: 0.11, feet: 0.93 } },
+  satanFoe: { src: "/cards/satan.jpg", figure: { cx: 0.5, head: 0.1, feet: 0.9 } },
   serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   // Scenes with no figure (the sky, the flood): the whole picture is the frame.
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
@@ -148,6 +155,16 @@ const MOVES: Record<
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
     { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
     { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
+  ],
+  satanMan: [
+    { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "lure", key: "v2.action.lure.name", amount: String(R.lure) },
+    { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
+  ],
+  satanFoe: [
+    { action: "darts", key: "v2.action.darts.name", amount: String(R.darts) },
+    { action: "devour", key: "v2.action.devour.name", amount: String(R.devour) },
+    { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
   ],
   serpentTempter: [
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },

@@ -6,7 +6,7 @@ import { STAGE_BOSS } from "../v2/data";
 import type { Rng } from "../v2/engine";
 import type { CardId, CharacterId, EnemyId, StageId } from "../v2/types";
 
-export type CampaignStageId = "eden" | "ark" | "redSea" | "jericho" | "goliath" | "carmel" | "lions" | "gerasa";
+export type CampaignStageId = "eden" | "ark" | "redSea" | "jericho" | "goliath" | "carmel" | "lions" | "temptation" | "gerasa";
 
 export type Testament = "old" | "new";
 
@@ -42,6 +42,7 @@ export const CAMPAIGN: CampaignStage[] = [
   { id: "goliath", testament: "old", era: "kingdom", battle: "goliath", pool: ["david", "jonathan", "samuel", "saul", "abigail", "michal"], pick: 3, art: "/stages/goliath.jpg", bgm: "/audio/bgm/goliath.mp3" },
   { id: "carmel", testament: "old", era: "prophets", battle: "carmel", pool: ["elijah", "elisha", "naaman", "jehu", "zarephath", "shunammite"], pick: 3, art: "/stages/carmel.jpg", bgm: "/audio/bgm/carmel.mp3" },
   { id: "lions", testament: "old", era: "exile", battle: "lions", before: "plot", pool: ["daniel", "threeFriends", "nebuchadnezzar", "esther", "haman", "nehemiah"], pick: 3, art: "/stages/lions.jpg", bgm: "/audio/bgm/lions.mp3" },
+  { id: "temptation", testament: "new", era: "ministry", battle: "temptation", before: "disguise", pool: ["jesusUR", "holySpirit", "peter", "johnApostle", "satanDisguised", "satan"], drops: ["satanDisguised", "satan"], pick: 3, art: "/stages/temptation.jpg", bgm: "/audio/bgm/battle.mp3" },
   { id: "gerasa", testament: "new", era: "ministry", battle: "gerasa", pool: ["jesusUR", "peter", "jamesZeb", "johnApostle", "simonZealot", "legionFreed"], pick: 3, art: "/stages/legion.jpg", bgm: "/audio/bgm/gerasa.mp3" },
 ];
 

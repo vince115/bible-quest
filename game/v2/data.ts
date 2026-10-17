@@ -58,6 +58,10 @@ export const RULES_V2 = {
   /** The presidents and princes who plot against Daniel (the first round of the lions' stage): Accuse shakes allies; the Decree hits the front line. */
   accuseTargets: 2,
   decree: 40,
+  /** Satan in the wilderness: the lure of the man he seems to be; his fiery darts and his devouring once he is shown for what he is. */
+  lure: 50,
+  darts: 40,
+  devour: 100,
   /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
   many: 20,
   manyTargets: 2,
@@ -857,7 +861,7 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark", satanMan: "dark", satanFoe: "dark",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -901,7 +905,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
   "lionRest", "lion", "lioness", "presidents", "princes",
-  "serpentTempter",
+  "serpentTempter", "satanMan", "satanFoe",
   "uncleanSpirits", "legion", "swine",
 ];
 
@@ -913,7 +917,7 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * Who fights in each stage: the boss, and (except in Eden) a guard who protects the boss while standing and a shooter
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
-export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter" };
+export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter", temptation: "satanFoe", disguise: "satanMan" };
 export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
 export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" };
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
@@ -922,7 +926,7 @@ export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
 /** What each shooter's hit on the front line does. */
 export const SHOOTER_DAMAGE: Partial<Record<EnemyId, number>> = { archer: RULES_V2.archerDamage, windows: 20, chariotCaptain: 30, wallGuard: 30, jezebelQueen: 30, lioness: 30, princes: 20, swine: 20 };
 /** The stages in the campaign's (Bible) order. */
-export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "gerasa"];
+export const STAGE_ORDER: StageId[] = ["eden", "ark", "redSea", "jericho", "goliath", "carmel", "lions", "temptation", "gerasa"];
 
 /** HP and damage use Pokémon-TCG-style numbers (steps of 10). */
 export const ENEMY_HP: Record<EnemyId, number> = {
@@ -931,11 +935,11 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 180, satanFoe: 300,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
-export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 170, satan: 280 };
+export const MAX_HP: Record<CharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 260, satan: 400 };
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   sling: { id: "sling", owner: "david", kind: "attack", cost: 1, damage: 30 },
@@ -1589,6 +1593,9 @@ export const PHASE2_CYCLE: GoliathActionId[] = ["swing", "raise", "crush"];
 export const SERPENT_CYCLE: GoliathActionId[] = ["tempt", "fang", "coil", "fang"];
 /** The cunning serpent of the first round only tempts and bites; the coil is for the serpent that was cursed. */
 export const TEMPTER_CYCLE: GoliathActionId[] = ["tempt", "fang", "fang", "tempt"];
+/** Satan in the wilderness: first the man who asks (lure, tempt, accuse), then the demon (darts, devour, accuse). */
+export const DISGUISE_CYCLE: GoliathActionId[] = ["tempt", "lure", "accuse", "lure"];
+export const TEMPTATION_CYCLE: GoliathActionId[] = ["darts", "devour", "accuse", "devour"];
 /** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
 export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
 /** Pharaoh's chariots keep one cycle; at half HP the wheels come off (Charge weakens). */
@@ -1606,12 +1613,12 @@ export const PLOT_CYCLE: GoliathActionId[] = ["decree", "accuse", "decree", "dec
 export const LEGION_CYCLE: GoliathActionId[] = ["many", "chains", "torment", "many"];
 
 /** Actions aimed at one ally (the front line on the v3 board). */
-export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains", "decree"];
+export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains", "decree", "lure", "devour"];
 /** Actions aimed at several allies at once, and how many. */
 export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, accuse: RULES_V2.accuseTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
 /** Actions that hunt the weakest ally (lowest HP), ignoring the front line. */
 export const HUNT_WEAKEST: GoliathActionId[] = ["maul"];
 /** Actions that hit every ally (We Are Many only once Legion is unleashed). */
-export const HITS_ALL: GoliathActionId[] = ["swing", "coil", "rain", "deluge", "arrows", "leap"];
+export const HITS_ALL: GoliathActionId[] = ["swing", "coil", "rain", "deluge", "arrows", "leap", "darts"];
 /** Actions that only shake (no damage). */
 export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment", "accuse"];

@@ -31,7 +31,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   {
     era: "ministry",
     cards: [
-      "jesusUR", "holySpirit", "satanDisguised", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
+      "jesusUR", "holySpirit", "satanDisguised", "satan", "satanMan", "satanFoe", "peter", "andrew", "jamesZeb", "johnApostle", "philipApostle", "nathanael", "matthew", "thomas", "jamesAlph", "thaddaeus", "simonZealot", "judas",
       "fisherman", "nicodemus", "samaritan", "centurion", "fourFriends", "uncleanSpirits", "legion", "swine", "legionFreed", "jairus", "loavesBoy", "canaanite", "goodSamaritan", "prodigal", "maryMagdalene", "martha", "maryBethany",
       "lazarus", "richRuler", "bartimaeus", "zacchaeus", "widow",
     ],
@@ -44,7 +44,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
       "loisEunice", "timothy", "priscilla", "aquila", "apollos", "luke", "titus", "phoebe", "philemon", "onesimus",
     ],
   },
-  { era: "revelation", cards: ["johnPatmos", "michael", "satan"] },
+  { era: "revelation", cards: ["johnPatmos", "michael"] },
 ];
 
 /** Every card in story order. */
