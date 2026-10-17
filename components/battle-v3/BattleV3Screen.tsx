@@ -36,6 +36,7 @@ import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, Poo
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
 import { MAX_LINEUP, ROW, SLOTS, arrange, boardBlockReason, boardSkillTargets, canDrawOnBoard, canMove, isDuel, leader, slotOf, type Board, type Slots } from "@/game/v3/engine";
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
+import { COPY_LIMIT } from "@/game/v3/gacha";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, stageOfBattle, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
 import { safeStorage, useT } from "@/game/locale";
@@ -1213,7 +1214,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
 export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const t = useT();
-  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, enter, interlude, nextRound, hellRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
+  const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, dropPoints, enter, interlude, nextRound, hellRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
@@ -1892,6 +1893,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                   <span className="rounded-full bg-[#f4c850] px-2.5 py-0.5 text-xs font-black tracking-wider text-stone-950">{CARD_RARITY[drop]}</span>
                   <span className="text-xl font-black tracking-wide text-amber-50">{t(`char.${drop}.name`)}</span>
                 </div>
+                {/* The collection already held as many of this card as it may: blessing points instead. */}
+                {dropPoints > 0 && <p className="text-sm font-semibold text-amber-200">{t("v3.campaign.dropFull", { max: COPY_LIMIT, n: dropPoints })}</p>}
               </div>
             </ResultNote>
           )}

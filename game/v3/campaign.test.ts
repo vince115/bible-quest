@@ -48,9 +48,9 @@ describe("the campaign", () => {
 describe("campaign progress", () => {
   it("counts clears and collects drops, duplicates included", () => {
     const st = useProgressStore.getState();
-    expect(st.clear("eden", () => 0)).toBe("adam");
-    expect(st.clear("eden", () => 0)).toBe("adam");
-    expect(st.clear("eden", () => 0.5)).toBe("abel");
+    expect(st.clear("eden", () => 0).card).toBe("adam");
+    expect(st.clear("eden", () => 0).card).toBe("adam");
+    expect(st.clear("eden", () => 0.5).card).toBe("abel");
     const after = useProgressStore.getState();
     expect(after.cleared.eden).toBe(3);
     expect([after.collection.adam, after.collection.abel, after.collection.eve]).toEqual([2, 1, undefined]);

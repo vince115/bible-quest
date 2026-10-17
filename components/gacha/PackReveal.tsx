@@ -16,6 +16,8 @@ import { asset } from "@/game/assets";
 export interface Pulled {
   card: CharacterId;
   isNew: boolean;
+  /** Blessing points given instead of the card: the collection already held as many copies as it may. */
+  overflow: number;
 }
 
 /** The glow around a card as it turns over: more for the rarer ones. */
@@ -28,9 +30,16 @@ const GLOW: Record<Rarity, string> = {
   GR: "shadow-[0_0_56px_16px_rgb(255_226_122/0.95)]",
 };
 
-const Badge = ({ isNew, label }: { isNew: boolean; label: string }) => (
-  <span className={`absolute -right-1 -top-1 z-10 rounded-full px-1.5 text-xs font-black shadow ${isNew ? "bg-red-600 text-white" : "bg-stone-700 text-stone-100"}`}>{label}</span>
-);
+/** New, a copy, or (when the collection is full of it) the blessing points given instead. */
+function Badge({ pulled }: { pulled: Pulled }) {
+  const t = useT();
+  const { isNew, overflow } = pulled;
+  return (
+    <span className={`absolute -right-1 -top-1 z-10 whitespace-nowrap rounded-full px-1.5 text-xs font-black shadow ${isNew ? "bg-red-600 text-white" : overflow ? "bg-amber-400 text-stone-950" : "bg-stone-700 text-stone-100"}`}>
+      {isNew ? t("v3.gacha.new") : overflow ? t("v3.gacha.full", { n: overflow }) : t("v3.gacha.copy")}
+    </span>
+  );
+}
 
 export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: () => void }) {
   const t = useT();
@@ -62,7 +71,9 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
     return (
       <div className="flex w-full flex-col items-center gap-5">
         <section aria-label={t("v3.gacha.result")} className="grid w-full max-w-4xl grid-cols-[repeat(auto-fill,minmax(130px,1fr))] justify-items-center gap-x-3 gap-y-5">
-          {results.map(({ card, isNew }, i) => (
+          {results.map((pulled, i) => {
+            const { card } = pulled;
+            return (
             // The cards come in one after another: each flies up from below the screen's middle, turning as it lands.
             <motion.div
               key={`${card}-${i}`}
@@ -74,9 +85,10 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
               <HoloCard element={CHARACTER_ELEMENT[card]} rarity={CARD_RARITY[card]} effects touchTilt={false} figure={figureArea(card)} className="w-[130px] text-[6.1px]">
                 <CharacterCardFace id={card} />
               </HoloCard>
-              <Badge isNew={isNew} label={isNew ? t("v3.gacha.new") : t("v3.gacha.copy")} />
+              <Badge pulled={pulled} />
             </motion.div>
-          ))}
+            );
+          })}
         </section>
         <button onClick={onAgain} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400">
           {t("v3.gacha.again")}
@@ -108,7 +120,7 @@ export function PackReveal({ results, onAgain }: { results: Pulled[]; onAgain: (
             <HoloCard element={CHARACTER_ELEMENT[current.card]} rarity={CARD_RARITY[current.card]} effects touchTilt={false} figure={figureArea(current.card)} className="w-full text-[10.3px]">
               <CharacterCardFace id={current.card} />
             </HoloCard>
-            <Badge isNew={current.isNew} label={current.isNew ? t("v3.gacha.new") : t("v3.gacha.copy")} />
+            <Badge pulled={current} />
           </div>
         </div>
       </button>

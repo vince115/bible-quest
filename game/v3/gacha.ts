@@ -54,6 +54,10 @@ export const CLEAR_POINTS = { first: 300, repeat: 100 };
 /** What a new player starts with: one pack. */
 export const STARTING_POINTS = 500;
 
+/** The most copies of one card a player can own. A card that would go past it turns into blessing points instead, more for a rarer card. */
+export const COPY_LIMIT = 4;
+export const OVERFLOW_POINTS: Record<Rarity, number> = { N: 10, R: 20, SR: 40, SSR: 80, UR: 150, GR: 300 };
+
 const RARITY_ORDER: Rarity[] = ["N", "R", "SR", "SSR", "UR", "GR"];
 
 const pick = <T,>(list: T[], rng: Rng) => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
