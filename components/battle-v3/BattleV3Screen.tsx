@@ -243,9 +243,12 @@ function EnemyCard({
 }
 
 /**
- * The energy deck on the table: one stack of cards (like a deck before the deal) with how many are left, tapped to draw;
- * the cards drawn this turn lie fanned beside it, each tapped to look at it and play it.
+ * The energy deck on the table: one stack of cards on the right (like a deck before the deal) with how many are left,
+ * tapped to draw; the cards drawn lie fanned out to its left, each tapped to look at it and play it.
  */
+/** How many card edges the deck shows: one for every three cards left, between one and eight. */
+const deckLayers = (cards: number) => Math.max(1, Math.min(8, Math.ceil(cards / 3)));
+
 function TableDeck({
   board,
   t,
@@ -265,7 +268,29 @@ function TableDeck({
   const canDraw = !disabled && canDrawOnBoard(board);
   return (
     <div className="flex items-end justify-center gap-4">
-      {/* The deck */}
+      {/* The hand, fanned out to the left of the deck: the first card drawn lies next to it, each new one further left */}
+      <div className="flex min-h-[5.9rem] flex-row-reverse items-end pr-2 sm:min-h-[6.7rem]">
+        {b.hand.map((inst, i) => {
+          const tilt = ((b.hand.length - 1) / 2 - i) * 5;
+          return (
+            <button
+              key={inst.uid}
+              onClick={(e) => {
+                e.stopPropagation();
+                onInspect({ uid: inst.uid, card: inst.card });
+              }}
+              title={t("v3.ui.viewCard")}
+              className={`relative -mr-6 w-[4.2rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:mr-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-mr-7 sm:w-[4.8rem]`}
+              style={{ transform: `rotate(${tilt}deg)` }}
+            >
+              <span className="absolute inset-0 overflow-hidden rounded-xs" style={{ fontSize: "4.67cqw" }}>
+                <ScriptureCardFace id={inst.card} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {/* The deck, on the right: as thick as the cards left in it */}
       <div className="flex flex-col items-center gap-1">
         <button
           onClick={(e) => {
@@ -277,12 +302,12 @@ function TableDeck({
           aria-label={t("v3.deck.title")}
           className={`relative w-[4.2rem] ${CARD_RATIO} sm:w-[4.8rem] ${canDraw ? "cursor-pointer" : "cursor-default opacity-70"}`}
         >
-          {[2, 1, 0].map((k) => (
+          {Array.from({ length: deckLayers(b.deck.length) }, (_, i) => deckLayers(b.deck.length) - 1 - i).map((k) => (
             <span
               key={k}
               aria-hidden
               className={`absolute inset-0 overflow-hidden rounded-xs shadow-lg ${canDraw && k === 0 ? "ring-2 ring-amber-300/80" : ""}`}
-              style={{ transform: `translate(${k * 2}px, ${k * -2}px)` }}
+              style={{ transform: `translate(${k * 1.5}px, ${k * -1.5}px)` }}
             >
               <ScriptureCardBack />
             </span>
@@ -307,28 +332,6 @@ function TableDeck({
         </span>
       </div>
 
-      {/* The hand, fanned */}
-      <div className="flex min-h-[5.9rem] items-end pl-2 sm:min-h-[6.7rem]">
-        {b.hand.map((inst, i) => {
-          const tilt = (i - (b.hand.length - 1) / 2) * 5;
-          return (
-            <button
-              key={inst.uid}
-              onClick={(e) => {
-                e.stopPropagation();
-                onInspect({ uid: inst.uid, card: inst.card });
-              }}
-              title={t("v3.ui.viewCard")}
-              className={`relative -ml-6 w-[4.2rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:ml-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-ml-7 sm:w-[4.8rem]`}
-              style={{ transform: `rotate(${tilt}deg)` }}
-            >
-              <span className="absolute inset-0 overflow-hidden rounded-xs" style={{ fontSize: "4.67cqw" }}>
-                <ScriptureCardFace id={inst.card} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
