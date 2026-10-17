@@ -40,8 +40,8 @@ describe("the lions' den in two rounds", () => {
     const first = createBoard([...PARTY], "daniel", () => 0.5, "plot", "table");
     first.battle.party.daniel.hp = 0;
     const second = nextRoundBoard(first, "lions", () => 0.5);
-    expect(second.front).not.toBe("daniel");
-    expect(isAlive(second.battle, second.front)).toBe(true);
+    expect(second.front).not.toContain("daniel");
+    expect(second.front.every((id) => isAlive(second.battle, id))).toBe(true);
   });
 
   it("winning round 1 only opens round 2; clearing the stage takes both", () => {

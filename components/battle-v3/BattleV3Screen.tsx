@@ -20,6 +20,7 @@ import {
   mpCap,
   MULTI_TARGETS,
   RULES_V2 as R,
+  HUNT_WEAKEST,
   SHAKES,
   SHOOTER_DAMAGE,
   SINGLE_TARGET,
@@ -32,7 +33,7 @@ import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyCo
 import { MAGIC_VERSION_ENABLED, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
-import { boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, isDuel, needsFront, type Board } from "@/game/v3/engine";
+import { backRow, boardBlockReason, boardSkillTargets, canDrawOnBoard, canSwap, frontLiving, inFront, isDuel, leader, needsFront, type Board } from "@/game/v3/engine";
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
@@ -106,10 +107,11 @@ function AttackRow({ label, name, tag, dim }: { label?: string; name: string; ta
 }
 
 function IntentRow({ label, intent, front, t, dim, b }: { label: string; intent: Intent; front: CharacterId; t: T; dim?: boolean; b: BattleState }) {
-  // Aimed at the front line, or (the lions' Maul) at its prey by name.
+  // Aimed at one member of the front row (named), or at its prey wherever it stands (the lions' Maul, the pinnacle).
   const single = SINGLE_TARGET.includes(intent.action);
-  const prey = intent.action === "maul" && intent.targets[0] ? t(`char.${intent.targets[0]}.name`) : null;
-  const name = `${t(`v2.action.${intent.action}.name`)}${single ? ` → ${t("v3.ui.front")}` : prey ? ` → ${prey}` : ""}`;
+  const hunts = HUNT_WEAKEST.includes(intent.action);
+  const who = intent.targets[0] ? t(`char.${intent.targets[0]}.name`) : null;
+  const name = `${t(`v2.action.${intent.action}.name`)}${single ? ` → ${who ?? t("v3.ui.front")}` : hunts && who ? ` → ${who}` : ""}`;
   return <AttackRow label={label} name={name} tag={actionTag(t, b, intent, front)} dim={dim} />;
 }
 
@@ -219,7 +221,7 @@ function EnemyCard({
             </div>
           )}
           {id === STAGE_SHOOTER[b.stage] && b.archerTarget && (
-            <AttackRow name={`${t(id === "archer" ? "v3.action.arrow" : "v3.action.strike")} → ${t("v3.ui.front")}`} tag={String(enemyDamage(id, front, SHOOTER_DAMAGE[id] ?? 0, b.pools))} />
+            <AttackRow name={`${t(id === "archer" ? "v3.action.arrow" : "v3.action.strike")} → ${t(`char.${b.archerTarget}.name`)}`} tag={String(enemyDamage(id, b.archerTarget, SHOOTER_DAMAGE[id] ?? 0, b.pools))} />
           )}
         </div>
       )}
@@ -383,7 +385,11 @@ function CharacterSlot({
       {b.pools === "table" && alive && <PoolBars b={b} id={id} t={t} />}
       {/* Front-line tag under the card */}
       <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
-        {board.front === id && <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>}
+        {inFront(board, id) ? (
+          <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>
+        ) : (
+          <span className="rounded-full bg-slate-600 px-2 py-0.5 text-white shadow">{t("v3.ui.back")}</span>
+        )}
       </div>
       {b.pools !== "team" && b.pools !== "table" && alive && <PoolBars b={b} id={id} t={t} />}
     </div>
@@ -908,13 +914,13 @@ function SkillFocus({
                 </button>
               );
             })}
-            {board.front !== id && alive && (
+            {!inFront(board, id) && alive && (
               <button
                 onClick={onSwap}
                 disabled={locked || !canSwap(board, id)}
                 className="flex items-center justify-between gap-2 rounded-lg border-2 border-white bg-gradient-to-b from-slate-50 to-slate-300 px-2.5 py-1.5 text-slate-900 shadow-[0_6px_16px_rgb(0_0_0/0.5)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:grayscale"
               >
-                <span className="text-[11px] font-bold text-slate-600">{needsFront(board) ? t("v3.focus.free") : b.coiled === board.front ? t("v3.ui.coiled") : board.swapped ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
+                <span className="text-[11px] font-bold text-slate-600">{needsFront(board) ? t("v3.focus.free") : board.swapped ? t("v3.ui.swapUsed") : t("v3.focus.free")}</span>
                 <span className="text-sm font-black tracking-widest">{needsFront(board) ? t("v3.ui.promote") : t("v3.ui.swap")}</span>
               </button>
             )}
@@ -1260,6 +1266,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   const [pending, setPending] = useState<Pending | null>(null);
   /** The character whose skill view is open. */
   const [acting, setActing] = useState<CharacterId | null>(null);
+  /** A back-row character waiting to take a front-row place: the next tap on a front-row card is who steps back. */
+  const [swapIn, setSwapIn] = useState<CharacterId | null>(null);
   /** Character whose full card is shown enlarged. */
   const [viewing, setViewing] = useState<CharacterId | null>(null);
   /** Enemy whose card is shown enlarged. */
@@ -1349,6 +1357,13 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
     if (pending?.targets.includes(id)) return onTarget(id);
     if (pending) return setPending(null); // tapping a card that is not a target gives up choosing
     if (promote && canSwap(board, id)) return swap(id);
+    if (swapIn) {
+      // Choosing who steps back: one of the front row
+      const incoming = swapIn;
+      setSwapIn(null);
+      if (canSwap(board, incoming, id)) swap(incoming, id);
+      return;
+    }
     setActing(open === id ? null : id);
   };
   const slot = (id: CharacterId, size: "large" | "small", order: string) => (
@@ -1359,11 +1374,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       t={t}
       size={size}
       className={order}
-      highlight={!!pending?.targets.includes(id) || (promote && canSwap(board, id))}
+      highlight={!!pending?.targets.includes(id) || (promote && canSwap(board, id)) || (!!swapIn && inFront(board, id) && canSwap(board, swapIn, id))}
       onClick={() => onCharacter(id)}
     />
   );
-  const bench = board.lineup.filter((id) => id !== board.front);
   const lastHit = [...b.log].reverse().find((l) => l.key === "v2.log.attack" || l.key === "v2.log.slingStone");
   const order: EnergyKind[] = ["faith", "attack", "guard"];
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1432,18 +1446,20 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           <div className="flex items-start justify-center gap-2 sm:gap-5">
             {/* The stage's shooter and guard flank the boss; in a duel they stand aside (Eden has only the Serpent). */}
             {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
-              <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
+              <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
             {!isDuel(board) && STAGE_GUARD[b.stage] && (
-              <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
+              <EnemyCard b={b} front={leader(board)} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
             )}
-            <EnemyCard b={b} front={board.front} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
+            <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
           </div>
         </section>
 
         {/* What is happening / what to do next */}
         <div className="mx-auto my-1 min-h-6 max-w-xl px-3 text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
-          {promote ? (
+          {swapIn ? (
+            <span className="text-emerald-200">{t("v3.ui.chooseOut")}</span>
+          ) : promote ? (
             <span className="text-red-200">{t("v3.ui.chooseFront")}</span>
           ) : pending ? (
             <span className="text-emerald-200">
@@ -1483,8 +1499,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <section className="flex flex-1 items-center justify-center px-2 pb-2 sm:px-4">
           <div className="flex items-start justify-center gap-2 sm:gap-5">
             {/* The front line stands forward; the bench stands back. */}
-            {slot(board.front, "large", "order-2 z-10 -translate-y-3")}
-            {bench.map((id, i) => slot(id, "small", `${i === 0 ? "order-1" : "order-3"} brightness-90`))}
+            {board.front.map((id, i) => slot(id, "large", `${i === 0 ? "order-2" : "order-3"} z-10 -translate-y-3`))}
+            {backRow(board).map((id) => slot(id, "small", "order-1 brightness-90"))}
           </div>
         </section>
 
@@ -1606,7 +1622,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           onBasic={() => onBasic(open)}
           onSwap={() => {
             setActing(null);
-            swap(open);
+            // Stepping up into a gap needs no choice; otherwise name who steps back (at once when only one can)
+            const out = frontLiving(board).filter((f) => canSwap(board, open, f));
+            if (promote || out.length === 1) swap(open, promote ? undefined : out[0]);
+            else if (out.length > 1) setSwapIn(open);
           }}
           onClose={() => setActing(null)}
         />

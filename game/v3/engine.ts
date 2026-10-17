@@ -2,8 +2,11 @@
 // - Bring 1–3 characters. Characters left behind sit out the whole battle (HP 0, can't be revived).
 // - A lone champion duels the boss one-on-one (1 Sam 17): the stage's guard and shooter stand aside.
 // - Spear Thrust, Crushing Blow and the archer's arrow hit the front line; Swing still hits everyone.
-// - Once per turn the front line may be swapped for free. When the front line falls, the player picks
-//   who steps up (also free) before doing anything else.
+// - Formation: the front row holds two characters (fewer when fewer came), everyone else stands in the back row.
+//   Single-target blows and the shooter's arrow fall on the front row, one of its members a turn (telegraphed);
+//   a blow that hunts the weakest, and every blow that hits all, reach the back row too.
+// - Once per turn a back-row character may swap places with a front-row one for free. When a front-row character
+//   falls, the player picks who steps up (also free) before doing anything else.
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
 // Everything else is the v2 engine, unchanged.
@@ -32,12 +35,16 @@ export interface Board {
   battle: BattleState;
   /** Who came to battle, in party order. */
   lineup: CharacterId[];
-  front: CharacterId;
+  /** The front row: up to FRONT_SLOTS characters (a fallen one keeps its slot until someone steps up). */
+  front: CharacterId[];
   /** The free swap has been used this turn. */
   swapped: boolean;
   /** Cards still to be drawn from the deck this turn. */
   draws: number;
 }
+
+/** How many characters stand in the front row. */
+export const FRONT_SLOTS = 2;
 
 const clone = (b: Board): Board => structuredClone(b);
 
@@ -48,11 +55,22 @@ function log(s: BattleState, key: string, params?: Record<string, string>) {
 /** Living members of the line-up. */
 export const standing = (b: Board) => b.lineup.filter((id) => isAlive(b.battle, id));
 
+/** Is `id` in the front row? */
+export const inFront = (b: Board, id: CharacterId) => b.front.includes(id);
+
+/** The living members of the front row, and the back row (everyone else who came). */
+export const frontLiving = (b: Board) => b.front.filter((id) => isAlive(b.battle, id));
+export const backRow = (b: Board) => b.lineup.filter((id) => !b.front.includes(id));
+
+/** The first living front-row character (where a card goes by default). */
+export const leader = (b: Board): CharacterId => frontLiving(b)[0] ?? b.front[0];
+
 /** One character against the boss alone. */
 export const isDuel = (b: Board) => b.lineup.length === 1;
 
-/** The front line has fallen and someone must step up before anything else happens. */
-export const needsFront = (b: Board) => b.battle.result === "ongoing" && !isAlive(b.battle, b.front) && standing(b).length > 0;
+/** A front-row character has fallen while someone stands behind: they must step up before anything else happens. */
+export const needsFront = (b: Board) =>
+  b.battle.result === "ongoing" && frontLiving(b).length < Math.min(FRONT_SLOTS, standing(b).length);
 
 /** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
 export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode): Board {
@@ -65,7 +83,10 @@ export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0
     battle.archerTarget = null;
     log(battle, "v3.log.duel", { char: chosen[0] });
   }
-  const board: Board = { battle, lineup: chosen, front: chosen.includes(front) ? front : chosen[0], swapped: false, draws: R.openingHand };
+  // The chosen leader and the next in party order form the front row; the rest stand behind them.
+  const lead = chosen.includes(front) ? front : chosen[0];
+  const row = [lead, ...chosen.filter((id) => id !== lead)].slice(0, Math.min(FRONT_SLOTS, chosen.length));
+  const board: Board = { battle, lineup: chosen, front: row, swapped: false, draws: R.openingHand };
   return aim(board, rng);
 }
 
@@ -75,30 +96,48 @@ export function createBoard(lineup: CharacterId[], front: CharacterId = lineup[0
  * battle starts fresh (Shields, energy stuck under a character, once-a-battle skills and the turn count).
  */
 export function nextRoundBoard(prev: Board, stage: StageId, rng: Rng = Math.random): Board {
-  const next = createBoard(prev.lineup, prev.front, rng, stage, prev.battle.pools);
+  const next = createBoard(prev.lineup, prev.front[0], rng, stage, prev.battle.pools);
   for (const id of prev.lineup) next.battle.party[id].hp = prev.battle.party[id].hp;
   next.battle.deck = prev.battle.deck;
   next.battle.hand = prev.battle.hand;
   next.battle.discard = prev.battle.discard;
-  const front = isAlive(next.battle, prev.front) ? prev.front : (standing(next)[0] ?? prev.front);
-  next.front = front;
+  // The formation carries over; a fallen front-row character is replaced at the start of the new round.
+  next.front = [...prev.front];
+  for (let i = 0; i < next.front.length; i++) {
+    if (isAlive(next.battle, next.front[i])) continue;
+    const sub = backRow(next).find((id) => isAlive(next.battle, id));
+    if (sub) next.front[i] = sub;
+  }
   return aim(next, rng);
 }
 
-/** Can `id` be moved to the front line right now? (A fallen front line is replaced for free.) */
-export function canSwap(b: Board, id: CharacterId): boolean {
-  if (b.battle.result !== "ongoing" || id === b.front || !b.lineup.includes(id) || !isAlive(b.battle, id)) return false;
+/**
+ * Can `id` (standing in the back row) take a place in the front row right now? A fallen front-row character is replaced
+ * for free; otherwise one free swap a turn, trading places with a living front-row character (`out`, or any when left out).
+ */
+export function canSwap(b: Board, id: CharacterId, out?: CharacterId): boolean {
+  if (b.battle.result !== "ongoing" || !b.lineup.includes(id) || b.front.includes(id) || !isAlive(b.battle, id)) return false;
   if (needsFront(b)) return true;
-  // The Serpent's Coil holds the front line in place this turn.
-  return !b.swapped && b.battle.coiled !== b.front;
+  if (b.swapped) return false;
+  // The Serpent's Coil holds its victim in place this turn.
+  const leaving = out === undefined ? frontLiving(b).filter((f) => b.battle.coiled !== f) : [out].filter((f) => frontLiving(b).includes(f) && b.battle.coiled !== f);
+  return leaving.length > 0;
 }
 
-export function swapFront(board: Board, id: CharacterId, rng: Rng = Math.random): Board {
-  if (!canSwap(board, id)) return board;
+/** Steps `id` forward: into the empty place of a fallen front-row character, or in place of `out`, who falls back. */
+export function swapFront(board: Board, id: CharacterId, out?: CharacterId, rng: Rng = Math.random): Board {
+  if (!canSwap(board, id, out)) return board;
   const b = clone(board);
   const promote = needsFront(b);
-  b.front = id;
-  if (!promote) b.swapped = true;
+  if (promote) {
+    const gap = b.front.findIndex((f) => !isAlive(b.battle, f));
+    if (gap >= 0) b.front[gap] = id;
+    else b.front.push(id);
+  } else {
+    const leaving = out ?? frontLiving(b).filter((f) => b.battle.coiled !== f)[0];
+    b.front[b.front.indexOf(leaving)] = id;
+    b.swapped = true;
+  }
   log(b.battle, promote ? "v3.log.promote" : "v3.log.swap", { char: id });
   return aim(b, rng);
 }
@@ -110,10 +149,18 @@ export function swapFront(board: Board, id: CharacterId, rng: Rng = Math.random)
  */
 function aim(b: Board, rng: Rng): Board {
   const s = b.battle;
-  // Cards that never fall can stand at the front, but the blows land on the next ally in line.
-  const front = isAlive(s, b.front) && !NEVER_FALLS.has(b.front) ? b.front : (standing(b).find((id) => !NEVER_FALLS.has(id)) ?? null);
-  for (const intent of s.intents) {
-    if (SINGLE_TARGET.includes(intent.action)) intent.targets = front ? [front] : [];
+  // Cards that never fall can stand in the front row, but the blows land on someone else in it (or, failing that, anyone).
+  const open = (ids: CharacterId[]) => ids.filter((id) => isAlive(s, id) && !NEVER_FALLS.has(id));
+  const row = open(b.front);
+  const mark = row.length ? row : open(b.lineup);
+  // One member of the front row takes each blow, by turn: the first blow of a turn on one, the next turn's on the other (so both are in
+  // the telegraph before they happen, and who stands in front can change it).
+  const pick = (offset: number) => (mark.length ? mark[(s.turn + offset) % mark.length] : null);
+  s.intents.forEach((intent, i) => {
+    if (SINGLE_TARGET.includes(intent.action)) {
+      const t = pick(i);
+      intent.targets = t ? [t] : [];
+    }
     if (HUNT_WEAKEST.includes(intent.action)) {
       const w = weakestAlly(s);
       intent.targets = w ? [w] : [];
@@ -124,9 +171,11 @@ function aim(b: Board, rng: Rng): Board {
       intent.targets = [];
       while (pool.length && intent.targets.length < many) intent.targets.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
     }
-  }
+  });
   const shooter = STAGE_SHOOTER[s.stage];
-  s.archerTarget = shooter && enemyAlive(s, shooter) && front ? front : null;
+  // The arrow goes to the other member of the front row than the boss's blow this turn.
+  const arrow = pick(1);
+  s.archerTarget = shooter && enemyAlive(s, shooter) && arrow ? arrow : null;
   return b;
 }
 
@@ -146,7 +195,7 @@ export function boardBlockReason(b: Board, skill: SkillId, target?: Target): str
 
 /** Plays a scripture card. In the personal-pool battles `target` is the ally who receives it (the front line when left out). */
 export function playCardOnBoard(board: Board, uid: number, target?: CharacterId): Board {
-  const battle = playCard(board.battle, uid, board.battle.pools !== "team" ? (target ?? board.front) : undefined);
+  const battle = playCard(board.battle, uid, board.battle.pools !== "team" ? (target ?? leader(board)) : undefined);
   return battle === board.battle ? board : { ...board, battle };
 }
 

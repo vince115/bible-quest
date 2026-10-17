@@ -5,6 +5,7 @@ import type { CharacterId } from "../v2/types";
 import { earnedBy } from "./achievements";
 import { nextBoardAutoAction } from "./auto";
 import {
+  backRow,
   boardBlockReason,
   boardSkillTargets,
   canSwap,
@@ -12,6 +13,7 @@ import {
   createBoard,
   drawOnBoard,
   endBoardTurn,
+  frontLiving,
   needsFront,
   playCardOnBoard,
   resolveBoard,
@@ -50,7 +52,7 @@ function autoBattle(lineup: CharacterId[], seed: number): Board {
         : a.type === "cast"
           ? castOnBoard(b, a.skill, a.target, rng)
           : a.type === "front"
-            ? swapFront(b, a.id, rng)
+            ? swapFront(b, a.id, a.out, rng)
             : endBoardTurn(b, rng);
     expect(next).not.toBe(b);
     b = next;
@@ -111,46 +113,83 @@ describe("line-up", () => {
   });
 });
 
-describe("front line", () => {
-  it("the archer and Goliath's spear hit the front line", () => {
+describe("formation", () => {
+  it("a team stands in two rows: two in front, the rest behind; blows aimed at the front row never reach the back row", () => {
     const b = createBoard(["david", "samuel", "jonathan"], "samuel", seeded());
-    b.battle.intents[0] = { action: "spear", targets: ["david"] };
+    expect(b.front).toEqual(["samuel", "david"]);
+    expect(backRow(b)).toEqual(["jonathan"]);
+    b.battle.intents[0] = { action: "spear", targets: [] };
     const after = resolveBoard(b);
     const lost = (id: CharacterId) => b.battle.party[id].hp - after.battle.party[id].hp;
-    expect(lost("samuel")).toBe(enemyDamage("archer", "samuel", R.archerDamage) + enemyDamage("goliath", "samuel", R.spear));
-    expect(lost("david")).toBe(0);
     expect(lost("jonathan")).toBe(0);
+    // the spear and the arrow each fall on one front-row character, and not on the same one
+    const spear = after.battle.intents[0].targets;
+    expect(b.front).toContain(after.battle.archerTarget);
+    expect(lost("samuel") + lost("david")).toBeGreaterThan(0);
+    expect(spear.length).toBeLessThanOrEqual(1);
   });
 
-  it("the front line decides elemental damage", () => {
-    // Metal Goliath hits light David normally; fire Jonathan resists metal (×0.75).
-    const david = resolveBoard(spearTurn(["david", "jonathan"], "david"));
-    const jonathan = resolveBoard(spearTurn(["david", "jonathan"], "jonathan"));
-    expect(MAX_HP.david - david.battle.party.david.hp).toBe(R.spear);
-    expect(MAX_HP.jonathan - jonathan.battle.party.jonathan.hp).toBe(Math.floor((R.spear * 0.75) / 10) * 10);
+  it("the front row takes the blows one at a time, telegraphed in advance, and the turn changes who", () => {
+    const b = createBoard(["david", "samuel", "jonathan"], "david", seeded());
+    b.battle.intents[0] = { action: "spear", targets: [] };
+    b.battle.intents[1] = { action: "spear", targets: [] };
+    const aimed = swapFront(b, "jonathan", "samuel"); // re-aims
+    const [now, next] = aimed.battle.intents.map((i) => i.targets[0]);
+    expect(aimed.front).toContain(now);
+    expect(aimed.front).toContain(next);
+    expect(now).not.toBe(next);
   });
 
-  it("allows one free swap per turn", () => {
+  it("the element of whoever is hit decides the damage", () => {
+    // Metal Goliath hits light David normally; fire Jonathan resists metal (x0.75).
+    const b = spearTurn(["david", "jonathan"], "david");
+    const after = resolveBoard(b);
+    const victim = after.battle.intents[0].targets[0] ?? b.battle.intents[0].targets[0];
+    const hit = b.front.find((id) => b.battle.party[id].hp - after.battle.party[id].hp > 0)!;
+    expect(["david", "jonathan"]).toContain(victim ?? hit);
+    expect(b.battle.party[hit].hp - after.battle.party[hit].hp).toBe(enemyDamage("goliath", hit, R.spear));
+    expect(enemyDamage("goliath", "jonathan", R.spear)).toBe(Math.floor((R.spear * 0.75) / 10) * 10);
+  });
+
+  it("a blow that hunts the weakest reaches the back row", () => {
+    const b = createBoard(["david", "samuel", "jonathan"], "david", seeded());
+    b.battle.party.jonathan.hp = 20;
+    b.battle.intents[0] = { action: "maul", targets: [] };
+    const after = resolveBoard(b);
+    expect(after.battle.party.jonathan.hp).toBeLessThan(20);
+  });
+
+  it("allows one free swap a turn: a back-row character takes the place of a front-row one", () => {
     let b = createBoard(["david", "samuel", "jonathan"], "david", seeded());
-    b = swapFront(b, "jonathan");
-    expect(b.front).toBe("jonathan");
-    expect(canSwap(b, "samuel")).toBe(false);
-    expect(swapFront(b, "samuel")).toBe(b);
+    expect(b.front).toEqual(["david", "samuel"]);
+    expect(canSwap(b, "david", "samuel")).toBe(false); // already in front
+    expect(canSwap(b, "jonathan", "jonathan")).toBe(false); // not in front, can't step back
+    b = swapFront(b, "jonathan", "samuel");
+    expect(b.front).toEqual(["david", "jonathan"]);
+    expect(backRow(b)).toEqual(["samuel"]);
+    expect(canSwap(b, "samuel", "david")).toBe(false);
+    expect(swapFront(b, "samuel", "david")).toBe(b);
     b = endBoardTurn(b, seeded(2));
-    expect(canSwap(b, "samuel")).toBe(b.battle.result === "ongoing" && isAlive(b.battle, "samuel"));
+    expect(canSwap(b, "samuel", "david")).toBe(b.battle.result === "ongoing" && isAlive(b.battle, "samuel") && isAlive(b.battle, "david"));
   });
 
-  it("a fallen front line must be replaced before anything else, for free", () => {
-    let b = createBoard(["david", "jonathan"], "david", seeded());
-    b = swapFront(b, "jonathan");
-    b.battle.party.jonathan.hp = 0;
+  it("a fallen front-row character must be replaced before anything else, for free", () => {
+    let b = createBoard(["david", "samuel", "jonathan"], "david", seeded());
+    b.battle.party.samuel.hp = 0;
     b.battle.energy.attack = 1;
     expect(needsFront(b)).toBe(true);
     expect(boardBlockReason(b, "sling", "bearer")).toBe("v3.reason.chooseFront");
     expect(resolveBoard(b)).toBe(b);
-    b = swapFront(b, "david");
-    expect(b.front).toBe("david");
+    b = swapFront(b, "jonathan");
+    expect(b.front).toEqual(["david", "jonathan"]);
     expect(needsFront(b)).toBe(false);
+  });
+
+  it("with nobody left behind a fallen front-row character leaves the front row short, not stuck", () => {
+    const b = createBoard(["david", "jonathan"], "david", seeded());
+    b.battle.party.jonathan.hp = 0;
+    expect(needsFront(b)).toBe(false);
+    expect(frontLiving(b)).toEqual(["david"]);
   });
 
   it("losing the only character is a defeat", () => {

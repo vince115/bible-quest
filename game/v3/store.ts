@@ -59,7 +59,7 @@ interface BattleV3Store {
   cast: (skill: SkillId, target?: Target) => void;
   /** The tabletop rules' free basic attack. */
   basic: (who: CharacterId, target: EnemyId) => void;
-  swap: (id: CharacterId) => void;
+  swap: (id: CharacterId, out?: CharacterId) => void;
   endTurn: () => void;
   setAuto: (on: boolean) => void;
 }
@@ -102,7 +102,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         : action.type === "play"
         ? playCardOnBoard(b, action.uid, action.target)
         : action.type === "front"
-          ? swapFront(b, action.id)
+          ? swapFront(b, action.id, action.out)
           : action.type === "basic"
             ? basicAttackOnBoard(b, action.who, action.target)
             : castOnBoard(b, action.skill, action.target),
@@ -164,7 +164,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       }),
     cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
     basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
-    swap: (id) => act((b) => swapFront(b, id)),
+    swap: (id, out) => act((b) => swapFront(b, id, out)),
     endTurn: () => {
       const { board, resolving, runId } = get();
       if (!board || resolving || board.battle.result !== "ongoing") return;
