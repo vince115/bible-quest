@@ -23,18 +23,24 @@ import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WID
 const RARITY_TABS: Rarity[] = USED_TIERS;
 const FILTER_KEY = "bq-card-demo-rarity";
 /**
- * All the cards in one grid, grouped along the Bible timeline, or one section: Jesus, his disciples, or Satan; remembered
- * in this browser.
+ * All the cards in one grid, grouped along the Bible timeline, or one section: the Trinity, Jesus' disciples, or Satan;
+ * remembered in this browser.
  */
-type Section = "jesus" | "disciples" | "satan";
+type Section = "trinity" | "disciples" | "satan";
 type Layout = "grid" | "timeline" | Section;
-const LAYOUTS: Layout[] = ["grid", "timeline", "jesus", "disciples", "satan"];
-const SECTIONS: Record<Section, string[]> = {
-  // Jesus' cards and Satan's (every form, the old serpent first) in story order.
-  jesus: TIMELINE.filter((id) => (sectionOf("jesus") as string[]).includes(id)),
+const LAYOUTS: Layout[] = ["grid", "timeline", "trinity", "disciples", "satan"];
+/** Each section's cards, in parts that may carry a heading of their own (the Father, the Son and the Spirit). */
+const SECTIONS: Record<Section, { part?: string; cards: string[] }[]> = {
+  // One God in three persons (Matthew 28:19): the Father, the Son (Jesus' cards in story order) and the Holy Spirit.
+  trinity: [
+    { part: "v3.demo.father", cards: ["father"] },
+    { part: "v3.demo.son", cards: TIMELINE.filter((id) => (sectionOf("jesus") as string[]).includes(id)) },
+    { part: "v3.demo.spirit", cards: ["holySpirit"] },
+  ],
   // The twelve in the order Matthew 10:2–4 names them (both of John's cards together), then Matthias, chosen in Judas' place (Acts 1:26).
-  disciples: [...APOSTLES],
-  satan: TIMELINE.filter((id) => (sectionOf("satan") as string[]).includes(id)),
+  disciples: [{ cards: [...APOSTLES] }],
+  // Every form of Satan, the old serpent first, in story order.
+  satan: [{ cards: TIMELINE.filter((id) => (sectionOf("satan") as string[]).includes(id)) }],
 };
 const isSection = (l: Layout): l is Section => l in SECTIONS;
 const LAYOUT_KEY = "bq-card-demo-layout";
@@ -336,9 +342,11 @@ export function CardDemo() {
     </div>
   );
 
-  // A section's cards, in its order (search and the rarity tab still apply).
-  const section = isSection(layout) ? SECTIONS[layout].map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c) : [];
-  const onScreen = isSection(layout) ? section : shown;
+  // A section's cards, part by part in its order (search and the rarity tab still apply).
+  const parts = isSection(layout)
+    ? SECTIONS[layout].map(({ part, cards }) => ({ part, cards: cards.map((id) => shown.find((c) => c.id === id)).filter((c): c is (typeof CARDS)[number] => !!c) })).filter((p) => p.cards.length > 0)
+    : [];
+  const onScreen = isSection(layout) ? parts.flatMap((p) => p.cards) : shown;
 
   // Flip through the cards on screen (the current search and rarity tab), wrapping at either end.
   const at = viewing ? onScreen.findIndex((c) => c.id === viewing.id) : -1;
@@ -409,7 +417,12 @@ export function CardDemo() {
           <section className="w-full max-w-7xl overflow-x-clip px-2">
             <h2 className="text-lg font-black text-amber-100">{t(`v3.demo.${layout}`)}</h2>
             <p className="text-sm text-stone-400">{t(`v3.demo.${layout}Hint`)}</p>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(section, layout)}</div>
+            {parts.map(({ part, cards }) => (
+              <div key={part ?? layout}>
+                {part && <h3 className="mt-3 text-base font-bold text-amber-200">{t(part)}</h3>}
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(cards, `${layout}:${part ?? ""}`)}</div>
+              </div>
+            ))}
           </section>
         )
       ) : layout === "grid" ? (

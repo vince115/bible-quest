@@ -7,7 +7,8 @@ export type Card = CharacterId | BaseEnemyId;
 
 /**
  * One person, every card of them; `via` names the verse that makes the link for cards that are not plainly the same figure.
- * `ownSection`: the person has a section of their own in the card demo (Jesus, Satan), so their cards are never piled.
+ * `ownSection`: the person has a section of their own in the card demo (Jesus in the Trinity's, Satan), so their cards are
+ * never piled.
  */
 export const SAME_PERSON: { cards: Card[]; via?: Partial<Record<Card, string>>; ownSection?: boolean }[] = [
   { cards: ["moses", "mosesSinai"] },
