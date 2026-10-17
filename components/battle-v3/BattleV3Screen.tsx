@@ -73,9 +73,15 @@ const DESKTOP_CARD = "lg:w-[min(14.5rem,calc((100dvh-23rem)*0.26))]";
 /** Phones: 3 character cards across screen width in bottom row. */
 const PHONE_CARD = "w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.26))]";
 const CARD_WIDTH = { large: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}`, small: `${PHONE_CARD} sm:w-32 ${DESKTOP_CARD}` };
-const CHAR_WIDTH = CARD_WIDTH;
+/** Our characters: the front row at full size, the back row (behind it) a little smaller, so both rows fit under the enemies. */
+const CHAR_WIDTH = {
+  large: `w-[min(8.5rem,calc((100vw-2.5rem)/3),calc((100dvh-23rem)*0.22))] sm:w-28 lg:w-[min(13rem,calc((100dvh-14rem)*0.21))]`,
+  small: `w-[min(7rem,calc((100vw-2.5rem)/3.2),calc((100dvh-23rem)*0.19))] sm:w-24 lg:w-[min(11rem,calc((100dvh-14rem)*0.18))]`,
+};
 /** Upper row: 4 skill/energy card slots across screen width. */
 const SKILL_SLOT_WIDTH = "w-[min(5.8rem,calc((100vw-3rem)/4))] sm:w-24 md:w-28 lg:w-[min(10.5rem,calc((100dvh-23rem)*0.19))]";
+/** The four slots in the side panel (desktop). */
+const SIDE_SLOT_WIDTH = "w-[min(7.5rem,calc((100dvh-16rem)/4.2))] xl:w-[min(8.5rem,calc((100dvh-16rem)/4.2))]";
 const CARD_RATIO = "aspect-[63/88]";
 
 
@@ -225,6 +231,31 @@ function EnemyCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * One row of our formation: a faint band across the board with its name at the left, the cards standing on it. The front
+ * row's band is warm (it takes the blows), the back row's cool.
+ */
+function FormationLane({ label, tone, children }: { label: string; tone: "front" | "back"; children: React.ReactNode }) {
+  return (
+    <div className="relative flex w-full max-w-3xl items-center justify-center">
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-1/2 h-[70%] -translate-y-1/2 rounded-2xl border ${
+          tone === "front" ? "border-red-400/25 bg-gradient-to-r from-transparent via-red-900/25 to-transparent" : "border-sky-300/15 bg-gradient-to-r from-transparent via-sky-900/20 to-transparent"
+        }`}
+      />
+      <span
+        className={`absolute left-1 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-[10px] font-black tracking-widest [writing-mode:vertical-rl] sm:left-3 sm:text-xs ${
+          tone === "front" ? "bg-red-700/80 text-white" : "bg-slate-600/80 text-slate-100"
+        }`}
+      >
+        {label}
+      </span>
+      <div className="relative flex items-start justify-center gap-2 sm:gap-4">{children}</div>
     </div>
   );
 }
@@ -383,14 +414,6 @@ function CharacterSlot({
         )}
       </button>
       {b.pools === "table" && alive && <PoolBars b={b} id={id} t={t} />}
-      {/* Front-line tag under the card */}
-      <div className="h-4 text-[9px] font-black uppercase tracking-wider sm:text-[10px]">
-        {inFront(board, id) ? (
-          <span className="rounded-full bg-red-700 px-2 py-0.5 text-white shadow">{t("v3.ui.front")}</span>
-        ) : (
-          <span className="rounded-full bg-slate-600 px-2 py-0.5 text-white shadow">{t("v3.ui.back")}</span>
-        )}
-      </div>
       {b.pools !== "team" && b.pools !== "table" && alive && <PoolBars b={b} id={id} t={t} />}
     </div>
   );
@@ -413,10 +436,13 @@ function SkillSlotsRow({
   onPlay,
   onPlayAll,
   onInspect,
+  side = false,
 }: {
   board: Board;
   t: T;
   disabled: boolean;
+  /** Laid out as a narrow column for the side panel (desktop): header stacked, the four slots in a 2 x 2 grid. */
+  side?: boolean;
   onDraw: () => void;
   onDrawAll: () => void;
   onPlay: (uid: number) => void;
@@ -431,9 +457,9 @@ function SkillSlotsRow({
   const canDrawSlots = ready && handLen < 4;
 
   return (
-    <section className="flex flex-col items-center gap-1 px-2 py-1">
+    <section className={`flex flex-col items-center gap-1 px-2 py-1 ${side ? "gap-2" : ""}`}>
       {/* Header bar above the 4 slots */}
-      <div className="flex w-full max-w-2xl items-center justify-between gap-2 px-1 text-[11px] sm:text-xs">
+      <div className={`flex w-full max-w-2xl gap-2 px-1 text-[11px] sm:text-xs ${side ? "flex-col items-stretch" : "items-center justify-between"}`}>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <span className="font-bold text-amber-200">
             {t("v3.deck.slotTitle")}
@@ -495,7 +521,7 @@ function SkillSlotsRow({
       </div>
 
       {/* 4 Card Slots */}
-      <div className="flex items-center justify-center gap-2 sm:gap-3 lg:gap-4">
+      <div className={side ? "grid grid-cols-2 gap-2" : "flex items-center justify-center gap-2 sm:gap-3 lg:gap-4"}>
         {slots.map((idx) => {
           const inst = hand[idx];
           if (inst) {
@@ -506,7 +532,7 @@ function SkillSlotsRow({
             const extra = idx === 3 && handLen > 4 ? handLen - 4 : 0;
 
             return (
-              <div key={inst.uid} className={`relative flex shrink-0 flex-col items-center ${SKILL_SLOT_WIDTH}`}>
+              <div key={inst.uid} className={`relative flex shrink-0 flex-col items-center ${side ? SIDE_SLOT_WIDTH : SKILL_SLOT_WIDTH}`}>
                 <div
                   role="button"
                   tabIndex={0}
@@ -578,7 +604,7 @@ function SkillSlotsRow({
 
           // Empty Slot: Stone / antique gold dashed frame
           return (
-            <div key={`empty-${idx}`} className={`relative flex shrink-0 flex-col items-center ${SKILL_SLOT_WIDTH}`}>
+            <div key={`empty-${idx}`} className={`relative flex shrink-0 flex-col items-center ${side ? SIDE_SLOT_WIDTH : SKILL_SLOT_WIDTH}`}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -934,7 +960,7 @@ function SkillFocus({
 }
 
 /** How many characters can go to battle in free mode. */
-const MAX_LINEUP = 3;
+const MAX_LINEUP = 5;
 
 /** The drop-down arrow of the phone selects, drawn as a background so it can sit a little in from the edge. */
 const SELECT_ARROW = {
@@ -1434,7 +1460,22 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
       {/* 支援滑鼠滑過：區域周邊色點發光效果 */}
       <div className="pointer-events-none absolute inset-0 z-0 bq-glowing-dots-dense" />
 
-      {/* ---------- Board: enemies, message, our characters, hand ---------- */}
+      {/* ---------- Hand: a side panel on desktop (on phones it stays a row above the characters) ---------- */}
+      <aside onClick={(e) => e.stopPropagation()} className="relative z-10 hidden w-[17rem] shrink-0 flex-col justify-center border-r border-white/10 bg-black/30 py-3 lg:flex xl:w-[19rem]">
+        <SkillSlotsRow
+          board={board}
+          t={t}
+          side
+          disabled={locked || !!pending || promote}
+          onDraw={draw}
+          onDrawAll={drawAll}
+          onPlay={play}
+          onPlayAll={playAll}
+          onInspect={(target) => setViewingScripture(target)}
+        />
+      </aside>
+
+      {/* ---------- Board: enemies, message, our characters (and the hand on phones) ---------- */}
       <main className="relative z-10 flex min-w-0 flex-1 flex-col">
 
         <section className="relative flex flex-1 items-center justify-center px-2 pt-5 sm:px-4">
@@ -1483,7 +1524,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           )}
         </div>
 
-        {/* Upper row: 4 skill/energy card slots (上方技能四張卡) */}
+        {/* Upper row: 4 skill/energy card slots (上方技能四張卡), on phones only: the desktop has them in the side panel */}
+        <div className="lg:hidden">
         <SkillSlotsRow
           board={board}
           t={t}
@@ -1494,14 +1536,18 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           onPlayAll={playAll}
           onInspect={(target) => setViewingScripture(target)}
         />
+        </div>
 
-        {/* Lower row: 3 character cards (下方三張角色卡) */}
-        <section className="flex flex-1 items-center justify-center px-2 pb-2 sm:px-4">
-          <div className="flex items-start justify-center gap-2 sm:gap-5">
-            {/* The front line stands forward; the bench stands back. */}
-            {board.front.map((id, i) => slot(id, "large", `${i === 0 ? "order-2" : "order-3"} z-10 -translate-y-3`))}
-            {backRow(board).map((id) => slot(id, "small", "order-1 brightness-90"))}
-          </div>
+        {/* Our characters in two rows: the front row faces the enemy, the back row stands behind it */}
+        <section className="flex flex-1 flex-col items-center justify-center gap-3 px-2 pb-2 pt-3 sm:px-4">
+          <FormationLane label={t("v3.ui.front")} tone="front">
+            {board.front.map((id) => slot(id, "large", "z-10"))}
+          </FormationLane>
+          {backRow(board).length > 0 && (
+            <FormationLane label={t("v3.ui.back")} tone="back">
+              {backRow(board).map((id) => slot(id, "small", "brightness-95"))}
+            </FormationLane>
+          )}
         </section>
 
       </main>
