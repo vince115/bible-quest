@@ -13,7 +13,8 @@ export interface Figure {
   head: number;
   feet: number;
   size?: number;
-  gaze?: "left" | "right";
+  /** Where the figure looks: it is placed off the middle, leaving room there. "center" (facing the viewer) keeps it in the middle. */
+  gaze?: "left" | "right" | "center";
 }
 
 /** The card face is taller than wide; a square picture filling its height is this many face-widths wide. */
@@ -34,7 +35,7 @@ export function frameFigure({ cx, head, feet, size = 1, gaze = "right" }: Figure
   // A bigger figure keeps its feet where the others' are, so its head sits higher.
   const headAt = HEAD_AT - (size - 1) * FIGURE_HEIGHT * 0.3;
   // Horizontal crop that puts the figure's centre-line just off the middle, leaving space where it looks.
-  const target = gaze === "right" ? 0.5 - LEAD : 0.5 + LEAD;
+  const target = gaze === "center" ? 0.5 : gaze === "right" ? 0.5 - LEAD : 0.5 + LEAD;
   const x = clamp((IMAGE_WIDTH * cx - target) / (IMAGE_WIDTH - 1), 0, 1);
   // Vertical zoom origin that puts the head at the target; kept inside the face so no gap opens at the top.
   const oy = scale > 1 ? clamp((headAt - head * scale) / (1 - scale), 0, 1) : 0.5;
@@ -50,7 +51,7 @@ export function figureOnFace(figure: Figure): { x: number; top: number; bottom: 
   const { cx, head, feet, size = 1, gaze = "right" } = figure;
   const scale = Math.max(1, (FIGURE_HEIGHT * size) / (feet - head));
   const headAt = HEAD_AT - (size - 1) * FIGURE_HEIGHT * 0.3;
-  const target = gaze === "right" ? 0.5 - LEAD : 0.5 + LEAD;
+  const target = gaze === "center" ? 0.5 : gaze === "right" ? 0.5 - LEAD : 0.5 + LEAD;
   const x = clamp((IMAGE_WIDTH * cx - target) / (IMAGE_WIDTH - 1), 0, 1);
   const oy = scale > 1 ? clamp((headAt - head * scale) / (1 - scale), 0, 1) : 0.5;
   // object-fit: cover puts the square picture's left edge x·(width−1) face-widths off the face; then the zoom.

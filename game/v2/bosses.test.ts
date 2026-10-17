@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENEMY_HP, MAX_HP, RULES_V2 as R, SHOOTER_DAMAGE, STAGE_BOSS, STAGE_ENEMIES, STAGE_GUARD, STAGE_ORDER, STAGE_SHOOTER } from "./data";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R, SHOOTER_DAMAGE, STAGE_BOSS, STAGE_ENEMIES, STAGE_GUARD, STAGE_ORDER, STAGE_SHOOTER, SUMMONED } from "./data";
 import { attackableEnemies, castSkill, createBattle, enemyDamage, resolveGoliath, startNextTurn, weakestAlly } from "./engine";
 import type { BattleState, CharacterId, StageId } from "./types";
 
@@ -67,7 +67,7 @@ describe("guards and shooters", () => {
     for (const stage of STAGE_ORDER) {
       const guard = STAGE_GUARD[stage];
       const shooter = STAGE_SHOOTER[stage];
-      if (!guard || !shooter) continue;
+      if (!guard || !shooter || SUMMONED.has(stage)) continue; // a summoned guard and shooter are not there yet
       let s = createBattle(seeded(), LINEUP, stage);
       s.hand = [];
       const boss = STAGE_BOSS[stage];
