@@ -14,7 +14,7 @@
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
 // Everything else is the v2 engine, unchanged.
-import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, ENEMY_HP, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, STAGE_SHOOTER, SUMMONED, aidesOf } from "../v2/data";
+import { HUNT_WEAKEST, MAX_HP, MULTI_TARGETS, NEVER_FALLS, PARTY_ORDER, PERSONAL_POOL_STAGES, ENEMY_HP, RULES_V2 as R, SINGLE_TARGET, STAGE_GUARD, SUMMONED, aideCopies, aidesOf } from "../v2/data";
 import {
   canDraw,
   basicAttack,
@@ -24,6 +24,8 @@ import {
   inPartyOrder,
   drawCard,
   enemyAlive,
+  guardOf,
+  shooterOf,
   isAlive,
   playCard,
   resolveGoliath,
@@ -117,19 +119,23 @@ export function arrange(lineup: CharacterId[], placement: readonly (CharacterId 
 }
 
 /** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
-export function createBoard(lineup: CharacterId[], placement?: readonly (CharacterId | null)[], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode): Board {
+/** foes: free mode's own guard and shooter (see BattleState.foes). */
+export function createBoard(lineup: CharacterId[], placement?: readonly (CharacterId | null)[], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode, foes?: BattleState["foes"]): Board {
   const chosen = inPartyOrder(lineup.filter((id) => PARTY_ORDER.includes(baseCharacter(id)))).slice(0, MAX_LINEUP);
   if (!chosen.length) throw new Error("line-up needs at least one character");
-  const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"));
+  const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"), foes);
   battle.rows = true;
-  const minions = [STAGE_GUARD[stage], STAGE_SHOOTER[stage]].filter((e) => e !== undefined);
+  const minions = [guardOf(battle), shooterOf(battle)].filter((e) => e !== undefined);
   if (chosen.length === 1 && minions.length) {
     for (const e of minions) battle.enemies[e].hp = 0;
     battle.archerTarget = null;
     log(battle, "v3.log.duel", { char: chosen[0] });
   }
   // A big party meets reinforcements in the enemy's front row (not where the guard is summoned, nor where there is none).
-  const aides = SUMMONED.has(stage) || !STAGE_GUARD[stage] ? [] : aidesOf(stage).slice(0, aideCount(chosen.length));
+  // A big party meets reinforcements in the enemy's front row: more of the stage's guards, or of free mode's chosen guard
+  // (not where the guard is summoned, nor where there is none or it has no copies).
+  const aides = (SUMMONED.has(stage) ? [] : foes ? (foes.guard ? aideCopies(foes.guard) : []) : STAGE_GUARD[stage] ? aidesOf(stage) : []).slice(0, aideCount(chosen.length));
+  battle.aides = aides;
   for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
   // ...and a boss who hits harder for each ally past three.
   battle.bossBoost = (battle.bossBoost ?? 0) + R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
@@ -209,7 +215,7 @@ function aim(b: Board, rng: Rng): Board {
       while (pool.length && intent.targets.length < many) intent.targets.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
     }
   });
-  const shooter = STAGE_SHOOTER[s.stage];
+  const shooter = shooterOf(s);
   // The arrow goes to the member of the row beside the one the boss's blow falls on this turn, and each reinforcement's
   // strike to the next one along.
   const arrow = pick(1);
