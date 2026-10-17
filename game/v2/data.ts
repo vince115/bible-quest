@@ -59,9 +59,13 @@ export const RULES_V2 = {
   accuseTargets: 2,
   decree: 40,
   /** Satan in the wilderness: the lure of the man he seems to be; his fiery darts and his devouring once he is shown for what he is. */
-  lure: 50,
-  darts: 40,
-  devour: 100,
+  lure: 80,
+  darts: 80,
+  devour: 180,
+  /** The pinnacle of the temple picks off the weakest ally; the kingdoms of the world dazzle two allies. At half HP the demon rages. */
+  pinnacle: 100,
+  dartsRage: 110,
+  devourRage: 250,
   /** Legion: We Are Many hits two allies (every ally once unleashed at half HP); Break the Chains hits the front; Torment shakes allies. */
   many: 20,
   manyTargets: 2,
@@ -935,7 +939,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 180, satanFoe: 300,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160, satanMan: 200, satanFoe: 340,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
@@ -1594,7 +1598,8 @@ export const SERPENT_CYCLE: GoliathActionId[] = ["tempt", "fang", "coil", "fang"
 /** The cunning serpent of the first round only tempts and bites; the coil is for the serpent that was cursed. */
 export const TEMPTER_CYCLE: GoliathActionId[] = ["tempt", "fang", "fang", "tempt"];
 /** Satan in the wilderness: first the man who asks (lure, tempt, accuse), then the demon (darts, devour, accuse). */
-export const DISGUISE_CYCLE: GoliathActionId[] = ["tempt", "lure", "accuse", "lure"];
+/** The three temptations of Matthew 4 (stones to bread, the pinnacle, the kingdoms), then the question that opened them all. */
+export const DISGUISE_CYCLE: GoliathActionId[] = ["tempt", "pinnacle", "kingdoms", "lure"];
 export const TEMPTATION_CYCLE: GoliathActionId[] = ["darts", "devour", "accuse", "devour"];
 /** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
 export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
@@ -1615,10 +1620,10 @@ export const LEGION_CYCLE: GoliathActionId[] = ["many", "chains", "torment", "ma
 /** Actions aimed at one ally (the front line on the v3 board). */
 export const SINGLE_TARGET: GoliathActionId[] = ["spear", "crush", "fang", "coil", "tempt", "surge", "charge", "stones", "boulder", "cut", "pounce", "chains", "decree", "lure", "devour"];
 /** Actions aimed at several allies at once, and how many. */
-export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, accuse: RULES_V2.accuseTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
+export const MULTI_TARGETS: Partial<Record<GoliathActionId, number>> = { defy: RULES_V2.defyTargets, pursue: RULES_V2.pursueTargets, roar: RULES_V2.roarTargets, accuse: RULES_V2.accuseTargets, kingdoms: RULES_V2.accuseTargets, torment: RULES_V2.tormentTargets, many: RULES_V2.manyTargets };
 /** Actions that hunt the weakest ally (lowest HP), ignoring the front line. */
-export const HUNT_WEAKEST: GoliathActionId[] = ["maul"];
+export const HUNT_WEAKEST: GoliathActionId[] = ["maul", "pinnacle"];
 /** Actions that hit every ally (We Are Many only once Legion is unleashed). */
 export const HITS_ALL: GoliathActionId[] = ["swing", "coil", "rain", "deluge", "arrows", "leap", "darts"];
 /** Actions that only shake (no damage). */
-export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment", "accuse"];
+export const SHAKES: GoliathActionId[] = ["defy", "roar", "torment", "accuse", "kingdoms"];

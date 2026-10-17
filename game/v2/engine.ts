@@ -218,8 +218,9 @@ export function actionBase(s: BattleState, action: GoliathActionId): number {
     case "pounce": return R.pounce;
     case "decree": return R.decree;
     case "lure": return R.lure;
-    case "darts": return R.darts;
-    case "devour": return R.devour;
+    case "darts": return enraged ? R.dartsRage : R.darts;
+    case "devour": return enraged ? R.devourRage : R.devour;
+    case "pinnacle": return R.pinnacle;
     case "maul": return R.maul;
     case "many": return R.many;
     case "chains": return R.chains;
@@ -1390,6 +1391,11 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         // They cried aloud, and cut themselves after their manner (1 Kings 18:28): a frenzy.
         s.goliath.enraged = true;
         log(s, "v2.log.frenzy", "enemy");
+        break;
+      case "temptation":
+        // Half his HP gone, the demon stops pretending to be patient: his darts and his devouring hit harder.
+        s.goliath.enraged = true;
+        log(s, "v2.log.satanRage", "enemy");
         break;
       case "gerasa":
         // Legion unleashed: We Are Many now falls on everyone.
@@ -4247,6 +4253,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       // ---- The lions: Roar shakes, Maul hunts the weakest ----
       case "roar":
       case "accuse":
+      case "kingdoms":
       case "torment":
         spread(s, intent, rng).forEach((id) => {
           if (s.party[id].shield > 0) log(s, "v2.log.shieldHolds", "detail", { char: id });
@@ -4256,11 +4263,12 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
           }
         });
         break;
-      case "maul": {
+      case "maul":
+      case "pinnacle": {
         const t = intent.targets[0] && isAlive(s, intent.targets[0]) ? intent.targets[0] : weakestAlly(s);
         if (t) {
           log(s, "v2.log.hunted", "detail", { char: t });
-          damageAlly(s, t, actionBase(s, "maul"), boss);
+          damageAlly(s, t, actionBase(s, intent.action), boss);
         }
         break;
       }

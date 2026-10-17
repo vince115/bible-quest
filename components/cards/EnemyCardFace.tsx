@@ -158,12 +158,13 @@ const MOVES: Record<
   ],
   satanMan: [
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "pinnacle", key: "v2.action.pinnacle.name", amount: String(R.pinnacle) },
+    { action: "kingdoms", key: "v2.action.kingdoms.name", amount: `😨×${R.accuseTargets}` },
     { action: "lure", key: "v2.action.lure.name", amount: String(R.lure) },
-    { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
   ],
   satanFoe: [
-    { action: "darts", key: "v2.action.darts.name", amount: String(R.darts) },
-    { action: "devour", key: "v2.action.devour.name", amount: String(R.devour) },
+    { action: "darts", key: "v2.action.darts.name", amount: `${R.darts}/${R.dartsRage}` },
+    { action: "devour", key: "v2.action.devour.name", amount: `${R.devour}/${R.devourRage}` },
     { action: "accuse", key: "v2.action.accuse.name", amount: `😨×${R.accuseTargets}` },
   ],
   serpentTempter: [

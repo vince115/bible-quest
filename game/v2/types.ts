@@ -134,7 +134,7 @@ export type GoliathActionId =
   | "cry" | "leap" | "cut"
   | "roar" | "pounce" | "maul"
   | "accuse" | "decree"
-  | "lure" | "darts" | "devour"
+  | "lure" | "darts" | "devour" | "pinnacle" | "kingdoms"
   | "many" | "chains" | "torment";
 
 export interface Intent {
