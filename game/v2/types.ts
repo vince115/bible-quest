@@ -50,7 +50,7 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
-  | "serpentTempter" | "satanMan" | "satanFoe" | "demon"
+  | "serpentTempter" | "satanMan" | "satanFoe" | "roaringLion" | "fieryDarts"
   | "legion" | "uncleanSpirits" | "swine";
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */

@@ -1393,7 +1393,7 @@ function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
         log(s, "v2.log.frenzy", "enemy");
         break;
       case "temptation":
-        // Half his HP gone, the demon stops pretending to be patient: his darts and his devouring hit harder.
+        // Half his HP gone, the demon stops pretending to be patient: his devouring hits harder.
         s.goliath.enraged = true;
         log(s, "v2.log.satanRage", "enemy");
         break;
@@ -4264,11 +4264,11 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
         });
         break;
       case "summon": {
-        // He calls his angels to the front line (Revelation 12:9); if one already stands, the host closes ranks round the boss.
-        const guard = guardOf(s);
-        if (guard && !enemyAlive(s, guard)) {
-          s.enemies[guard].hp = ENEMY_HP[guard];
-          log(s, "v2.log.summon", "enemy", { enemy: guard, hp: ENEMY_HP[guard] });
+        // He calls his own to the front line (Revelation 12:9), the guard first and then the shooter; with both standing, the host closes ranks round the boss.
+        const minion = [guardOf(s), shooterOf(s)].find((m): m is EnemyId => !!m && !enemyAlive(s, m));
+        if (minion) {
+          s.enemies[minion].hp = ENEMY_HP[minion];
+          log(s, "v2.log.summon", "enemy", { enemy: minion, hp: ENEMY_HP[minion] });
         } else {
           const e = s.enemies[boss];
           e.hp = Math.min(ENEMY_HP[boss], e.hp + R.hostHeal);

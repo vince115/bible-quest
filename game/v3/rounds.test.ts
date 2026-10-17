@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_HP, STAGE_ENEMIES } from "../v2/data";
-import { isAlive } from "../v2/engine";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R, STAGE_ENEMIES } from "../v2/data";
+import { isAlive, resolveGoliath } from "../v2/engine";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { campaignStage, stageBgm, stageOfBattle } from "./campaign";
 import { createBoard, nextRoundBoard } from "./engine";
@@ -132,5 +132,27 @@ describe("the lions' den in two rounds", () => {
     expect(useBattleV3Store.getState().interlude).toBe("temptation");
     useBattleV3Store.getState().nextRound();
     expect(useBattleV3Store.getState().board!.battle.stage).toBe("temptation");
+  });
+
+  it("Satan summons his guard, then his shooter, to the front line; with both standing the host closes ranks and he heals", () => {
+    expect(STAGE_ENEMIES.temptation).toEqual(["satanFoe"]);
+    const first = createBoard(["peter", "johnApostle", "holySpirit"], "peter", () => 0.5, "temptation", "table");
+    const b = first.battle;
+    expect(b.enemies.roaringLion.hp).toBe(0);
+    expect(b.enemies.fieryDarts.hp).toBe(0);
+    expect(b.intents[0].action).toBe("summon");
+    const summon = () => {
+      b.intents[0] = { action: "summon", targets: [] };
+      return resolveGoliath(b, () => 0.5);
+    };
+    const one = summon();
+    expect([one.enemies.roaringLion.hp, one.enemies.fieryDarts.hp]).toEqual([ENEMY_HP.roaringLion, 0]);
+    one.intents[0] = { action: "summon", targets: [] };
+    const two = resolveGoliath(one, () => 0.5);
+    expect([two.enemies.roaringLion.hp, two.enemies.fieryDarts.hp]).toEqual([ENEMY_HP.roaringLion, ENEMY_HP.fieryDarts]);
+    two.enemies.satanFoe.hp = 100;
+    two.intents[0] = { action: "summon", targets: [] };
+    const three = resolveGoliath(two, () => 0.5);
+    expect(three.enemies.satanFoe.hp).toBe(100 + R.hostHeal);
   });
 });

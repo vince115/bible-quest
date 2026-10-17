@@ -25,7 +25,7 @@ import {
   SINGLE_TARGET,
   SKILLS,
   STAGE_GUARD,
-  SUMMONED_GUARD,
+  SUMMONED,
   STAGE_ORDER,
   STAGE_SHOOTER,
 } from "@/game/v2/data";
@@ -1435,10 +1435,10 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           )}
           <div className="flex items-start justify-center gap-2 sm:gap-5">
             {/* The stage's shooter and guard flank the boss; in a duel they stand aside (Eden has only the Serpent). */}
-            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (
+            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_SHOOTER[b.stage]!)) && (
               <EnemyCard b={b} front={board.front} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" className="order-1" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
             )}
-            {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED_GUARD.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
+            {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
               <EnemyCard b={b} front={board.front} id={STAGE_GUARD[b.stage]!} t={t} size="small" className="order-3" pending={pending} onTarget={() => onTarget(STAGE_GUARD[b.stage]!)} onView={() => setViewingEnemy(STAGE_GUARD[b.stage]!)} />
             )}
             <EnemyCard b={b} front={board.front} id={bossOf(b)} t={t} size="large" className="order-2" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
