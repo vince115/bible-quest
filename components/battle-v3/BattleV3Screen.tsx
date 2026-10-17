@@ -274,7 +274,7 @@ function TableDeck({
           disabled={!canDraw}
           title={canDraw ? t("v3.deck.tapToDraw") : board.draws > 0 ? t("v3.deck.full") : t("v3.deck.done")}
           aria-label={t("v3.deck.title")}
-          className={`relative w-[3.2rem] ${CARD_RATIO} sm:w-[3.6rem] ${canDraw ? "cursor-pointer" : "cursor-default opacity-70"}`}
+          className={`relative w-[4.2rem] ${CARD_RATIO} sm:w-[4.8rem] ${canDraw ? "cursor-pointer" : "cursor-default opacity-70"}`}
         >
           {[2, 1, 0].map((k) => (
             <span
@@ -307,7 +307,7 @@ function TableDeck({
       </div>
 
       {/* The hand, fanned */}
-      <div className="flex min-h-[4.5rem] items-end pl-2 sm:min-h-[5.1rem]">
+      <div className="flex min-h-[5.9rem] items-end pl-2 sm:min-h-[6.7rem]">
         {b.hand.map((inst, i) => {
           const tilt = (i - (b.hand.length - 1) / 2) * 5;
           return (
@@ -318,7 +318,7 @@ function TableDeck({
                 onInspect({ uid: inst.uid, card: inst.card });
               }}
               title={t("v3.ui.viewCard")}
-              className={`relative -ml-5 w-[3.6rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:ml-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-ml-6 sm:w-[3.6rem]`}
+              className={`relative -ml-6 w-[4.2rem] ${CARD_RATIO} origin-bottom rounded-xs shadow-xl transition [container-type:inline-size] first:ml-0 hover:z-20 hover:-translate-y-3 hover:scale-125 sm:-ml-7 sm:w-[4.8rem]`}
               style={{ transform: `rotate(${tilt}deg)` }}
             >
               <span className="absolute inset-0 overflow-hidden rounded-xs" style={{ fontSize: "4.67cqw" }}>
@@ -1585,8 +1585,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </section>
 
         {/* The table between the two sides: what is happening, the energy deck as one stack, the hand fanned beside it */}
-        <section className="flex flex-col items-center gap-1 px-3 py-1">
-          <div className="min-h-5 max-w-xl text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm">
+        <section className="flex flex-col items-center gap-1 px-3 py-1 lg:flex-row lg:justify-center lg:gap-6">
+          <div className="min-h-5 max-w-xl text-center text-[11px] font-semibold leading-tight text-amber-100 sm:text-sm lg:w-64 lg:text-right">
             {swapIn ? (
               <span className="text-emerald-200">{t("v3.ui.chooseOut")}</span>
             ) : promote ? (
