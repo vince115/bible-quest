@@ -7,7 +7,7 @@ type Card = CharacterId | EnemyId;
 
 /** Each period in story order; within a period, roughly in the order the people appear. */
 export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
-  { era: "creation", cards: ["father", "adam", "eve", "serpent", "serpentP", "cain", "abel", "seth", "enoch", "noah", "fountains", "flood", "windows"] },
+  { era: "creation", cards: ["father", "adam", "eve", "serpent", "serpentTempter", "serpentP", "cain", "abel", "seth", "enoch", "noah", "fountains", "flood", "windows"] },
   {
     era: "patriarchs",
     // Job is usually placed in the patriarchs' time.

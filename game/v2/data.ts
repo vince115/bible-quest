@@ -857,7 +857,7 @@ export const ENEMY_ELEMENT: Record<EnemyId, Element> = {
   chariots: "metal", pharaohHost: "metal", chariotCaptain: "metal",
   walls: "earth", jerichoKing: "earth", wallGuard: "earth",
   baalProphets: "fire", ahabKing: "fire", jezebelQueen: "fire",
-  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth",
+  lionRest: "wood", lion: "wood", lioness: "wood", presidents: "earth", princes: "earth", serpentTempter: "dark",
   legion: "dark", uncleanSpirits: "dark", swine: "earth",
 };
 
@@ -901,6 +901,7 @@ export const ENEMY_ORDER: EnemyId[] = [
   "jerichoKing", "walls", "wallGuard",
   "ahabKing", "baalProphets", "jezebelQueen",
   "lionRest", "lion", "lioness", "presidents", "princes",
+  "serpentTempter",
   "uncleanSpirits", "legion", "swine",
 ];
 
@@ -912,7 +913,7 @@ export const STORY: Partial<Record<CharacterId, StageId>> = { david: "goliath", 
  * Who fights in each stage: the boss, and (except in Eden) a guard who protects the boss while standing and a shooter
  * who hits the front line every turn, like Goliath's shield bearer and archer.
  */
-export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents" };
+export const STAGE_BOSS: Record<StageId, EnemyId> = { goliath: "goliath", eden: "serpent", ark: "flood", redSea: "chariots", jericho: "walls", carmel: "baalProphets", lions: "lion", gerasa: "legion", plot: "presidents", tempter: "serpentTempter" };
 export const STAGE_GUARD: Partial<Record<StageId, EnemyId>> = { goliath: "bearer", ark: "fountains", redSea: "pharaohHost", jericho: "jerichoKing", carmel: "ahabKing", lions: "lionRest", gerasa: "uncleanSpirits" };
 export const STAGE_SHOOTER: Partial<Record<StageId, EnemyId>> = { goliath: "archer", ark: "windows", redSea: "chariotCaptain", jericho: "wallGuard", carmel: "jezebelQueen", lions: "lioness", gerasa: "swine", plot: "princes" };
 export const STAGE_ENEMIES: Record<StageId, EnemyId[]> = Object.fromEntries(
@@ -930,7 +931,7 @@ export const ENEMY_HP: Record<EnemyId, number> = {
   chariots: 150, pharaohHost: 50, chariotCaptain: 40,
   walls: 200, jerichoKing: 50, wallGuard: 40,
   baalProphets: 180, ahabKing: 50, jezebelQueen: 40,
-  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40,
+  lionRest: 110, lion: 160, lioness: 120, presidents: 100, princes: 40, serpentTempter: 160,
   legion: 200, uncleanSpirits: 50, swine: 40,
 };
 
@@ -1586,6 +1587,8 @@ export const PHASE1_CYCLE: GoliathActionId[] = ["defy", "spear", "raise", "crush
 export const PHASE2_CYCLE: GoliathActionId[] = ["swing", "raise", "crush"];
 /** The Serpent keeps one cycle; after shedding its skin (half HP) its fang hits harder. */
 export const SERPENT_CYCLE: GoliathActionId[] = ["tempt", "fang", "coil", "fang"];
+/** The cunning serpent of the first round only tempts and bites; the coil is for the serpent that was cursed. */
+export const TEMPTER_CYCLE: GoliathActionId[] = ["tempt", "fang", "fang", "tempt"];
 /** The Flood keeps one cycle; from turn prevailTurn every blow is heavier. */
 export const FLOOD_CYCLE: GoliathActionId[] = ["rain", "surge", "rise", "deluge"];
 /** Pharaoh's chariots keep one cycle; at half HP the wheels come off (Charge weakens). */

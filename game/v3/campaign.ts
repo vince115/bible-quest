@@ -35,7 +35,7 @@ export interface CampaignStage {
 }
 
 export const CAMPAIGN: CampaignStage[] = [
-  { id: "eden", testament: "old", era: "creation", battle: "eden", pool: ["adam", "eve", "cain", "abel", "seth", "enoch"], pick: 3, art: "/stages/eden.jpg", bgm: "/audio/bgm/eden.mp3" },
+  { id: "eden", testament: "old", era: "creation", battle: "eden", before: "tempter", pool: ["adam", "eve", "cain", "abel", "seth", "enoch"], pick: 3, art: "/stages/eden.jpg", bgm: "/audio/bgm/eden.mp3" },
   { id: "ark", testament: "old", era: "creation", battle: "ark", pool: ["noah", "enoch", "seth", "adam", "cain", "abel"], pick: 3, art: "/stages/ark.jpg", bgm: "/audio/bgm/ark.mp3" },
   { id: "redSea", testament: "old", era: "exodus", battle: "redSea", pool: ["moses", "aaron", "miriam", "joshua", "jochebed", "zipporah"], pick: 3, art: "/stages/red-sea.jpg", bgm: "/audio/bgm/red-sea.m4a" },
   { id: "jericho", testament: "old", era: "exodus", battle: "jericho", pool: ["joshua", "rahab", "caleb", "achan", "aaron", "miriam"], pick: 3, art: "/stages/jericho.jpg", bgm: "/audio/bgm/jericho.mp3" },

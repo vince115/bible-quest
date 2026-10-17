@@ -27,6 +27,7 @@ import {
   BAAL_CYCLE,
   LIONS_CYCLE,
   PLOT_CYCLE,
+  TEMPTER_CYCLE,
   LEGION_CYCLE,
   SINGLE_TARGET,
   MULTI_TARGETS,
@@ -103,6 +104,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
       return LIONS_CYCLE;
     case "plot":
       return PLOT_CYCLE;
+    case "tempter":
+      return TEMPTER_CYCLE;
     case "gerasa":
       return LEGION_CYCLE;
     default:
@@ -110,8 +113,8 @@ function cycleOf(s: BattleState): GoliathActionId[] {
   }
 }
 /** Log keys for the start and the end of each stage's battle. */
-const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", gerasa: "v2.log.startGerasa" };
-const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", gerasa: "v2.log.victoryGerasa" };
+const START_LOG: Record<StageId, string> = { goliath: "v2.log.start", eden: "v2.log.startEden", ark: "v2.log.startArk", redSea: "v2.log.startRedSea", jericho: "v2.log.startJericho", carmel: "v2.log.startCarmel", lions: "v2.log.startLions", plot: "v2.log.startPlot", tempter: "v2.log.startTempter", gerasa: "v2.log.startGerasa" };
+const VICTORY_LOG: Record<StageId, string> = { goliath: "v2.log.victory", eden: "v2.log.victoryEden", ark: "v2.log.victoryArk", redSea: "v2.log.victoryRedSea", jericho: "v2.log.victoryJericho", carmel: "v2.log.victoryCarmel", lions: "v2.log.victoryLions", plot: "v2.log.victoryPlot", tempter: "v2.log.victoryTempter", gerasa: "v2.log.victoryGerasa" };
 /** This stage's boss (Goliath, the Serpent, the Flood, ...). */
 export const bossOf = (s: BattleState): EnemyId => STAGE_BOSS[s.stage];
 /** The stage's guard (protects the boss while standing) and shooter (hits the front line every turn), if any. */
@@ -400,8 +403,8 @@ export function elementMultiplier(attacker: Element, defender: Element, enabled:
  * Sling Stone is a fixed number: no bonuses, no element.
  */
 /** Is this character fighting in their own Bible story (story bonus on)? */
-/** A character fights in their own story: the first round of the lions' stage ("plot") is still Daniel's story. */
-export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage) && s.lineup.includes(id);
+/** A character fights in their own story: the first rounds ("plot", "tempter") still belong to the story of their stage. */
+export const inStory = (s: BattleState, id: CharacterId) => STORY[id] === (s.stage === "plot" ? "lions" : s.stage === "tempter" ? "eden" : s.stage) && s.lineup.includes(id);
 
 export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): number {
   const def = SKILLS[skill];
@@ -418,7 +421,7 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId): n
   const giant = def.owner === "david" && inStory(s, "david") && faithOf(s, "david") >= R.giantFaith ? R.giantBonus : 0;
   const till = skill === "till" && inStory(s, "adam") ? R.edenTillBonus : 0;
   // Eve in Eden: her seed shall bruise the serpent's head — every attack on the Serpent +20.
-  const seed = target === "serpent" && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
+  const seed = (target === "serpent" || target === "serpentTempter") && inStory(s, "eve") && isAlive(s, "eve") ? R.edenSeedBonus : 0;
   // Isaac sowed and reaped a hundredfold, for the LORD blessed him (Genesis 26:12): more with his father beside him.
   const blessing = skill === "harvest" && isAlive(s, "abraham") ? R.harvestBlessing : 0;
   // While Moses held up his hand, Israel prevailed (Exodus 17:11).
@@ -4104,9 +4107,9 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
   if (g.stunned) {
     g.stunned = false;
     g.charging = false;
-    log(s, s.stage === "goliath" ? "v2.log.stunned" : s.stage === "eden" ? "v2.log.serpentStunned" : "v2.log.bossStunned", "enemy", { action: intent.action, enemy: boss });
+    log(s, s.stage === "goliath" ? "v2.log.stunned" : s.stage === "eden" || s.stage === "tempter" ? "v2.log.serpentStunned" : "v2.log.bossStunned", "enemy", { action: intent.action, enemy: boss });
   } else {
-    log(s, s.stage === "goliath" ? "v2.log.goliathUses" : s.stage === "eden" ? "v2.log.serpentUses" : "v2.log.bossUses", "enemy", { action: intent.action, enemy: boss });
+    log(s, s.stage === "goliath" ? "v2.log.goliathUses" : s.stage === "eden" || s.stage === "tempter" ? "v2.log.serpentUses" : "v2.log.bossUses", "enemy", { action: intent.action, enemy: boss });
     switch (intent.action) {
       case "defy":
         // A Shield steadies an ally: they can't be Shaken.

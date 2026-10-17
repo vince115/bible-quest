@@ -50,11 +50,15 @@ export type EnemyId =
   | "walls" | "jerichoKing" | "wallGuard"
   | "baalProphets" | "ahabKing" | "jezebelQueen"
   | "lionRest" | "lion" | "lioness" | "presidents" | "princes"
+  | "serpentTempter"
   | "legion" | "uncleanSpirits" | "swine";
 
 /** Which battle is being fought: the campaign's eight stages (Goliath brings his shield bearer and archer). */
-/** "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel); it is not a stage of its own. */
-export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot";
+/**
+ * "plot" is the first round of the lions' stage (the presidents and princes plot against Daniel) and "tempter" the first
+ * round of Eden (the cunning serpent tempts Eve); neither is a stage of its own.
+ */
+export type StageId = "goliath" | "eden" | "ark" | "redSea" | "jericho" | "carmel" | "lions" | "gerasa" | "plot" | "tempter";
 
 /** Who an effect must be aimed at, chosen by the player before it resolves. */
 /** actedAlly: an ally who has already acted this turn (Eve's Helper lets them act again). */

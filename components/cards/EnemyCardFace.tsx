@@ -19,6 +19,7 @@ const PORTRAIT: Record<EnemyId, string> = {
   bearer: "🛡️",
   archer: "🏹",
   serpent: "🐍",
+  serpentTempter: "🐍",
   flood: "🌊",
   chariots: "🐎",
   walls: "🧱",
@@ -45,6 +46,7 @@ const CARD_NO: Record<EnemyId, string> = {
   bearer: "E02",
   archer: "E03",
   serpent: "E04",
+  serpentTempter: "E35",
   flood: "E05",
   chariots: "E06",
   walls: "E07",
@@ -73,6 +75,8 @@ const ART: Partial<Record<EnemyId, { src: string; figure: Figure }>> = {
   bearer: { src: "/cards/bearer.jpg", figure: { cx: 0.46, head: 0.156, feet: 0.947 } },
   // The serpent is coiled up the tree: frame the head and the tree, looking left.
   serpent: { src: "/cards/serpent.jpg", figure: { cx: 0.62, head: 0.02, feet: 0.97, gaze: "left" } },
+  // The cunning serpent of the first round has the picture of the serpent card the player draws.
+  serpentTempter: { src: "/cards/serpent-player.jpg", figure: { cx: 0.55, head: 0.2, feet: 0.931, gaze: "right" } },
   // Scenes with no figure (the sky, the flood): the whole picture is the frame.
   windows: { src: "/cards/windows.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
   fountains: { src: "/cards/fountains.jpg", figure: { cx: 0.5, head: 0.02, feet: 0.98 } },
@@ -144,6 +148,10 @@ const MOVES: Record<
     { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
     { action: "fang", key: "v2.action.fang.name", amount: `${R.fang}/${R.fangShed}` },
     { action: "coil", key: "v2.action.coil.name", amount: String(R.coil) },
+  ],
+  serpentTempter: [
+    { action: "tempt", key: "v2.action.tempt.name", amount: `✨-${R.temptFaith}` },
+    { action: "fang", key: "v2.action.fang.name", amount: String(R.fang) },
   ],
   flood: [
     { action: "rain", key: "v2.action.rain.name", amount: `${R.rain}/${R.rain + R.prevailBonus}` },

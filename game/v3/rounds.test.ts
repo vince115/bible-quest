@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STAGE_ENEMIES } from "../v2/data";
 import { isAlive } from "../v2/engine";
+import { CARD_RARITY } from "@/components/cards/rarity";
 import { campaignStage, stageBgm, stageOfBattle } from "./campaign";
 import { createBoard, nextRoundBoard } from "./engine";
 import { useProgressStore } from "./progress";
@@ -87,5 +88,27 @@ describe("the lions' den in two rounds", () => {
     store.start([...PARTY], "daniel", "lions", "table");
     useBattleV3Store.getState().restart();
     expect(useBattleV3Store.getState().board!.battle.stage).toBe("plot");
+  });
+
+  it("Eden opens with the cunning serpent, then the serpent that was cursed; the two cards differ in tier", () => {
+    expect(STAGE_ENEMIES.tempter).toEqual(["serpentTempter"]);
+    expect(STAGE_ENEMIES.eden).toEqual(["serpent"]);
+    const stage = campaignStage("eden");
+    expect(stage.before).toBe("tempter");
+    expect(stageOfBattle("tempter")).toBe(stage);
+    expect(CARD_RARITY.serpentTempter).toBe("SR");
+    expect(CARD_RARITY.serpent).toBe("SSR");
+    expect(CARD_RARITY.serpentP).not.toBe(CARD_RARITY.serpent);
+    const store = useBattleV3Store.getState();
+    store.enter("eden");
+    store.start(["adam", "eve", "cain"], "adam", "eden", "table");
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("tempter");
+    // Eve's seed bruises the serpent's head in both rounds
+    const first = useBattleV3Store.getState().board!;
+    first.battle.enemies.serpentTempter.hp = 1;
+    useBattleV3Store.getState().basic("adam", "serpentTempter");
+    expect(useBattleV3Store.getState().interlude).toBe("eden");
+    useBattleV3Store.getState().nextRound();
+    expect(useBattleV3Store.getState().board!.battle.stage).toBe("eden");
   });
 });
