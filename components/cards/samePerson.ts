@@ -22,6 +22,15 @@ export const SAME_PERSON: { cards: Card[]; via?: Partial<Record<Card, string>> }
 ];
 
 /**
+ * Which pile a card is stacked in when the same person's cards share a place in a list: the person's group, with the
+ * cards linked only by a verse (the serpent) in a pile of their own. Undefined for a card of its own.
+ */
+export function stackOf(card: Card): string | undefined {
+  const i = SAME_PERSON.findIndex((g) => g.cards.includes(card));
+  return i < 0 ? undefined : `${i}${SAME_PERSON[i].via?.[card] ? "*" : ""}`;
+}
+
+/**
  * The other cards of the person on `card`, each with the verse behind the link when it is not plain: only between a card
  * that needs it and one that doesn't (the serpent and Satan), never between two serpents.
  */

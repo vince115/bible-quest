@@ -15,7 +15,7 @@ import { GrCeremony } from "./GrCeremony";
 import { HoloCard } from "./HoloCard";
 import { ENERGY_ELEMENT, SCRIPTURE_CARDS, ScriptureCardBack, ScriptureCardFace } from "./ScriptureCardFace";
 import { TIMELINE, TIMELINE_ERAS } from "./timeline";
-import { samePersonAs } from "./samePerson";
+import { samePersonAs, stackOf } from "./samePerson";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
 
@@ -252,6 +252,69 @@ export function CardDemo() {
 
   // The cards on screen, period by period (the timeline keeps the story order, so it matches `shown`).
   const eras = TIMELINE_ERAS.map(({ era, cards }) => ({ era, cards: shown.filter((c) => (cards as string[]).includes(c.id)) })).filter((e) => e.cards.length > 0);
+  /** Which card of each pile is in front (by the pile's place in the list and its first card); the first card when unset. */
+  const [fronts, setFronts] = useState<Record<string, string>>({});
+  /**
+   * One place in a list: a card, or a pile of the same person's cards (see samePerson.ts) in the place of the first one,
+   * the cards behind showing their edge up and to the right. A tap on a card behind brings it to the front; a tap on the
+   * front card views it.
+   */
+  const pileTiles = (cards: (typeof CARDS)[number][], where: string) => {
+    const piles: (typeof CARDS)[number][][] = [];
+    const byPerson = new Map<string, (typeof CARDS)[number][]>();
+    for (const card of cards) {
+      const key = stackOf(card.id);
+      const pile = key ? byPerson.get(key) : undefined;
+      if (pile) pile.push(card);
+      else {
+        piles.push([card]);
+        if (key) byPerson.set(key, piles[piles.length - 1]);
+      }
+    }
+    return piles.map((pile) => {
+      if (pile.length === 1) return cardTile(pile[0]);
+      const key = `${where}:${pile[0].id}`;
+      const front = pile.find((c) => c.id === fronts[key]) ?? pile[0];
+      const order = [front, ...pile.filter((c) => c !== front)];
+      // The pile fills one card's place: the front card sits at the bottom left, a little smaller, and each card behind steps
+      // up and to the right, so the pile lines up with the cards beside it and never spills into them.
+      const step = Math.min(18, 40 / (order.length - 1));
+      const width = 220 - step * (order.length - 1);
+      const face = (card: (typeof CARDS)[number], fx: boolean) => (
+        <HoloCard element={elementOf(card)} effects={fx} rarity={CARD_RARITY[card.id]} figure={figureOf(card)} className="w-full">
+          <CardFace {...card} />
+        </HoloCard>
+      );
+      const at = (k: number) => ({ left: step * k, bottom: step * k, width, fontSize: `${(10.3 * width) / 220}px` });
+      return (
+        <div key={key} className="flex flex-col items-center gap-2">
+          <div className="relative aspect-[63/88] w-[220px]">
+            {order
+              .slice(1)
+              .reverse()
+              .map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setFronts((f) => ({ ...f, [key]: card.id }))}
+                  aria-label={t(card.enemy ? `v2.enemy.${card.id}.name` : `char.${card.id}.name`)}
+                  className="absolute brightness-75 transition hover:brightness-100"
+                  style={at(order.indexOf(card))}
+                >
+                  {face(card, false)}
+                </button>
+              ))}
+            <button type="button" onClick={() => setViewing(front)} aria-label={t("v3.demo.view")} className="absolute cursor-zoom-in" style={at(0)}>
+              {face(front, effects)}
+            </button>
+          </div>
+          <span className="text-sm font-black tracking-widest text-amber-200">
+            {CARD_RARITY[front.id]} <span className="text-xs font-bold tracking-normal text-stone-400">{t("v3.demo.pile", { n: order.length })}</span>
+          </span>
+        </div>
+      );
+    });
+  };
   const cardTile = (card: (typeof CARDS)[number]) => (
     <div key={card.id} className="flex flex-col items-center gap-2">
       <button type="button" onClick={() => setViewing(card)} aria-label={t("v3.demo.view")} className="cursor-zoom-in">
@@ -336,12 +399,12 @@ export function CardDemo() {
           <section className="w-full max-w-7xl overflow-x-clip px-2">
             <h2 className="text-lg font-black text-amber-100">{t("v3.demo.disciples")}</h2>
             <p className="text-sm text-stone-400">{t("v3.demo.disciplesHint")}</p>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{disciples.map((card) => cardTile(card))}</div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(disciples, "disciples")}</div>
           </section>
         )
       ) : layout === "grid" ? (
-        <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-          {shown.map((card) => cardTile(card))}
+        <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 overflow-x-clip px-2 py-4">
+          {pileTiles(shown, "grid")}
         </div>
       ) : (
         <>
@@ -362,7 +425,7 @@ export function CardDemo() {
               <p className="text-sm text-stone-400">
                 {t(`v3.era.${era}.books`)} · {t(`v3.era.${era}.date`)}
               </p>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{cards.map((card) => cardTile(card))}</div>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 py-4">{pileTiles(cards, era)}</div>
             </section>
           ))}
         </>
