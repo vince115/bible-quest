@@ -35,6 +35,7 @@ export function ResultPanel({
   hint,
   facts,
   art,
+  artFocus,
   sections = false,
   children,
   actions,
@@ -49,6 +50,8 @@ export function ResultPanel({
   facts: string[];
   /** The stage's picture, faded into the ground. */
   art?: string;
+  /** Which part of the art shows (CSS object-position), as in the stage list. */
+  artFocus?: string;
   /** Whether `children` holds sections (the dropped card, achievements), each with its own title line. */
   sections?: boolean;
   children?: ReactNode;
@@ -62,7 +65,7 @@ export function ResultPanel({
           {art && (
             <div className="absolute inset-x-0 top-0 h-[60%]" style={{ WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%)", maskImage: "linear-gradient(to bottom, #000 0%, #000 35%, transparent 100%)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element -- stage art is a plain file in /public */}
-              <img src={asset(art)} alt="" className={`h-full w-full object-cover ${won ? "opacity-55" : "opacity-35 grayscale"}`} />
+              <img src={asset(art)} alt="" className={`h-full w-full object-cover ${won ? "opacity-55" : "opacity-35 grayscale"}`} style={{ objectPosition: artFocus }} />
             </div>
           )}
           <div

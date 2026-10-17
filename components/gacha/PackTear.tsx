@@ -1,6 +1,7 @@
 "use client";
 
 // Tearing a pack open: drag across the top of the pack and the strip tears away, following the finger.
+import { motion } from "framer-motion";
 import { Scissors } from "lucide-react";
 import { useRef, useState } from "react";
 import { useT } from "@/game/locale";
@@ -8,7 +9,7 @@ import { playSfx } from "@/game/sfx";
 import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
 
-const STRIP = 11; // the torn-off top strip (the pack's top foil seal), percent of its height
+export const STRIP = 11; // the torn-off top strip (the pack's top foil seal), percent of its height
 const NEEDED = 0.85; // how much of the width has to be torn to open it
 
 export function PackTear({ pack, onTorn }: { pack: PackKind; onTorn: () => void }) {
@@ -77,10 +78,12 @@ export function PackTear({ pack, onTorn }: { pack: PackKind; onTorn: () => void 
         className="relative w-[220px] touch-none select-none text-[14px]"
         style={{ animation: done ? undefined : "bq-pop 400ms ease-out" }}
       >
-        {/* The body of the pack, below the tear line */}
-        <div style={{ clipPath: `inset(${STRIP}% 0 0 0)` }}>
-          <PackArt pack={pack} />
-        </div>
+        {/* The body of the pack, below the tear line; once torn it glides down to where the cards are drawn (layoutId) */}
+        <motion.div layoutId="torn-pack">
+          <div style={{ clipPath: `inset(${STRIP}% 0 0 0)` }}>
+            <PackArt pack={pack} />
+          </div>
+        </motion.div>
         {/* The strip: it lifts and curls up as the tear goes across */}
         <div
           className="absolute inset-0"

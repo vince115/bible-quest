@@ -41,6 +41,8 @@ interface BattleV3Store {
   campaign: CampaignStageId | null;
   /** The card the campaign stage just dropped. */
   drop: CharacterId | null;
+  /** Blessing points given instead of the dropped card, when the collection already held as many as it may (0 otherwise). */
+  dropPoints: number;
   /** Between the two rounds of a stage: the battle the second round plays (the first round is won, the stage not yet). */
   interlude: StageId | null;
   /** Starts the second round of the stage with the same party. */
@@ -58,7 +60,8 @@ interface BattleV3Store {
   draw: () => void;
   /** Use up every draw left this turn. */
   drawAll: () => void;
-  cast: (skill: SkillId, target?: Target) => void;
+  /** `who`: which copy of the skill's owner uses it (the first able one when left out). */
+  cast: (skill: SkillId, target?: Target, who?: CharacterId) => void;
   /** The tabletop rules' free basic attack. */
   basic: (who: CharacterId, target: EnemyId) => void;
   /** This turn's free move: `id` to place `to`. */
@@ -82,13 +85,16 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
       // The hell level is played after the clear: winning gives its card, losing takes nothing away.
       if (stage?.hell && board.battle.stage === stage.hell) {
         const won = board.battle.result === "victory";
-        if (won && stage.hellDrop) useProgressStore.getState().grant(stage.hellDrop, stage.id);
-        set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)), drop: won ? (stage.hellDrop ?? null) : null });
+        const got = won && stage.hellDrop ? useProgressStore.getState().grant(stage.hellDrop, stage.id) : null;
+        set({ newAchievements: useAchievementStore.getState().unlock(earnedBy(board)), drop: got?.card ?? null, dropPoints: got?.overflow ?? 0 });
         return;
       }
       set({
         newAchievements: useAchievementStore.getState().unlock(earnedBy(board)),
-        drop: campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null,
+        ...(() => {
+          const got = campaign && board.battle.result === "victory" ? useProgressStore.getState().clear(campaign) : null;
+          return { drop: got?.card ?? null, dropPoints: got?.overflow ?? 0 };
+        })(),
       });
     }
   };
@@ -136,6 +142,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     newAchievements: [],
     campaign: null,
     drop: null,
+    dropPoints: 0,
     interlude: null,
     enter: (campaign) => {
       if (get().campaign === campaign) return;
@@ -178,7 +185,7 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
         while (canDrawOnBoard(b)) b = drawOnBoard(b);
         return b;
       }),
-    cast: (skill, target) => act((b) => castOnBoard(b, skill, target)),
+    cast: (skill, target, who) => act((b) => castOnBoard(b, skill, target, Math.random, who)),
     basic: (who, target) => act((b) => basicAttackOnBoard(b, who, target)),
     move: (id, to) => act((b) => moveTo(b, id, to)),
     endTurn: () => {

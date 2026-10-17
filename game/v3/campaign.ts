@@ -35,7 +35,7 @@ export interface CampaignStage {
   drops?: CharacterId[];
   /** Stage art in public/stages, when there is some. */
   art?: string;
-  /** Which part of the art the stage list's wide strip shows (CSS object-position); the middle when left out. */
+  /** Which part of the art shows where it is cropped (the stage list's strip, the battle background, the result); the middle when left out. */
   artFocus?: string;
   /** The scripture (energy) deck the stage lends, once decks are built per stage; the standard deck until then. */
   deck?: CardId[];

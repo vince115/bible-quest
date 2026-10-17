@@ -21,6 +21,7 @@ import {
   canBasicAttack,
   castSkill,
   createBattle,
+  inPartyOrder,
   drawCard,
   enemyAlive,
   isAlive,
@@ -34,6 +35,7 @@ import {
   type Target,
 } from "../v2/engine";
 import type { BattleState, CharacterId, EnemyId, PoolMode, SkillId, StageId } from "../v2/types";
+import { baseCharacter } from "../v2/copies";
 
 /** The formation's places: 0–2 the front row and 3–5 the back row, left to right. An empty place is null. */
 export type Slots = (CharacterId | null)[];
@@ -116,7 +118,7 @@ export function arrange(lineup: CharacterId[], placement: readonly (CharacterId 
 
 /** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
 export function createBoard(lineup: CharacterId[], placement?: readonly (CharacterId | null)[], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode): Board {
-  const chosen = PARTY_ORDER.filter((id) => lineup.includes(id)).slice(0, MAX_LINEUP);
+  const chosen = inPartyOrder(lineup.filter((id) => PARTY_ORDER.includes(baseCharacter(id)))).slice(0, MAX_LINEUP);
   if (!chosen.length) throw new Error("line-up needs at least one character");
   const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"));
   battle.rows = true;
@@ -221,15 +223,16 @@ function aim(b: Board, rng: Rng): Board {
 }
 
 /** Ally targets are limited to the line-up (nobody can be raised into a battle they never joined). */
-export function boardSkillTargets(b: Board, skill: SkillId): Target[] {
-  return skillTargets(b.battle, skill).filter((t) => !PARTY_ORDER.includes(t as CharacterId) || b.lineup.includes(t as CharacterId));
+/** `who`: the copy of the skill's owner using it (see casterFor in the v2 engine). */
+export function boardSkillTargets(b: Board, skill: SkillId, who?: CharacterId): Target[] {
+  return skillTargets(b.battle, skill, who).filter((t) => !PARTY_ORDER.includes(baseCharacter(t as CharacterId)) || b.lineup.includes(t as CharacterId));
 }
 
-export function boardBlockReason(b: Board, skill: SkillId, target?: Target): string | null {
-  const reason = skillBlockReason(b.battle, skill, target);
+export function boardBlockReason(b: Board, skill: SkillId, target?: Target, who?: CharacterId): string | null {
+  const reason = skillBlockReason(b.battle, skill, target, who);
   if (reason) return reason;
-  if (boardSkillTargets(b, skill).length === 0 && skillTargets(b.battle, skill).length > 0) return "v2.reason.noTarget";
-  if (target !== undefined && skillTargets(b.battle, skill).length > 0 && !boardSkillTargets(b, skill).includes(target)) return "v2.reason.badTarget";
+  if (boardSkillTargets(b, skill, who).length === 0 && skillTargets(b.battle, skill, who).length > 0) return "v2.reason.noTarget";
+  if (target !== undefined && skillTargets(b.battle, skill, who).length > 0 && !boardSkillTargets(b, skill, who).includes(target)) return "v2.reason.badTarget";
   return null;
 }
 
@@ -256,9 +259,9 @@ export function basicAttackOnBoard(board: Board, who: CharacterId, target: Enemy
   return aim({ ...board, battle }, rng);
 }
 
-export function castOnBoard(board: Board, skill: SkillId, target?: Target, rng: Rng = Math.random): Board {
-  if (boardBlockReason(board, skill, target) !== null) return board;
-  const battle = castSkill(board.battle, skill, target, rng);
+export function castOnBoard(board: Board, skill: SkillId, target?: Target, rng: Rng = Math.random, who?: CharacterId): Board {
+  if (boardBlockReason(board, skill, target, who) !== null) return board;
+  const battle = castSkill(board.battle, skill, target, rng, who);
   if (battle === board.battle) return board;
   return aim({ ...board, battle }, rng);
 }

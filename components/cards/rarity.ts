@@ -1,13 +1,14 @@
 // Card rarity decides how a card looks (frame, ornaments, foil, light effects) and the band its HP sits in
 // (N 60–110, R 100–140, SR 120–190, SSR 160–250, UR 220–330; see MAX_HP in game/v2/data.ts). Skill damage does not
 // depend on it, and it is not tied to draws or drop rates.
-import type { BaseEnemyId, CharacterId } from "@/game/v2/types";
+import type { BaseCharacterId, BaseEnemyId, CharacterId } from "@/game/v2/types";
+import { withCopies } from "@/game/v2/copies";
 import type { Ornament } from "./CardFrame";
 
 export type Rarity = "N" | "R" | "SR" | "SSR" | "UR" | "GR";
 
 /** Which rarity each card is printed at. R and UR are kept for later cards (common soldiers, special editions). */
-export const CARD_RARITY: Record<CharacterId | BaseEnemyId, Rarity> = {
+const BASE_RARITY: Record<BaseCharacterId | BaseEnemyId, Rarity> = {
   archer: "N",
   bearer: "N",
   samuel: "SR",
@@ -232,6 +233,8 @@ export const CARD_RARITY: Record<CharacterId | BaseEnemyId, Rarity> = {
   uncleanSpirits: "N",
   swine: "N",
 };
+/** A copy of a card is printed at the card's rarity. */
+export const CARD_RARITY: Record<CharacterId | BaseEnemyId, Rarity> = withCopies(BASE_RARITY) as Record<CharacterId | BaseEnemyId, Rarity>;
 
 export interface RarityLook {
   /** Gold ornaments on the frame (null: a plain frame), their size (% of the card width) and how strongly they show. */

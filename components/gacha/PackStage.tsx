@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
+import { PRIMARY_BUTTON } from "./buttons";
 import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilOf, packPicture } from "./packStyle";
 
 const W = 360; // the size everything is drawn in (9 : 14, like the pack art on the page)
@@ -341,10 +342,12 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
       const observer = new ResizeObserver(size);
       observer.observe(el);
 
-      // Pointer: drag to turn, tap a pack to bring it to the front; on the pack in front, tap its sides to turn it over or its middle to open it
+      // Pointer: drag to turn, tap a pack to bring it to the front, tap the sides of the pack in front to turn it over;
+      // a double tap on any pack brings it to the front and opens it.
       const raycaster = new THREE.Raycaster();
       let down: { x: number; target: number } | null = null;
       let moved = false;
+      let lastTap: { index: number; at: number } | null = null;
       const canvas = renderer.domElement;
       const onDown = (e: PointerEvent) => {
         down = { x: e.clientX, target };
@@ -378,16 +381,21 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         if (!hit) return;
         const i = hit.object.userData.index as number;
         const front = frontIndex();
-        if (i === front) {
-          // The left and right sides of the pack turn it over; the middle opens it
-          const local = hit.object.worldToLocal(hit.point.clone());
-          if (Math.abs(local.x) > PW * 0.2) flips[i].target = flips[i].target ? 0 : 1;
-          else if (allowed.current) pick.current(pack);
-        } else {
+        const now = performance.now();
+        const double = lastTap?.index === i && now - lastTap.at < 400;
+        lastTap = double ? null : { index: i, at: now };
+        if (i !== front) {
           let d = i - front;
           if (d > count / 2) d -= count;
           if (d < -count / 2) d += count;
           target = Math.round(target) + d;
+        }
+        if (double) {
+          if (allowed.current) pick.current(pack);
+        } else if (i === front) {
+          // The left and right sides of the pack in front turn it over
+          const local = hit.object.worldToLocal(hit.point.clone());
+          if (Math.abs(local.x) > PW * 0.2) flips[i].target = flips[i].target ? 0 : 1;
         }
       };
       canvas.addEventListener("pointerdown", onDown);
@@ -474,6 +482,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
+      {/* Above the stage, so it is in view without scrolling (a double tap on a pack opens it too) */}
+      <button onClick={() => onPick(pack)} disabled={!canOpen} className={`${PRIMARY_BUTTON} disabled:opacity-40`}>
+        {t("v3.gacha.pick")}
+      </button>
       <div
         className="relative h-[440px] w-full max-w-3xl select-none outline-none sm:h-[520px]"
         tabIndex={0}
@@ -494,9 +506,6 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         </button>
       </div>
       {failed && <p className="text-xs text-stone-400">{t("v3.gacha.noWebgl")}</p>}
-      <button onClick={() => onPick(pack)} disabled={!canOpen} className="rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-stone-950 shadow-lg enabled:hover:bg-amber-400 disabled:opacity-40">
-        {t("v3.gacha.pick")}
-      </button>
     </div>
   );
 }
