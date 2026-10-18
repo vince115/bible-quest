@@ -11,6 +11,7 @@ import { PackArt } from "./PackArt";
 import { PackStage } from "./PackStage";
 import { PackReveal, type Pulled } from "./PackReveal";
 import { PackTear } from "./PackTear";
+import { button } from "@/components/ui/buttons";
 
 const CHOSEN_KEY = "bible-quest-gacha-pack";
 
@@ -64,7 +65,7 @@ export function GachaScreen() {
         <p className="mt-2 text-sm text-stone-400">{t("v3.gacha.hint")}</p>
       </div>
 
-      <div className="flex items-baseline gap-3 rounded-full border-2 border-amber-400/70 bg-stone-900 px-5 py-2">
+      <div className="flex items-baseline gap-3 rounded-full bg-[#d4b35f]/15 px-5 py-2">
         <span className="text-sm text-stone-300">{t("v3.gacha.points")}</span>
         <span className="text-2xl font-black tabular-nums text-amber-300">{ready ? points : "–"}</span>
         <span className="text-xs text-stone-500">
@@ -95,7 +96,7 @@ export function GachaScreen() {
           {ready && !enough ? (
             <p className="text-sm text-amber-200">
               {t("v3.gacha.short")}{" "}
-              <Link href="/campaign" className="ml-1 rounded-full border border-amber-300/70 px-3 py-0.5 font-semibold hover:bg-white/10">
+              <Link href="/campaign" className={`ml-1 ${button("secondary", "sm")}`}>
                 {t("v3.campaign.title")}
               </Link>
             </p>
@@ -109,7 +110,7 @@ export function GachaScreen() {
       {phase.name === "tear" && (
         <>
           <PackTear pack={phase.pack} onTorn={() => torn(phase.pack)} />
-          <button onClick={() => setPhase({ name: "choose" })} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-300 hover:bg-white/10">
+          <button onClick={() => setPhase({ name: "choose" })} className={button("secondary")}>
             {t("v3.gacha.back")}
           </button>
         </>

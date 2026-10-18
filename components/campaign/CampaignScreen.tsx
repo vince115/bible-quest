@@ -113,7 +113,7 @@ export function CampaignScreen() {
 
       {/* The collection has its own page */}
       <section className="w-full max-w-2xl">
-        <Link href="/collection" className="flex items-center justify-between rounded-2xl border-2 border-stone-600 bg-stone-900 p-4 transition hover:bg-stone-800/90">
+        <Link href="/collection" className="flex items-center justify-between rounded-2xl bg-[#d4b35f]/10 p-4 transition hover:bg-[#d4b35f]/20">
           <span className="text-lg font-bold">{t("v3.campaign.collection")}</span>
           <span className="text-sm text-stone-300">{ready ? t("v3.campaign.collectionCount", { n: copies, m: owned.length }) : ""} →</span>
         </Link>

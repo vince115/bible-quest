@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "@/game/locale";
+import { button } from "@/components/ui/buttons";
 
 export function TitleScreen() {
   const t = useT();
@@ -16,17 +17,17 @@ export function TitleScreen() {
       <div className="flex flex-col items-center gap-3">
         <Link
           href="/campaign"
-          className="rounded-2xl bg-amber-500 px-8 py-4 text-lg font-bold text-stone-950 shadow-lg hover:bg-amber-400"
+          className={button("primary", "lg")}
         >
           {t("ui.campaign")}
         </Link>
-        <Link href="/gacha" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
+        <Link href="/gacha" className={button("secondary")}>
           {t("v3.gacha.title")}
         </Link>
-        <Link href="/collection" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
+        <Link href="/collection" className={button("secondary")}>
           {t("v3.collection.link")}
         </Link>
-        <Link href="/battle-v3" className="rounded-2xl border border-stone-500 px-6 py-2.5 text-sm text-stone-200 hover:bg-white/10">
+        <Link href="/battle-v3" className={button("secondary")}>
           {t("ui.free")}
         </Link>
       </div>

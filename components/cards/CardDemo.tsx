@@ -18,6 +18,7 @@ import { TIMELINE, TIMELINE_ERAS } from "./timeline";
 import { samePersonAs, sectionOf, stackOf } from "./samePerson";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "./rarity";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "./viewer";
+import { ICON_BUTTON, button, chip } from "@/components/ui/buttons";
 
 /** Rarity filter tabs, highest first; the choice is remembered in this browser. */
 const RARITY_TABS: Rarity[] = USED_TIERS;
@@ -393,7 +394,7 @@ export function CardDemo() {
               role="tab"
               aria-selected={filter === f}
               onClick={() => choose(f)}
-              className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${filter === f ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+              className={chip(filter === f)}
             >
               {f === "all" ? t("v3.demo.all") : f} <span className="opacity-60">{count}</span>
             </button>
@@ -407,7 +408,7 @@ export function CardDemo() {
             role="radio"
             aria-checked={layout === l}
             onClick={() => arrange(l)}
-            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${layout === l ? "border-sky-300 bg-sky-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+            className={chip(layout === l)}
           >
             {t(`v3.demo.${l}`)}
           </button>
@@ -437,7 +438,7 @@ export function CardDemo() {
               scrolls sideways on a phone; on wider screens the chips wrap onto as many lines as they need. */}
           <nav aria-label={t("v3.demo.timeline")} className="flex w-full max-w-7xl gap-2 overflow-x-auto px-2 py-2 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible">
             {eras.map(({ era, cards }, i) => (
-              <a key={era} href={`#era-${era}`} className="shrink-0 rounded-full border border-stone-500 px-3 py-1 text-xs font-bold text-stone-200 hover:bg-white/10">
+              <a key={era} href={`#era-${era}`} className={`shrink-0 ${button("secondary", "sm")}`}>
                 {i + 1}. {t(`v3.era.${era}.name`)} <span className="opacity-60">{cards.length}</span>
               </a>
             ))}
@@ -483,7 +484,7 @@ export function CardDemo() {
       <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => setEffects(!effects)}
-          className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${effects ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-300"}`}
+          className={chip(effects)}
         >
           {effects ? t("v3.demo.effectsOn") : t("v3.demo.effectsOff")}
         </button>
@@ -512,7 +513,7 @@ export function CardDemo() {
                 }}
                 aria-label={t("v3.demo.prev")}
                 title={`${t("v3.demo.prev")} (←)`}
-                className="fixed left-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:left-6"
+                className={`fixed left-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 ${ICON_BUTTON} text-2xl font-bold sm:left-6`}
               >
                 ‹
               </button>
@@ -523,7 +524,7 @@ export function CardDemo() {
                 }}
                 aria-label={t("v3.demo.next")}
                 title={`${t("v3.demo.next")} (→)`}
-                className="fixed right-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:right-6"
+                className={`fixed right-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 ${ICON_BUTTON} text-2xl font-bold sm:right-6`}
               >
                 ›
               </button>
@@ -557,7 +558,7 @@ export function CardDemo() {
               {samePersonAs(viewing.id as CharacterId | EnemyId).map(({ card, via }) => {
                 const other = CARDS.find((c) => c.id === card)!;
                 return (
-                  <button key={card} onClick={() => setViewing(other)} className="rounded-full border border-amber-300/70 px-3 py-1 text-xs font-bold text-amber-100 hover:bg-white/10">
+                  <button key={card} onClick={() => setViewing(other)} className={button("secondary", "sm")}>
                     {t(other.enemy ? `v2.enemy.${card}.name` : `char.${card}.name`)}
                     {/* Some people have a card on each side under the same name: say which is the enemy's. */}
                     {other.enemy && <span className="ml-1 font-normal text-stone-400">{t("v3.demo.enemyCard")}</span>}
@@ -584,26 +585,26 @@ export function CardDemo() {
               <button
                 onClick={toggleStory}
                 aria-pressed={showStory}
-                className={`rounded-full border px-3 py-1 text-xs ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+                className={chip(showStory, "sm")}
               >
                 {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
               </button>
             )}
             <span className="text-stone-400">{t("v3.demo.calibrate")}</span>
-            <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+            <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className={`${ICON_BUTTON} h-8 w-8 font-bold`}>
               −
             </button>
             <span className="w-12 text-center tabular-nums">{Math.round(scale * 100)}%</span>
-            <button onClick={() => adjust((v) => v + SCALE_STEP)} aria-label="+" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+            <button onClick={() => adjust((v) => v + SCALE_STEP)} aria-label="+" className={`${ICON_BUTTON} h-8 w-8 font-bold`}>
               +
             </button>
-            <button onClick={() => adjust(() => 1)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+            <button onClick={() => adjust(() => 1)} className={button("secondary", "sm")}>
               1:1
             </button>
-            <button onClick={() => adjust(() => SCALE_DEFAULT)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+            <button onClick={() => adjust(() => SCALE_DEFAULT)} className={button("secondary", "sm")}>
               {t("v3.demo.reset")}
             </button>
-            <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
+            <button onClick={() => setViewing(null)} className={button("secondary")}>
               ✕ {t("v3.ui.close")}
             </button>
           </div>

@@ -17,6 +17,7 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { CARD_RARITY, USED_TIERS, type Rarity } from "@/components/cards/rarity";
 import { TIMELINE } from "@/components/cards/timeline";
 import { SCALE_DEFAULT, SCALE_KEY, SCALE_STEP, STORY_KEY, StoryPanel, VIEWER_WIDTH, savedScale, savedShowStory, viewerStyle } from "@/components/cards/viewer";
+import { ICON_BUTTON, button, chip } from "@/components/ui/buttons";
 
 const ALL_CARDS = TIMELINE.filter((id): id is CharacterId => id in CHARACTER_ELEMENT);
 const RARITY_TABS = USED_TIERS;
@@ -111,7 +112,7 @@ export function CollectionScreen() {
               role="tab"
               aria-selected={rarity === f}
               onClick={() => setRarity(f)}
-              className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${rarity === f ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+              className={chip(rarity === f)}
             >
               {f === "all" ? t("v3.demo.all") : f} <span className="opacity-60">{ready ? ownedIn(list) : 0}/{list.length}</span>
             </button>
@@ -121,7 +122,7 @@ export function CollectionScreen() {
           role="switch"
           aria-checked={ownedOnly}
           onClick={() => setOwnedOnly(!ownedOnly)}
-          className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${ownedOnly ? "border-emerald-300 bg-emerald-600 text-white" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+          className={chip(ownedOnly)}
         >
           {t("v3.collection.ownedOnly")}
         </button>
@@ -139,7 +140,7 @@ export function CollectionScreen() {
                 </HoloCard>
               </button>
               {n > 1 && (
-                <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-amber-500 px-1.5 text-xs font-black text-stone-950 shadow">
+                <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-[#d4b35f] px-1.5 text-xs font-black text-[#2b1d07] shadow">
                   ×{n}/{COPY_LIMIT}
                 </span>
               )}
@@ -157,10 +158,10 @@ export function CollectionScreen() {
         <div role="dialog" aria-modal="true" onClick={() => setViewing(null)} className="fixed inset-0 z-[60] flex flex-col items-center gap-3 overflow-y-auto bg-black/80 p-4">
           {viewable.length > 1 && (
             <>
-              <button onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label={t("v3.demo.prev")} className="fixed left-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:left-6">
+              <button onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label={t("v3.demo.prev")} className={`fixed left-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 ${ICON_BUTTON} text-2xl font-bold sm:left-6`}>
                 ‹
               </button>
-              <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label={t("v3.demo.next")} className="fixed right-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 sm:right-6">
+              <button onClick={(e) => { e.stopPropagation(); step(1); }} aria-label={t("v3.demo.next")} className={`fixed right-2 top-1/2 z-10 h-12 w-12 -translate-y-1/2 ${ICON_BUTTON} text-2xl font-bold sm:right-6`}>
                 ›
               </button>
             </>
@@ -193,28 +194,28 @@ export function CollectionScreen() {
             <button
               onClick={toggleStory}
               aria-pressed={showStory}
-              className={`rounded-full border px-3 py-1 text-xs ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+              className={chip(showStory, "sm")}
             >
               {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
             </button>
             <span className="text-stone-400">{t("v3.demo.calibrate")}</span>
-            <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+            <button onClick={() => adjust((v) => v - SCALE_STEP)} aria-label="−" className={`${ICON_BUTTON} h-8 w-8 font-bold`}>
               −
             </button>
             <span className="w-12 text-center tabular-nums">{Math.round(scale * 100)}%</span>
-            <button onClick={() => adjust((v) => v + SCALE_STEP)} aria-label="+" className="h-8 w-8 rounded-full border border-stone-400 font-bold hover:bg-white/10">
+            <button onClick={() => adjust((v) => v + SCALE_STEP)} aria-label="+" className={`${ICON_BUTTON} h-8 w-8 font-bold`}>
               +
             </button>
-            <button onClick={() => adjust(() => 1)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+            <button onClick={() => adjust(() => 1)} className={button("secondary", "sm")}>
               1:1
             </button>
-            <button onClick={() => adjust(() => SCALE_DEFAULT)} className="rounded-full border border-stone-500 px-3 py-1 text-xs text-stone-300 hover:bg-white/10">
+            <button onClick={() => adjust(() => SCALE_DEFAULT)} className={button("secondary", "sm")}>
               {t("v3.demo.reset")}
             </button>
-            <button onClick={() => setDiscarding(true)} className="flex items-center gap-1 rounded-full border border-red-400/70 px-3 py-1 text-xs text-red-200 hover:bg-red-900/40">
+            <button onClick={() => setDiscarding(true)} className={button("important", "sm")}>
               <Trash2 size={14} aria-hidden /> {t("v3.collection.discard")}
             </button>
-            <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
+            <button onClick={() => setViewing(null)} className={button("secondary")}>
               ✕ {t("v3.ui.close")}
             </button>
           </div>
@@ -234,11 +235,11 @@ export function CollectionScreen() {
                     setDiscarding(false);
                     if (last) setViewing(after);
                   }}
-                  className="rounded-xl bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-600"
+                  className={button("important")}
                 >
                   {t("v3.collection.discardConfirm")}
                 </button>
-                <button onClick={() => setDiscarding(false)} className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800">
+                <button onClick={() => setDiscarding(false)} className={button("secondary")}>
                   {t("v3.collection.discardCancel")}
                 </button>
               </div>
