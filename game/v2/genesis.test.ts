@@ -999,7 +999,7 @@ describe("The LORD", () => {
     s0.energy = { faith: 0, attack: 3, guard: 0 };
     expect(skillTargetKind("manOfWar")).toBe("enemy");
     const s = castSkill(s0, "manOfWar", "archer");
-    expect(skillDamage(s0, "manOfWar", "archer")).toBeGreaterThanOrEqual(100);
+    expect(skillDamage(s0, "manOfWar", "archer")).toBeGreaterThanOrEqual(150);
     expect(s.enemies.archer.hp).toBe(Math.max(0, ENEMY_HP.archer - skillDamage(s0, "manOfWar", "archer")));
   });
 });

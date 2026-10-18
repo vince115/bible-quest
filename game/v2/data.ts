@@ -1358,7 +1358,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   // The Father: "Let there be light" (Genesis 1:3) and "the LORD is a shield for me" (Psalm 3:3)
   letThereBeLight: { id: "letThereBeLight", owner: "father", kind: "faith", cost: 2 },
   lordMyShield: { id: "lordMyShield", owner: "father", kind: "guard", cost: 1 },
-  manOfWar: { id: "manOfWar", owner: "father", kind: "attack", cost: 3, damage: 100 },
+  manOfWar: { id: "manOfWar", owner: "father", kind: "attack", cost: 3, damage: 150 },
   // The Holy Spirit descends like a dove (Matthew 3:16) and is the Comforter (John 14:26)
   likeADove: { id: "likeADove", owner: "holySpirit", kind: "faith", cost: 1 },
   comforter: { id: "comforter", owner: "holySpirit", kind: "guard", cost: 2 },
