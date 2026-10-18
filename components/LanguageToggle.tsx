@@ -19,7 +19,7 @@ export function LanguageToggle({ inline = false }: { inline?: boolean }) {
 
   return (
     <div
-      className={`${inline ? "" : "fixed top-2.5 right-2.5 sm:top-auto sm:bottom-3 sm:right-3 z-40 "}flex overflow-hidden rounded-full border border-stone-600 bg-stone-900/90 text-xs font-semibold shadow-lg backdrop-blur-sm`}
+      className={`${inline ? "" : "fixed top-2.5 right-2.5 sm:top-auto sm:bottom-3 sm:right-3 z-40 "}flex overflow-hidden rounded-full bg-[#d4b35f]/15 text-xs font-semibold backdrop-blur-sm`}
       role="group"
       aria-label={t("ui.switchLanguage")}
     >
@@ -28,7 +28,7 @@ export function LanguageToggle({ inline = false }: { inline?: boolean }) {
           key={l}
           onClick={() => setLocale(l)}
           aria-pressed={locale === l}
-          className={`px-3 py-1.5 ${locale === l ? "bg-amber-500 text-stone-950" : "text-stone-300 hover:bg-stone-800"}`}
+          className={`px-3 py-1.5 transition ${locale === l ? "bg-[#d4b35f] text-[#2b1d07]" : "text-[#efe2bd] hover:bg-[#d4b35f]/25"}`}
         >
           {l === "zh" ? "中文" : "EN"}
         </button>

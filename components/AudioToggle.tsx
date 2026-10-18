@@ -26,11 +26,11 @@ export function AudioToggle({ inline = false }: { inline?: boolean }) {
       onClick={toggleMuted}
       aria-label={isMuted ? t("ui.soundOff") : t("ui.soundOn")}
       title={isMuted ? t("ui.soundOff") : t("ui.soundOn")}
-      className={`${inline ? "" : "fixed top-2.5 right-[7rem] sm:top-auto sm:bottom-3 sm:right-28 z-40 "}flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-stone-600 bg-stone-900/90 text-xs sm:text-sm shadow-lg backdrop-blur-sm transition active:scale-95 hover:bg-stone-800 ${
+      className={`${inline ? "" : "fixed top-2.5 right-[7rem] sm:top-auto sm:bottom-3 sm:right-28 z-40 "}flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#d4b35f]/15 text-xs text-[#efe2bd] sm:text-sm backdrop-blur-sm transition active:scale-95 hover:bg-[#d4b35f]/25 ${
         isMuted ? "opacity-70 hover:opacity-100" : "shadow-[0_0_10px_rgba(255,255,255,0.2)]"
       }`}
     >
-      <span className="select-none text-base text-white" aria-hidden="true">
+      <span className="select-none text-base" aria-hidden="true">
         {isMuted ? <VolumeX size="1em" /> : <Volume2 size="1em" />}
       </span>
     </button>

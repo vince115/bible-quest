@@ -8,6 +8,7 @@ import { useT } from "@/game/locale";
 import { playSfx } from "@/game/sfx";
 import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
+import { button } from "@/components/ui/buttons";
 
 export const STRIP = 11; // the torn-off top strip (the pack's top foil seal), percent of its height
 const NEEDED = 0.85; // how much of the width has to be torn to open it
@@ -108,7 +109,7 @@ export function PackTear({ pack, onTorn }: { pack: PackKind; onTorn: () => void 
       {!done && (
         <>
           <p className="text-sm text-stone-300">{t("v3.gacha.tear")}</p>
-          <button onClick={finish} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+          <button onClick={finish} className={button("secondary")}>
             {t("v3.gacha.tearButton")}
           </button>
         </>

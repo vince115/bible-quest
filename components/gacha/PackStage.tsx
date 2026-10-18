@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/game/locale";
 import { asset } from "@/game/assets";
 import type { PackKind } from "@/game/v3/gacha";
-import { PRIMARY_BUTTON } from "./buttons";
+import { ICON_BUTTON, button } from "@/components/ui/buttons";
 import { SEAL_BOTTOM, SEAL_TOP, drawSeal, foilOf, packPicture } from "./packStyle";
 
 const W = 360; // the size everything is drawn in (9 : 14, like the pack art on the page)
@@ -483,7 +483,7 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
   return (
     <div className="flex w-full flex-col items-center gap-4">
       {/* Above the stage, so it is in view without scrolling (a double tap on a pack opens it too) */}
-      <button onClick={() => onPick(pack)} disabled={!canOpen} className={`${PRIMARY_BUTTON} disabled:opacity-40`}>
+      <button onClick={() => onPick(pack)} disabled={!canOpen} className={button("primary")}>
         {t("v3.gacha.pick")}
       </button>
       <div
@@ -498,10 +498,10 @@ export function PackStage({ pack, count, canOpen = true, onPick }: { pack: PackK
         }}
       >
         <div ref={host} className="absolute inset-0" />
-        <button type="button" onClick={() => go(-1)} aria-label={t("v3.gacha.prev")} className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
+        <button type="button" onClick={() => go(-1)} aria-label={t("v3.gacha.prev")} className={`${ICON_BUTTON} absolute left-1 top-1/2 -translate-y-1/2 p-2`}>
           <ChevronLeft size={24} aria-hidden />
         </button>
-        <button type="button" onClick={() => go(1)} aria-label={t("v3.gacha.nextPack")} className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
+        <button type="button" onClick={() => go(1)} aria-label={t("v3.gacha.nextPack")} className={`${ICON_BUTTON} absolute right-1 top-1/2 -translate-y-1/2 p-2`}>
           <ChevronRight size={24} aria-hidden />
         </button>
       </div>

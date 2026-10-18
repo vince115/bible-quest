@@ -91,7 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             href={item.href}
             title={t(item.label)}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${active ? "bg-amber-500/90 text-stone-950" : "text-stone-300 hover:bg-white/10"}`}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${active ? "bg-[#d4b35f] text-[#2b1d07]" : "text-stone-300 hover:bg-[#d4b35f]/15"}`}
           >
             <Icon size={20} aria-hidden className="shrink-0" />
             {wide && <span className="truncate">{t(item.label)}</span>}
@@ -131,9 +131,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
         {here && here.href !== "/" && <span className="hidden truncate text-sm text-stone-400 sm:block">/ {t(here.label)}</span>}
         <div className="ml-auto flex items-center gap-2">
-          <Link href="/gacha" title={t("v3.gacha.points")} className="flex items-baseline gap-1.5 rounded-full border border-amber-400/60 px-3 py-1 hover:bg-white/10">
+          <Link href="/gacha" title={t("v3.gacha.points")} className="flex items-baseline gap-1.5 rounded-full bg-[#d4b35f]/15 px-3 py-1 transition hover:bg-[#d4b35f]/25">
             <span className="hidden text-xs text-stone-400 sm:inline">{t("v3.gacha.points")}</span>
-            <span className="text-sm font-black tabular-nums text-amber-300">{ready ? points : "–"}</span>
+            <span className="text-sm font-black tabular-nums text-[#f2d27a]">{ready ? points : "–"}</span>
           </Link>
           <AudioToggle inline />
           <LanguageToggle inline />

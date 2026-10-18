@@ -5,14 +5,12 @@
 import type { ReactNode } from "react";
 import { OrnateFrame } from "@/components/cards/viewer";
 import { asset } from "@/game/assets";
+import { button } from "@/components/ui/buttons";
 
 const GOLD = "#f4c850";
 
 /** A button of the panel: the main one is filled gold, the others are dark pills with a gold ring. */
-export const resultButton = (primary: boolean) =>
-  `rounded-full px-5 py-2 text-sm font-bold tracking-wide transition ${
-    primary ? "bg-[#f4c850] text-stone-950 ring-1 ring-[#fff3b8] hover:bg-[#ffd96a]" : "bg-black/50 text-amber-100 ring-1 ring-[#f4c850]/70 hover:bg-black/70"
-  }`;
+export const resultButton = (primary: boolean) => button(primary ? "primary" : "secondary");
 
 /** A section of the panel with no box of its own (the panel is already framed): a small gold title between two hairlines. */
 export function ResultNote({ label, children }: { label: string; children: ReactNode }) {

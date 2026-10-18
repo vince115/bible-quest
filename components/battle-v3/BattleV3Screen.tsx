@@ -56,6 +56,7 @@ import { playSfx, playSfxSequence } from "@/game/sfx";
 import { battleDeltas } from "@/game/v3/battleFx";
 import { BattleFxContext, FxNumbers, usePopups, useHitShake, useStrikeLunge } from "./BattleFx";
 import { sfxEvents } from "@/game/v3/sfxEvents";
+import { button, chip } from "@/components/ui/buttons";
 
 type T = ReturnType<typeof useT>;
 /** A skill waiting for its target; `basic` is the tabletop rules' free basic attack (made by that character) instead of a skill. */
@@ -204,7 +205,7 @@ function EnemyCard({
           </span>
         )}
         {isTarget && pending && (
-          <span className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-md bg-amber-400 py-1 text-center text-xs font-black text-stone-950 shadow-lg sm:text-sm">
+          <span className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-md bg-[#d4b35f] py-1 text-center text-xs font-black text-[#2b1d07] shadow-lg sm:text-sm">
             🎯 {pending.basic ? elementAdjust(basicDamage(pending.basic), mult, b.pools) : skillDamage(b, pending.skill, id, pending.who)}
             {mult !== 1 && ` ×${mult}`}
           </span>
@@ -323,7 +324,7 @@ function TableDeck({
                 e.stopPropagation();
                 onDrawAll();
               }}
-              className="ml-1 rounded-full border border-amber-300/60 bg-amber-500/10 px-1.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/25"
+              className="ml-1 rounded-full bg-[#d4b35f]/15 px-1.5 text-[10px] font-bold text-[#efe2bd] transition hover:bg-[#d4b35f]/25"
             >
               {t("v3.deck.drawFill")}
             </button>
@@ -745,7 +746,7 @@ function SkillFocus({
             <button
               onClick={toggleStory}
               aria-pressed={showStory}
-              className={`rounded-full border px-3 py-0.5 text-[11px] ${showStory ? "border-amber-300 bg-amber-500/90 font-bold text-stone-950" : "border-stone-500 text-stone-300 hover:bg-white/10"}`}
+              className={chip(showStory, "sm")}
             >
               {t("v3.demo.story")}：{showStory ? t("v3.demo.on") : t("v3.demo.off")}
             </button>
@@ -901,7 +902,7 @@ function FormationPicker({ t, slots, picked, onPlace, onAuto }: { t: T; slots: S
     <div className="flex flex-col items-center gap-2 px-4">
       <div className="flex items-center gap-3">
         <span className="text-sm font-bold text-amber-100">{t("v3.lineup.formation")}</span>
-        <button onClick={onAuto} className="rounded-full border border-amber-300/70 px-3 py-0.5 text-xs font-bold text-amber-100 hover:bg-white/10">
+        <button onClick={onAuto} className={button("secondary", "sm")}>
           {t("v3.lineup.auto")}
         </button>
       </div>
@@ -959,7 +960,7 @@ function FoePicker({ t, foes, onChange, onAuto }: { t: T; foes: FoeSetup; onChan
     <section className="flex flex-col items-center gap-2 px-4">
       <div className="flex items-center gap-3">
         <h2 className="text-sm font-bold tracking-widest text-stone-200">{t("v3.foes.title")}</h2>
-        <button onClick={onAuto} className="rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-stone-950 hover:bg-amber-400">
+        <button onClick={onAuto} className={button("primary", "sm")}>
           🎲 {t("v3.foes.auto")}
         </button>
       </div>
@@ -1041,7 +1042,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const copyStepper = (id: CharacterId) =>
     copiesIn(id) > 0 &&
     mayBring(id) > 1 && (
-      <div className="flex items-center gap-1 rounded-full border border-stone-500 px-1 text-xs font-bold text-stone-200" title={t("v3.lineup.copies", { n: mayBring(id) })}>
+      <div className="flex items-center gap-1 rounded-full bg-[#d4b35f]/15 px-1 text-xs font-bold text-[#efe2bd]" title={t("v3.lineup.copies", { n: mayBring(id) })}>
         <button onClick={() => dropCopy(id)} aria-label={t("v3.lineup.fewer")} className="h-6 w-6 rounded-full hover:bg-white/10">
           −
         </button>
@@ -1130,7 +1131,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         onChange={(e) => pickStage(e.target.value as StageId)}
         aria-label={t("v3.stage.title")}
         style={SELECT_ARROW}
-        className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 pl-4 pr-9 py-1.5 text-center text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
+        className="w-full max-w-xs rounded-full bg-[#d4b35f]/15 pl-4 pr-9 py-1.5 text-center text-base appearance-none bg-no-repeat font-bold text-[#efe2bd] focus:outline-none sm:hidden"
       >
         {STAGE_ORDER.map((st) => (
           <option key={st} value={st}>
@@ -1145,7 +1146,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             role="radio"
             aria-checked={stage === st}
             onClick={() => pickStage(st)}
-            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${stage === st ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+            className={chip(stage === st)}
           >
             {t(`v3.stage.${st}`)}
           </button>
@@ -1187,7 +1188,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   <button
                     onClick={() => toggle(id)}
                     disabled={!on && full && !twin(id)}
-                    className={`w-full max-w-[90px] rounded-full px-1.5 py-0.5 text-[10px] font-bold sm:max-w-none sm:w-auto sm:px-3 sm:py-1 sm:text-xs disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
+                    className={`${chip(on, "sm")} w-full max-w-[90px] sm:w-auto sm:max-w-none`}
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
                   </button>
@@ -1214,7 +1215,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             onChange={(e) => setRarity(e.target.value as Rarity | "all")}
             aria-label={t("v3.demo.filter")}
             style={SELECT_ARROW}
-            className="shrink-0 rounded-full border-2 border-amber-300 bg-stone-900/80 pl-3 pr-8 py-2 text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
+            className="shrink-0 rounded-full bg-[#d4b35f]/15 pl-3 pr-8 py-2 text-base appearance-none bg-no-repeat font-bold text-[#efe2bd] focus:outline-none sm:hidden"
           >
             {(["all", ...USED_TIERS] as const).map((f) => (
               <option key={f} value={f}>
@@ -1232,7 +1233,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                 role="tab"
                 aria-selected={rarity === f}
                 onClick={() => setRarity(f)}
-                className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${rarity === f ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+                className={chip(rarity === f)}
               >
                 {f === "all" ? t("v3.demo.all") : f} <span className="opacity-60">{count}</span>
               </button>
@@ -1259,7 +1260,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
                   <button
                     onClick={() => toggle(id)}
                     disabled={!on && full && !twin(id)}
-                    className={`rounded-full px-3 py-1 text-xs font-bold disabled:opacity-40 ${on ? "bg-amber-500 text-stone-950" : "border border-stone-400 text-stone-200"}`}
+                    className={chip(on, "sm")}
                   >
                     {on ? t("v3.lineup.in") : t("v3.lineup.out")}
                   </button>
@@ -1282,7 +1283,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             aria-checked={mode === m}
             onClick={() => setMode(m)}
             title={t(`v3.mode.${m}.desc`)}
-            className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${mode === m ? "border-sky-300 bg-sky-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
+            className={chip(mode === m)}
           >
             {t(`v3.mode.${m}`)}
           </button>
@@ -1296,7 +1297,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       <button
         onClick={() => onStart(chosen, slots, stage, mode, campaign || isStageOwn(foes) ? undefined : { guard: foes.guard, shooter: foes.shooter })}
         disabled={!chosen.length}
-        className="rounded-full bg-red-700 px-8 py-2.5 text-lg font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40"
+        className={button("primary", "lg")}
       >
         {chosen.length === 1 ? t("v3.lineup.startSolo") : chosen.length ? t("v3.lineup.start") : t("v3.lineup.need")}
       </button>
@@ -1316,7 +1317,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       </div>
       )}
 
-      <Link href={campaign ? "/campaign" : "/"} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-300 hover:bg-white/10">
+      <Link href={campaign ? "/campaign" : "/"} className={button("secondary")}>
         {campaign ? `← ${t("v3.campaign.list")}` : t("v2.ui.backHome")}
       </Link>
       </div>
@@ -1528,7 +1529,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         {/* The enemy's formation: its back row (the boss, and the shooter) above, its front row (the guard) below */}
         <section className="relative flex flex-col items-center gap-1 px-2 pt-3 sm:px-4">
           {inRounds && (
-            <div className="absolute left-2 top-1 z-10 rounded-full border border-amber-300/70 bg-black/50 px-3 py-0.5 text-xs font-bold text-amber-100">
+            <div className="absolute left-2 top-1 z-10 rounded-full bg-black/50 px-3 py-0.5 text-xs font-bold text-[#f2d27a]">
               {t(`v3.round.${inRounds.id}.${b.stage === inRounds.before ? "first" : inHell ? "hell" : "second"}`)}
             </div>
           )}
@@ -1560,7 +1561,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                     e.stopPropagation();
                     setPending(null);
                   }}
-                  className="ml-2 rounded-full border-2 border-red-300 bg-red-900/60 px-3 py-0.5 text-xs font-bold text-red-50 hover:bg-red-800"
+                  className={`ml-2 ${button("important", "sm")}`}
                 >
                   ✕ {t("v2.ui.cancel")}
                 </button>
@@ -1611,7 +1612,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         <button
           onClick={playAll}
           disabled={locked || !b.hand.length || b.pools !== "team"}
-          className={`hidden rounded-full border border-stone-400 px-3 py-1 text-xs text-stone-200 enabled:hover:bg-white/10 disabled:opacity-40 ${b.pools !== "team" ? "" : "sm:block"}`}
+          className={`${button("secondary", "sm")} !hidden ${b.pools !== "team" ? "" : "sm:!inline-flex"}`}
         >
           {t("v2.ui.playAll")}
         </button>
@@ -1630,9 +1631,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             setAuto(!auto);
           }}
           disabled={b.result !== "ongoing"}
-          className={`shrink-0 whitespace-nowrap rounded-full border-2 px-3 py-1.5 text-xs font-bold disabled:opacity-40 sm:text-sm ${
-            auto ? "border-sky-300 bg-sky-500 text-stone-950" : "border-sky-300 text-sky-100 hover:bg-sky-900/60"
-          }`}
+          className={`${chip(auto, "sm")} shrink-0 sm:text-sm`}
         >
           {auto ? t("v2.ui.autoOn") : t("v2.ui.autoOff")}
         </button>
@@ -1640,7 +1639,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           onClick={() => setAutoSpeed(autoSpeed === 1 ? 2 : 1)}
           aria-label={t("v3.ui.autoSpeed")}
           title={t("v3.ui.autoSpeed")}
-          className="shrink-0 whitespace-nowrap rounded-full border-2 border-sky-300 px-2.5 py-1.5 text-xs font-black tabular-nums text-sky-100 hover:bg-sky-900/60 sm:text-sm"
+          className={`${button("secondary", "sm")} shrink-0 font-black tabular-nums sm:text-sm`}
         >
           {autoSpeed}x
         </button>
@@ -1651,15 +1650,15 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             endTurn();
           }}
           disabled={locked}
-          className="shrink-0 whitespace-nowrap rounded-full bg-red-700 px-4 py-1.5 text-sm font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40 sm:py-2.5 sm:text-base"
+          className={`${button("important")} shrink-0 sm:py-2.5 sm:text-base`}
         >
           {resolving ? t("v2.ui.resolving") : t("v2.ui.endTurn")}
         </button>
-        <button onClick={() => setShowLog(!showLog)} className="shrink-0 whitespace-nowrap rounded-full border border-stone-500 px-2.5 py-1.5 text-xs text-stone-200 hover:bg-white/10">
+        <button onClick={() => setShowLog(!showLog)} className={`${button("secondary", "sm")} shrink-0`}>
           {showLog ? t("v3.ui.hideLog") : t("v3.ui.showLog")}
         </button>
         {b.result === "ongoing" && (
-          <button onClick={() => setLeaving(true)} className="shrink-0 whitespace-nowrap rounded-full border border-stone-500 px-2.5 py-1.5 text-xs text-stone-200 hover:bg-white/10">
+          <button onClick={() => setLeaving(true)} className={`${button("secondary", "sm")} shrink-0`}>
             {t("v3.leave.button")}
           </button>
         )}
@@ -1671,7 +1670,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           <div role="dialog" aria-label={t("v3.leave.title")} onClick={(e) => e.stopPropagation()} className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-stone-600 bg-stone-900 p-5 text-center">
             <h2 className="text-lg font-black text-stone-100">{t("v3.leave.title")}</h2>
             <p className="text-sm text-stone-300">{t("v3.leave.desc")}</p>
-            <button onClick={() => setLeaving(false)} className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
+            <button onClick={() => setLeaving(false)} className={button("primary")}>
               {t("v3.leave.stay")}
             </button>
             <button
@@ -1682,11 +1681,11 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
                 setShowResult(true);
                 pickLineup();
               }}
-              className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800"
+              className={button("secondary")}
             >
               {t("v3.lineup.change")}
             </button>
-            <Link href={campaign ? "/campaign" : "/"} className="rounded-xl border border-stone-500 px-4 py-2 text-stone-200 hover:bg-stone-800">
+            <Link href={campaign ? "/campaign" : "/"} className={button("secondary")}>
               {campaign ? t("v3.campaign.list") : t("v2.ui.backHome")}
             </Link>
           </div>
@@ -1837,7 +1836,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
 
                 <button
                   onClick={() => setViewingScripture(null)}
-                  className="self-center rounded-full border border-stone-400 bg-black/40 px-5 py-1.5 text-xs font-semibold text-stone-200 transition hover:bg-white/10"
+                  className={`self-center ${button("secondary", "sm")}`}
                 >
                   ✕ {t("v3.ui.close")}
                 </button>
@@ -1872,7 +1871,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
               ✕
             </button>
           </div>
-          <button onClick={() => setViewing(null)} className="rounded-full border border-stone-400 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+          <button onClick={() => setViewing(null)} className={button("secondary")}>
             ✕ {t("v3.ui.close")}
           </button>
         </div>
@@ -1910,7 +1909,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
               ✕
             </button>
           </motion.div>
-          <button onClick={() => setViewingEnemy(null)} className="rounded-full border border-stone-400 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10">
+          <button onClick={() => setViewingEnemy(null)} className={button("secondary")}>
             ✕ {t("v3.ui.close")}
           </button>
         </div>
@@ -2024,7 +2023,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
         </ResultPanel>
       )}
       {b.result !== "ongoing" && !showResult && (
-        <button onClick={() => setShowResult(true)} className="fixed bottom-14 right-3 z-40 rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950">
+        <button onClick={() => setShowResult(true)} className={`${button("primary")} fixed bottom-14 right-3 z-40`}>
           {b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")} · {t("v2.ui.playAgain")}
         </button>
       )}

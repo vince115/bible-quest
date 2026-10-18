@@ -16,7 +16,7 @@ import { CARD_RARITY, type Rarity } from "@/components/cards/rarity";
 import { CARD_BACK } from "@/components/cards/ScriptureCardFace";
 import { asset } from "@/game/assets";
 import { VIEWER_WIDTH, savedScale, viewerStyle } from "@/components/cards/viewer";
-import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttons";
+import { ICON_BUTTON, button } from "@/components/ui/buttons";
 import type { PackKind } from "@/game/v3/gacha";
 import { PackArt } from "./PackArt";
 import { STRIP } from "./PackTear";
@@ -54,7 +54,7 @@ function Badge({ pulled }: { pulled: Pulled }) {
   const t = useT();
   const { isNew, overflow } = pulled;
   return (
-    <span className={`absolute -right-1 -top-1 z-10 whitespace-nowrap rounded-full px-1.5 text-xs font-black shadow ${isNew ? "bg-red-600 text-white" : overflow ? "bg-amber-400 text-stone-950" : "bg-stone-700 text-stone-100"}`}>
+    <span className={`absolute -right-1 -top-1 z-10 whitespace-nowrap rounded-full px-1.5 text-xs font-black shadow ${isNew ? "bg-red-600 text-white" : overflow ? "bg-[#d4b35f] text-[#2b1d07]" : "bg-stone-700 text-stone-100"}`}>
       {isNew ? t("v3.gacha.new") : overflow ? t("v3.gacha.full", { n: overflow }) : t("v3.gacha.copy")}
     </span>
   );
@@ -138,10 +138,10 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
   };
   const after = (
     <div className="flex flex-wrap justify-center gap-3">
-      <button onClick={onAgain} className={PRIMARY_BUTTON}>
+      <button onClick={onAgain} className={button("primary")}>
         {t("v3.gacha.again")}
       </button>
-      <Link href="/collection" className={SECONDARY_BUTTON}>
+      <Link href="/collection" className={button("secondary")}>
         {t("nav.collection")} →
       </Link>
     </div>
@@ -179,7 +179,7 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
         </section>
         {/* First the cards are put away into the collection; then another pack, or a look at the collection. */}
         {!stored ? (
-          <button onClick={store} disabled={!!fly} className={`${PRIMARY_BUTTON} disabled:opacity-60`}>
+          <button onClick={store} disabled={!!fly} className={button("primary")}>
             {t("v3.gacha.store")}
           </button>
         ) : (
@@ -281,7 +281,7 @@ export function PackReveal({ results, pack, onAgain }: { results: Pulled[]; pack
         </div>
         <p className="h-5 text-center text-sm text-stone-300">{placed > 0 ? t("v3.gacha.drawMore") : t("v3.gacha.draw")}</p>
         <div className="flex flex-wrap justify-center gap-2">
-          <button onClick={() => setAll(true)} disabled={!!leaving} className="rounded-full border border-stone-500 px-4 py-1.5 text-sm text-stone-200 hover:bg-white/10 disabled:opacity-60">
+          <button onClick={() => setAll(true)} disabled={!!leaving} className={button("secondary")}>
             {t("v3.gacha.skip")}
           </button>
         </div>
@@ -318,7 +318,7 @@ function PulledViewer({ results, start, onClose }: { results: Pulled[]; start: n
               step(d);
             }}
             aria-label={t(d < 0 ? "v3.demo.prev" : "v3.demo.next")}
-            className={`fixed top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-full border-2 border-stone-400 bg-stone-900/70 text-2xl font-bold text-stone-100 hover:bg-white/15 ${d < 0 ? "left-2 sm:left-6" : "right-2 sm:right-6"}`}
+            className={`${ICON_BUTTON} fixed top-1/2 z-10 h-12 w-12 -translate-y-1/2 text-2xl font-bold ${d < 0 ? "left-2 sm:left-6" : "right-2 sm:right-6"}`}
           >
             {d < 0 ? "‹" : "›"}
           </button>
@@ -331,7 +331,7 @@ function PulledViewer({ results, start, onClose }: { results: Pulled[]; start: n
       </motion.div>
       <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 text-sm text-stone-200">
         {results.length > 1 && <span className="tabular-nums text-stone-400">{i + 1} / {results.length}</span>}
-        <button onClick={onClose} className="rounded-full border border-stone-400 px-4 py-1.5 hover:bg-white/10">
+        <button onClick={onClose} className={button("secondary")}>
           ✕ {t("v3.ui.close")}
         </button>
       </div>
