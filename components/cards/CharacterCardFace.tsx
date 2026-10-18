@@ -434,7 +434,8 @@ export function CharacterCardFace({ id: shown, ornament, rarity: printed }: { id
     return (
       <>
         <CardFrame frame={theme.frame} rarity={rarity} ornament={ornament}>
-        <div className="relative h-full overflow-hidden rounded-[0.6%]">
+        {/* overflow-clip, not hidden: the zoomed art spills past the face, and a hidden box can still be scrolled (by focus or scrollIntoView), which would lift the whole face. */}
+        <div className="relative h-full overflow-clip rounded-[0.6%]">
           {/* Only UR gets the 2.5D parallax; the rest show the picture flat. */}
           {rarity === "UR" || rarity === "GR" ? (
             <ParallaxArt src={art.src} alt={t(`char.${id}.name`)} figure={art.figure} />
