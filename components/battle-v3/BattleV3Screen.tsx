@@ -12,7 +12,6 @@ import {
   CHARACTER_ELEMENT,
   CHARACTER_SKILLS,
   ENEMY_ELEMENT,
-  ENEMY_HP,
   ENEMY_ORDER,
   MAX_HP,
   basicDamage,
@@ -28,7 +27,7 @@ import {
   SUMMONED,
   STAGE_ORDER,
 } from "@/game/v2/data";
-import { guardOf, shooterOf, actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target, inPartyOrder } from "@/game/v2/engine";
+import { guardOf, shooterOf, actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target, inPartyOrder, enemyMaxHp } from "@/game/v2/engine";
 import { MAGIC_VERSION_ENABLED, baseEnemy, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BaseCharacterId, BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
@@ -192,7 +191,7 @@ function EnemyCard({
           </motion.span>
         )}
         <span className="absolute -right-2 -top-4 z-20">
-          <HpBadge hp={hp} max={ENEMY_HP[id]} />
+          <HpBadge hp={hp} max={enemyMaxHp(b, id)} />
         </span>
         {alive && chips.length > 0 && (
           <span className="absolute -left-2 -top-3 z-20 flex flex-wrap gap-0.5 text-[9px] font-bold text-white sm:text-[10px]">
@@ -1901,7 +1900,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             </HoloCard>
             {lookOf(baseEnemy(viewingEnemy)).shine && <CardShine />}
             <div className="absolute -right-4 -top-6 z-30">
-              <HpBadge hp={b.enemies[viewingEnemy].hp} max={ENEMY_HP[viewingEnemy]} big />
+              <HpBadge hp={b.enemies[viewingEnemy].hp} max={enemyMaxHp(b, viewingEnemy)} big />
             </div>
             <button
               onClick={() => setViewingEnemy(null)}

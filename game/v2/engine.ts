@@ -140,6 +140,8 @@ const shooterAlive = (s: BattleState): boolean => {
   return !!shooter && enemyAlive(s, shooter);
 };
 export const enemyAlive = (s: BattleState, id: EnemyId) => s.enemies[id].hp > 0;
+/** An enemy's full HP in this battle: its card's, unless the battle gives it more (see BattleState.maxHp). */
+export const enemyMaxHp = (s: BattleState, id: EnemyId): number => s.maxHp?.[id] ?? ENEMY_HP[id];
 const randomAlly = (s: BattleState, rng: Rng) => {
   const alive = targetable(s);
   return alive.length ? alive[Math.floor(rng() * alive.length)] : null;
@@ -503,11 +505,11 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId, wh
     + (skill === "thouArtTheMan" && target === bossOf(s) ? R.manBonus : 0)
     + (skill === "fireInBones" && s.party[self("jeremiah")].hp <= MAX_HP.jeremiah / 2 ? R.bonesBonus : 0)
     // Jael took a nail of the tent... and smote the nail into his temples (Judges 4:21).
-    + (skill === "tentPeg" && target && s.enemies[target].hp <= ENEMY_HP[target] / 2 ? R.pegFinish : 0)
-    + (skill === "leftHanded" && target && s.enemies[target].hp >= ENEMY_HP[target] ? R.ehudSurprise : 0)
+    + (skill === "tentPeg" && target && s.enemies[target].hp <= enemyMaxHp(s, target) / 2 ? R.pegFinish : 0)
+    + (skill === "leftHanded" && target && s.enemies[target].hp >= enemyMaxHp(s, target) ? R.ehudSurprise : 0)
     // He ordained twelve, that they should be with him (Mark 3:14).
     // Simon called Zelotes (Luke 6:15): his zeal burns hotter as the leader weakens.
-    + (skill === "zeal" && s.enemies[bossOf(s)].hp <= ENEMY_HP[bossOf(s)] / 2 ? 20 : 0)
+    + (skill === "zeal" && s.enemies[bossOf(s)].hp <= enemyMaxHp(s, bossOf(s)) / 2 ? 20 : 0)
     + (skill === "oneOfTwelve" ? 10 * living(s).filter((id) => id !== "jamesAlph" && APOSTLES.has(id)).length : 0)
     // He was numbered with the eleven apostles (Acts 1:26).
     + (skill === "withEleven" ? 10 * living(s).filter((id) => id !== "matthias" && APOSTLES.has(id)).length : 0);
@@ -1419,7 +1421,7 @@ function hitEnemy(s: BattleState, skill: SkillId, enemy: EnemyId, who?: Characte
  */
 function afterEnemyHit(s: BattleState, enemy: EnemyId, rng: Rng = Math.random) {
   const e = s.enemies[enemy];
-  if (enemy === bossOf(s) && e.hp > 0 && !s.goliath.enraged && e.hp <= ENEMY_HP[enemy] / 2) {
+  if (enemy === bossOf(s) && e.hp > 0 && !s.goliath.enraged && e.hp <= enemyMaxHp(s, enemy) / 2) {
     switch (s.stage) {
       case "eden":
         // The Serpent sheds its skin at half HP: its fang hits harder from then on.
@@ -4289,7 +4291,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
       // ---- The walls of Jericho mend themselves until they crack ----
       case "repair": {
         const e = s.enemies[boss];
-        const mended = Math.min(R.repair, ENEMY_HP[boss] - e.hp);
+        const mended = Math.min(R.repair, enemyMaxHp(s, boss) - e.hp);
         e.hp += mended;
         log(s, "v2.log.repair", "detail", { enemy: boss, n: mended, hp: e.hp });
         break;
@@ -4337,7 +4339,7 @@ export function resolveGoliath(state: BattleState, rng: Rng = Math.random): Batt
           log(s, "v2.log.summon", "enemy", { enemy: minion, hp: ENEMY_HP[minion] });
         } else {
           const e = s.enemies[boss];
-          e.hp = Math.min(ENEMY_HP[boss], e.hp + R.hostHeal);
+          e.hp = Math.min(enemyMaxHp(s, boss), e.hp + R.hostHeal);
           log(s, "v2.log.hostCloses", "enemy", { n: R.hostHeal, hp: e.hp });
         }
         break;
