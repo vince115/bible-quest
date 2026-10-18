@@ -993,6 +993,15 @@ describe("The LORD", () => {
     expect(s.result).toBe("defeat");
   });
 
+  it("alone, cannot be beaten", () => {
+    let s = createBattle(seeded(), ["father"]);
+    s.archerTarget = null;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.result).toBe("ongoing");
+    expect(s.party.father.hp).toBe(MAX_HP.father);
+  });
+
   it("strikes as a man of war", () => {
     const s0 = createBattle(seeded(), ["father", "david"]);
     s0.hand = [];

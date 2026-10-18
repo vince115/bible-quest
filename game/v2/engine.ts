@@ -265,7 +265,9 @@ function checkVictory(s: BattleState) {
 function checkDefeat(s: BattleState) {
   // While Jesus lies in the tomb (or someone waits on Martha's word) the battle is not lost: they will rise.
   const waiting = s.tomb !== null || s.lazarus === "tomb" || s.dorcas === "asleep" || (s.riseAgain !== "unused" && s.riseAgain !== "ready" && s.riseAgain !== "used");
-  if (s.result === "ongoing" && targetable(s).length === 0 && !waiting) {
+  // A card that never falls does not hold the line for the others, but a line-up of nothing else (the LORD alone) cannot be beaten.
+  const onlyUnfalling = s.lineup.every((id) => NEVER_FALLS.has(id));
+  if (s.result === "ongoing" && targetable(s).length === 0 && !waiting && !onlyUnfalling) {
     s.result = "defeat";
     log(s, "v2.log.defeat", "system");
   }
