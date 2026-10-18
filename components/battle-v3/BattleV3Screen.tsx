@@ -269,7 +269,8 @@ function TableDeck({
   return (
     <div className="flex items-end justify-center gap-4">
       {/* The hand, fanned out to the left of the deck: the first card drawn lies next to it, each new one further left */}
-      <div className="flex min-h-[5.9rem] flex-row-reverse items-end pr-2 sm:min-h-[6.7rem]">
+      {/* Room for five cards is kept from the start, so the deck stays put on the right as cards are drawn */}
+      <div className="flex min-h-[5.9rem] min-w-[15.5rem] flex-row-reverse items-end justify-start pr-2 sm:min-h-[6.7rem] sm:min-w-[17.5rem]">
         {b.hand.map((inst, i) => {
           const tilt = ((b.hand.length - 1) / 2 - i) * 5;
           return (
