@@ -890,6 +890,8 @@ export const aidesOf = (stage: StageId): AideId[] => {
   return base ? [`${base}#1`, `${base}#2`] : [];
 };
 const ALL_AIDES: AideId[] = [...new Set(Object.values(AIDE_BASE))].flatMap((b) => [`${b}#1`, `${b}#2`] as AideId[]);
+/** The reinforcement copies of an enemy, if it has any (free mode's chosen guard). */
+export const aideCopies = (enemy: EnemyId): AideId[] => ALL_AIDES.filter((a) => a.split("#")[0] === enemy);
 /** The card an enemy is (a reinforcement is a copy of its base). */
 export const baseEnemy = (id: EnemyId): BaseEnemyId => id.split("#")[0] as BaseEnemyId;
 export const ENEMY_ELEMENT: Record<EnemyId, Element> = { ...BASE_ELEMENT, ...Object.fromEntries(ALL_AIDES.map((a) => [a, BASE_ELEMENT[baseEnemy(a)]])) } as Record<EnemyId, Element>;

@@ -25,12 +25,10 @@ import {
   SHOOTER_DAMAGE,
   SINGLE_TARGET,
   SKILLS,
-  STAGE_GUARD,
   SUMMONED,
   STAGE_ORDER,
-  STAGE_SHOOTER,
 } from "@/game/v2/data";
-import { actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target, inPartyOrder } from "@/game/v2/engine";
+import { guardOf, shooterOf, actionBase, attachedTotal, hasSkillOfColor, attackableEnemies, energyColor, paymentPreview, bossOf, canAct, canBasicAttack, elementAdjust, cardValue, cardsOf, energyRoom, mpCost, spCost, cardBlockReason, elementMultiplier, hitsEveryone, inStory, skillTargets, supportAmount, enemyAlive, enemyDamage, isAlive, skillDamage, type Target, inPartyOrder } from "@/game/v2/engine";
 import { MAGIC_VERSION_ENABLED, baseEnemy, NEVER_FALLS, PARTY_ORDER, personOf, tableKind } from "@/game/v2/data";
 import type { BaseCharacterId, BattleState, CardId, CharacterId, EnemyId, EnergyKind, Intent, PoolMode, SkillId, StageId } from "@/game/v2/types";
 import { ACHIEVEMENTS, useAchievementStore, type AchievementId } from "@/game/v3/achievements";
@@ -40,6 +38,7 @@ import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { COPY_LIMIT } from "@/game/v3/gacha";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, stageOfBattle, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
 import { freeModePool, useProgressStore } from "@/game/v3/progress";
+import { BOSSES, GUARDS, SHOOTERS, autoFoes, isStageOwn, stageFoes, stageOfBoss, type FoeSetup } from "@/game/v3/foes";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
 import { CARD_RARITY, USED_TIERS, lookOf, type Rarity } from "@/components/cards/rarity";
@@ -157,7 +156,7 @@ function EnemyCard({
     isBoss && g.enraged && { text: t(`v3.ui.phase.${id}`), tone: "bg-red-700" },
     isBoss && g.stunned && { text: t("v2.ui.stunned"), tone: "bg-sky-600" },
     isBoss && g.charging && { text: t(`v3.ui.charging.${id}`) === `v3.ui.charging.${id}` ? t("v2.ui.charging") : t(`v3.ui.charging.${id}`), tone: "bg-orange-600" },
-    isBoss && STAGE_GUARD[b.stage] && !attackableEnemies(b).includes(id) && { text: "🛡", title: t("v2.ui.protected", { enemy: STAGE_GUARD[b.stage] }), tone: "bg-amber-700" },
+    isBoss && guardOf(b) && !attackableEnemies(b).includes(id) && { text: "🛡", title: t("v2.ui.protected", { enemy: guardOf(b) }), tone: "bg-amber-700" },
   ].filter(Boolean) as { text: string; title?: string; tone: string }[];
   const cardRef = useRef<HTMLButtonElement>(null);
   const lungeRef = useRef<HTMLDivElement>(null);
@@ -233,7 +232,7 @@ function EnemyCard({
               <IntentRow label={t("v3.ui.then")} intent={b.intents[1]} front={front} t={t} dim b={b} />
             </div>
           )}
-          {id === STAGE_SHOOTER[b.stage] && b.archerTarget && (
+          {id === shooterOf(b) && b.archerTarget && (
             <AttackRow name={`${t(id === "archer" ? "v3.action.arrow" : "v3.action.strike")} → ${t(`char.${b.archerTarget}.name`)}`} tag={String(enemyDamage(id, b.archerTarget, SHOOTER_DAMAGE[id] ?? 0, b.pools))} />
           )}
         </div>
@@ -921,24 +920,85 @@ const SELECT_ARROW = {
 } as const;
 
 /**
+ * Free mode's enemy side: the boss, the guard in its front row and the shooter behind, each a small card with a list to
+ * change it (the guard and the shooter can be left out), and a button that sets up a side to suit the team.
+ */
+function FoePicker({ t, foes, onChange, onAuto }: { t: T; foes: FoeSetup; onChange: (f: FoeSetup) => void; onAuto: () => void }) {
+  const slot = (key: "boss" | "guard" | "shooter", label: string, options: EnemyId[], optional: boolean) => {
+    const id = foes[key];
+    return (
+      <div key={key} className="flex w-[104px] flex-col items-center gap-1.5 sm:w-[120px]">
+        <span className="text-[11px] font-bold tracking-widest text-amber-200/90">{label}</span>
+        <div className="w-full text-[4.85px] sm:text-[5.6px]">
+          {id ? (
+            <HoloCard element={ENEMY_ELEMENT[id]} rarity={CARD_RARITY[baseEnemy(id)]} touchTilt={false} effects={false}>
+              <EnemyCardFace id={id} />
+            </HoloCard>
+          ) : (
+            <div className={`flex ${CARD_RATIO} w-full items-center justify-center rounded-md bg-black/40 text-xs text-stone-400`}>{t("v3.foes.none")}</div>
+          )}
+        </div>
+        <select
+          value={id ?? ""}
+          onChange={(e) => onChange({ ...foes, [key]: (e.target.value || null) as EnemyId | null })}
+          aria-label={label}
+          style={SELECT_ARROW}
+          className="w-full appearance-none rounded-full bg-stone-900/80 bg-no-repeat py-1 pl-3 pr-7 text-xs font-bold text-amber-100"
+        >
+          {optional && <option value="">{t("v3.foes.none")}</option>}
+          {options.map((e) => (
+            <option key={e} value={e}>
+              {t(`v2.enemy.${e}.name`)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+  return (
+    <section className="flex flex-col items-center gap-2 px-4">
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-bold tracking-widest text-stone-200">{t("v3.foes.title")}</h2>
+        <button onClick={onAuto} className="rounded-full bg-amber-500 px-3 py-1 text-xs font-bold text-stone-950 hover:bg-amber-400">
+          🎲 {t("v3.foes.auto")}
+        </button>
+      </div>
+      <div className="flex items-start justify-center gap-3 sm:gap-5">
+        {slot("shooter", t("v3.foes.shooter"), SHOOTERS, true)}
+        {slot("boss", t("v3.foes.boss"), BOSSES, false)}
+        {slot("guard", t("v3.foes.guard"), GUARDS, true)}
+      </div>
+    </section>
+  );
+}
+
+/**
  * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
  * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
  */
-function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode) => void; campaign?: CampaignStage }) {
+function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode, foes?: BattleState["foes"]) => void; campaign?: CampaignStage }) {
   const last = useBattleV3Store((st) => st.lastLineup);
   const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
-  const [stage, setStage] = useState<StageId>(campaign?.battle ?? "goliath");
+  const [stage, setStage] = useState<StageId>(campaign?.battle ?? last.stage ?? "goliath");
+  // Free mode's enemy side: the stage's own by default; any boss, guard and shooter by hand, or set up automatically.
+  const [foes, setFoes] = useState<FoeSetup>(() => {
+    const st = campaign?.battle ?? last.stage ?? "goliath";
+    return last.foes && !campaign ? { boss: stageFoes(st).boss, guard: last.foes.guard, shooter: last.foes.shooter } : stageFoes(st);
+  });
+  const pickStage = (st: StageId) => {
+    setStage(st);
+    setFoes(stageFoes(st));
+  };
   // Free mode offers every card: search by name and filter by rarity.
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const unlocked = useAchievementStore((st) => st.unlocked);
-  // Free mode offers the cards the player owns; the collection is read from this browser after mount.
+  const pool = campaign?.pool ?? freeModePool(PARTY_ORDER);
+  // The collection, for how many copies of a card free mode may bring; read from this browser after mount.
   const collection = useProgressStore((st) => st.collection);
-  const [ownedReady, setOwnedReady] = useState(!!campaign);
   useEffect(() => {
-    if (!campaign) void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setOwnedReady(true));
+    if (!campaign) void useProgressStore.persist.rehydrate();
   }, [campaign]);
-  const pool = campaign?.pool ?? freeModePool(collection, PARTY_ORDER);
   const max = campaign?.pick ?? MAX_LINEUP;
   const q = query.trim().toLowerCase();
   const matching = q ? pool.filter((id) => characterSearchText(id).includes(q)) : pool;
@@ -953,9 +1013,11 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const chosen = inPool(lineup);
   /** How many copies of a card are in the line-up. */
   const copiesIn = (card: CharacterId) => chosen.filter((x) => baseCharacter(x) === card).length;
-  /** How many copies of a card may go to battle: one in a stage; in free mode as many as the collection holds (up to COPY_LIMIT). */
-  const mayBring = (card: CharacterId) =>
-    campaign ? 1 : Math.min(COPY_LIMIT, process.env.NEXT_PUBLIC_DEBUG_ALL_CARDS === "1" ? COPY_LIMIT : (collection[baseCharacter(card)] ?? 0));
+  /**
+   * How many copies of a card may go to battle: one in a stage; in free mode (which offers every card, owned or not) as
+   * many as the collection holds, at least one and up to COPY_LIMIT.
+   */
+  const mayBring = (card: CharacterId) => (campaign ? 1 : Math.max(1, Math.min(COPY_LIMIT, collection[baseCharacter(card)] ?? 0)));
   // Where everyone stands: the last formation as far as it still fits, newcomers arranged into the empty places.
   const [placement, setPlacement] = useState<Slots>(() => arrange(chosen, last.slots));
   const slots = arrange(chosen, placement);
@@ -1065,7 +1127,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       {/* On a phone the eight stages take four rows of chips: one drop-down instead. */}
       <select
         value={stage}
-        onChange={(e) => setStage(e.target.value as StageId)}
+        onChange={(e) => pickStage(e.target.value as StageId)}
         aria-label={t("v3.stage.title")}
         style={SELECT_ARROW}
         className="w-full max-w-xs rounded-full border-2 border-amber-300 bg-stone-900/80 pl-4 pr-9 py-1.5 text-center text-base appearance-none bg-no-repeat font-bold text-amber-100 focus:outline-none sm:hidden"
@@ -1082,25 +1144,31 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
             key={st}
             role="radio"
             aria-checked={stage === st}
-            onClick={() => setStage(st)}
+            onClick={() => pickStage(st)}
             className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${stage === st ? "border-amber-300 bg-amber-500 text-stone-950" : "border-stone-500 text-stone-200 hover:bg-white/10"}`}
           >
             {t(`v3.stage.${st}`)}
           </button>
         ))}
       </div>
+      <FoePicker
+        t={t}
+        foes={foes}
+        onChange={(f) => {
+          setFoes(f);
+          setStage(stageOfBoss(f.boss));
+        }}
+        onAuto={() => {
+          const f = autoFoes(chosen.length ? chosen : PARTY_ORDER.slice(0, 3));
+          setFoes(f);
+          setStage(stageOfBoss(f.boss));
+        }}
+      />
       </>
       )}
 
       {/* Full character cards; 2 rows of 3 in campaign mode (top 3, bottom 3). */}
-      {!campaign && !ownedReady ? null : !campaign && pool.length === 0 ? (
-        <div className="flex max-w-sm flex-col items-center gap-3 px-6 py-8 text-center">
-          <p className="text-sm text-stone-200">{t("v3.free.empty")}</p>
-          <Link href="/campaign" className="rounded-xl bg-amber-500 px-4 py-2 font-semibold text-stone-950 hover:bg-amber-400">
-            {t("v3.campaign.list")}
-          </Link>
-        </div>
-      ) : campaign || pool.length <= 6 ? (
+      {campaign || pool.length <= 6 ? (
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 justify-items-center max-w-4xl mx-auto px-2 sm:px-4 py-2">
           {pool.map((id) => {
             const on = copiesIn(id) > 0;
@@ -1226,7 +1294,7 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
       {chosen.length > 0 && <FormationPicker t={t} slots={slots} picked={picked} onPlace={place} onAuto={() => (setPlacement(arrange(chosen)), setPicked(null))} />}
 
       <button
-        onClick={() => onStart(chosen, slots, stage, mode)}
+        onClick={() => onStart(chosen, slots, stage, mode, campaign || isStageOwn(foes) ? undefined : { guard: foes.guard, shooter: foes.shooter })}
         disabled={!chosen.length}
         className="rounded-full bg-red-700 px-8 py-2.5 text-lg font-bold text-white shadow-lg enabled:hover:bg-red-600 disabled:opacity-40"
       >
@@ -1465,14 +1533,14 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
             </div>
           )}
           <FormationLane label={t("v3.ui.enemyBack")} tone="enemy">
-            {!isDuel(board) && STAGE_SHOOTER[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_SHOOTER[b.stage]!)) && (
-              <EnemyCard b={b} front={leader(board)} id={STAGE_SHOOTER[b.stage]!} t={t} size="small" pending={pending} onTarget={() => onTarget(STAGE_SHOOTER[b.stage]!)} onView={() => setViewingEnemy(STAGE_SHOOTER[b.stage]!)} />
+            {!isDuel(board) && shooterOf(b) && (!SUMMONED.has(b.stage) || enemyAlive(b, shooterOf(b)!)) && (
+              <EnemyCard b={b} front={leader(board)} id={shooterOf(b)!} t={t} size="small" pending={pending} onTarget={() => onTarget(shooterOf(b)!)} onView={() => setViewingEnemy(shooterOf(b)!)} />
             )}
             <EnemyCard b={b} front={leader(board)} id={bossOf(b)} t={t} size="large" pending={pending} onTarget={() => onTarget(bossOf(b))} onView={() => setViewingEnemy(bossOf(b))} />
           </FormationLane>
-          {!isDuel(board) && STAGE_GUARD[b.stage] && (!SUMMONED.has(b.stage) || enemyAlive(b, STAGE_GUARD[b.stage]!)) && (
+          {!isDuel(board) && guardOf(b) && (!SUMMONED.has(b.stage) || enemyAlive(b, guardOf(b)!)) && (
             <FormationLane label={t("v3.ui.enemyFront")} tone="enemy">
-              {[STAGE_GUARD[b.stage]!, ...board.aides].map((e) => (
+              {[guardOf(b)!, ...board.aides].map((e) => (
                 <EnemyCard key={e} b={b} front={leader(board)} id={e} t={t} size="small" inFront pending={pending} onTarget={() => onTarget(e)} onView={() => setViewingEnemy(e)} />
               ))}
             </FormationLane>

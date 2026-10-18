@@ -197,12 +197,19 @@ export interface BattleState {
   /** The boss's status (Goliath, or the Serpent in Eden); the name is kept from stage 1. */
   goliath: GoliathState;
   stage: StageId;
+  /**
+   * Free mode: the guard and the shooter chosen by the player (null for none) instead of the stage's own; the boss is always
+   * the stage's. Left out, the stage's own stand.
+   */
+  foes?: { guard: EnemyId | null; shooter: EnemyId | null };
   /** The ally the Serpent coiled around: they can't move to another place this turn. */
   coiled: CharacterId | null;
   /** The enemies stand in two rows (the v3 board): while the guard stands in front, the boss and the shooter behind it can't be hit. */
   rows?: boolean;
   /** How much harder the boss hits (0.2 = +20%): the v3 board, against a big party. */
   bossBoost?: number;
+  /** The reinforcements standing in the enemy's front row beside the guard (the v3 board, against a big party). */
+  aides?: EnemyId[];
   /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
   aideTargets?: Partial<Record<EnemyId, CharacterId>>;
   /** Goliath's [current intent, next intent]; both are always shown. */
