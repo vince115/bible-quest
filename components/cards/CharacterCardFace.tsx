@@ -315,7 +315,7 @@ function Body({ id, compact, rarity }: { id: CharacterId; compact?: boolean; rar
   const resist = NEVER_FALLS.has(id) ? [] : ELEMENTS.filter((e) => elementMultiplier(e, element, true) < 1);
   return (
     <>
-      {(id === "david" || id === "abel" || id === "jonah" || id === "jesus" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul" || id === "dorcas" || id === "luke" || id === "josephArimathea" || id === "enoch") && (
+      {(id === "david" || id === "abel" || id === "jonah" || id === "father" || id === "jesusUR" || id === "jamesZeb" || id === "lazarus" || id === "paul" || id === "dorcas" || id === "luke" || id === "josephArimathea" || id === "enoch") && (
         <div className="rounded-md border border-red-700/30 bg-red-50/70 px-[3%] py-[1.5%] text-[0.62em] leading-snug">
           <span className="mr-1 rounded bg-red-700 px-1 font-bold text-white">{t("v3.card.passive")}</span>
           {t(`v2.passive.${id}`)}

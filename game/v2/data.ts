@@ -903,7 +903,7 @@ export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "
 export const APOSTLES: ReadonlySet<CharacterId> = new Set(["peter", "andrew", "jamesZeb", "johnApostle", "johnPatmos", "philipApostle", "nathanael", "thomas", "matthew", "jamesAlph", "thaddaeus", "simonZealot", "judas", "matthias"]);
 
 /** Cards that never fall: never targeted, never hurt, and not counted when deciding defeat. */
-export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
+export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["father"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Stages played with each character's own MP and SP (every campaign stage); a battle created without a stage mode still uses the shared team energy. */
@@ -1357,6 +1357,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   // The Father: "Let there be light" (Genesis 1:3) and "the LORD is a shield for me" (Psalm 3:3)
   letThereBeLight: { id: "letThereBeLight", owner: "father", kind: "faith", cost: 2 },
   lordMyShield: { id: "lordMyShield", owner: "father", kind: "guard", cost: 1 },
+  manOfWar: { id: "manOfWar", owner: "father", kind: "attack", cost: 3, damage: 100 },
   // The Holy Spirit descends like a dove (Matthew 3:16) and is the Comforter (John 14:26)
   likeADove: { id: "likeADove", owner: "holySpirit", kind: "faith", cost: 1 },
   comforter: { id: "comforter", owner: "holySpirit", kind: "guard", cost: 2 },
@@ -1589,7 +1590,7 @@ const BASE_CHARACTER_SKILLS: Record<BaseCharacterId, SkillId[]> = {
   bearerP: ["shieldUp", "bash"],
   goliathP: ["spearThrust", "taunt"],
   serpentP: ["venom", "beguile"],
-  father: ["letThereBeLight", "lordMyShield"],
+  father: ["manOfWar", "letThereBeLight", "lordMyShield"],
   holySpirit: ["likeADove", "comforter"],
   gabriel: ["heraldNews", "fearNot"],
   michael: ["whoIsLikeGod", "heavenlyHost"],
