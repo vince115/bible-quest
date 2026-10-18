@@ -1,12 +1,12 @@
 // The site's buttons, in one look (antique gold): the main action in a gold fill with dark ink; an important step that
-// ends something (End turn) in a wine fill with a gold line and gold lettering; everything else in a soft gold wash with
+// ends something (End turn) in a flat wine fill with ivory lettering; everything else in a soft gold wash with
 // no line. Chips that pick one of a set (tabs, filters) use the main look when chosen and the other look when not.
 export type ButtonKind = "primary" | "important" | "secondary";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const KIND: Record<ButtonKind, string> = {
   primary: "bg-[#d4b35f] font-semibold text-[#2b1d07] shadow-md enabled:hover:bg-[#e0c272] [&:is(a)]:hover:bg-[#e0c272]",
-  important: "border border-[#d4b35f] bg-[#7a2230] font-semibold text-[#f2d27a] shadow-md enabled:hover:bg-[#8c2a39] [&:is(a)]:hover:bg-[#8c2a39]",
+  important: "bg-[#7a2230] font-semibold text-[#f6e9cc] shadow-md enabled:hover:bg-[#8c2a39] [&:is(a)]:hover:bg-[#8c2a39]",
   secondary: "bg-[#d4b35f]/15 text-[#efe2bd] enabled:hover:bg-[#d4b35f]/25 [&:is(a)]:hover:bg-[#d4b35f]/25",
 };
 
