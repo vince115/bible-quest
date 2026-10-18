@@ -1013,6 +1013,16 @@ describe("Jesus", () => {
     expect(s.party.jesus.hp).toBe(MAX_HP.jesus - R.swing);
   });
 
+  it("the risen Jesus outlasts the other Jesus cards and strikes with all power", () => {
+    expect(MAX_HP.jesus).toBeGreaterThan(Math.max(MAX_HP.jesusUR, MAX_HP.jesusCross));
+    const s0 = createBattle(seeded(), ["jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 3, guard: 0 };
+    expect(skillTargetKind("allPower")).toBe("enemy");
+    const s = castSkill(s0, "allPower", "archer");
+    expect(s.enemies.archer.hp).toBe(Math.max(0, ENEMY_HP.archer - skillDamage(s0, "allPower", "archer")));
+  });
+
   it("the risen Jesus gives peace to one ally, and is with them alway once per battle", () => {
     const s0 = createBattle(seeded(), ["jesus", "david"]);
     s0.hand = [];
