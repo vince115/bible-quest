@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ENEMY_HP, MAX_HP, RULES_V2 as R, personOf } from "./data";
-import { castSkill, createBattle, endTurn, resolveGoliath, skillBlockReason, skillDamage, skillTargets, startNextTurn } from "./engine";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R, personOf, tableKind } from "./data";
+import { castSkill, createBattle, endTurn, resolveGoliath, skillBlockReason, skillDamage, skillTargetKind, skillTargets, startNextTurn } from "./engine";
 import type { BattleState, CharacterId } from "./types";
 
 /** Damage is shown in steps of 10. */
@@ -978,19 +978,62 @@ describe("John the Baptist", () => {
   });
 });
 
-describe("Jesus", () => {
-  it("the special card never falls: never targeted, never hurt, and not counted for defeat", () => {
-    let s = createBattle(seeded(), ["jesus", "david"]);
+describe("The LORD", () => {
+  it("never falls: never targeted, never hurt, and not counted for defeat", () => {
+    let s = createBattle(seeded(), ["father", "david"]);
     s.archerTarget = null;
     s.intents[0] = { action: "swing", targets: [] };
     s = resolveGoliath(s, seeded());
-    expect(s.party.jesus.hp).toBe(MAX_HP.jesus);
+    expect(s.party.father.hp).toBe(MAX_HP.father);
     expect(s.party.david.hp).toBe(MAX_HP.david - R.swing);
-    for (let i = 0; i < 20; i++) expect(s.intents.flatMap((x) => x.targets)).not.toContain("jesus");
+    for (let i = 0; i < 20; i++) expect(s.intents.flatMap((x) => x.targets)).not.toContain("father");
     s.party.david.hp = 0;
     s.intents[0] = { action: "swing", targets: [] };
     s = resolveGoliath(s, seeded());
     expect(s.result).toBe("defeat");
+  });
+
+  it("alone, cannot be beaten", () => {
+    let s = createBattle(seeded(), ["father"]);
+    s.archerTarget = null;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.result).toBe("ongoing");
+    expect(s.party.father.hp).toBe(MAX_HP.father);
+  });
+
+  it("strikes as a man of war", () => {
+    const s0 = createBattle(seeded(), ["father", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 3, guard: 0 };
+    expect(skillTargetKind("manOfWar")).toBe("enemy");
+    const s = castSkill(s0, "manOfWar", "archer");
+    expect(skillDamage(s0, "manOfWar", "archer")).toBeGreaterThanOrEqual(150);
+    expect(s.enemies.archer.hp).toBe(Math.max(0, ENEMY_HP.archer - skillDamage(s0, "manOfWar", "archer")));
+  });
+});
+
+describe("Jesus", () => {
+  it("can be hurt like any other card", () => {
+    let s = createBattle(seeded(), ["jesus", "david"]);
+    s.archerTarget = null;
+    s.intents[0] = { action: "swing", targets: [] };
+    s = resolveGoliath(s, seeded());
+    expect(s.party.jesus.hp).toBe(MAX_HP.jesus - R.swing);
+  });
+
+  it("the loaves are paid in green on the table, the colour of healing", () => {
+    expect(tableKind("loaves")).toBe("guard");
+  });
+
+  it("the risen Jesus outlasts the other Jesus cards and strikes with all power", () => {
+    expect(MAX_HP.jesus).toBeGreaterThan(Math.max(MAX_HP.jesusUR, MAX_HP.jesusCross));
+    const s0 = createBattle(seeded(), ["jesus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 3, guard: 0 };
+    expect(skillTargetKind("allPower")).toBe("enemy");
+    const s = castSkill(s0, "allPower", "archer");
+    expect(s.enemies.archer.hp).toBe(Math.max(0, ENEMY_HP.archer - skillDamage(s0, "allPower", "archer")));
   });
 
   it("the risen Jesus gives peace to one ally, and is with them alway once per battle", () => {

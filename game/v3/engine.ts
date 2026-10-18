@@ -54,6 +54,8 @@ export interface Board {
   draws: number;
   /** The reinforcements that joined the enemy's front row (they stay on the board when they fall). */
   aides: EnemyId[];
+  /** A lone champion chose to duel the boss: the guard and shooter stand aside. A lone champion may also face them all. */
+  duel?: boolean;
 }
 
 /** How many reinforcements a party of `n` meets: one for each ally past three, up to two. */
@@ -93,7 +95,7 @@ export const frontLiving = (b: Board) => frontRow(b).filter((id) => isAlive(b.ba
 export const leader = (b: Board): CharacterId => [...frontRow(b), ...backRow(b)].find((id) => isAlive(b.battle, id)) ?? b.lineup[0];
 
 /** One character against the boss alone. */
-export const isDuel = (b: Board) => b.lineup.length === 1;
+export const isDuel = (b: Board) => b.lineup.length === 1 && b.duel !== false;
 
 /** The order empty places are filled in: the middle of the front row first, then its sides, then the back row the same way. */
 const FILL_ORDER = [1, 0, 2, 4, 3, 5];
@@ -120,13 +122,15 @@ export function arrange(lineup: CharacterId[], placement: readonly (CharacterId 
 
 /** How a board plays its energy: the free digital rules by default, or the tabletop rules (cards stuck under characters). */
 /** foes: free mode's own guard and shooter (see BattleState.foes). */
-export function createBoard(lineup: CharacterId[], placement?: readonly (CharacterId | null)[], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode, foes?: BattleState["foes"]): Board {
+/** allFoes: a lone champion faces the whole enemy side instead of dueling the boss. */
+export function createBoard(lineup: CharacterId[], placement?: readonly (CharacterId | null)[], rng: Rng = Math.random, stage: StageId = "goliath", mode?: PoolMode, foes?: BattleState["foes"], allFoes = false): Board {
   const chosen = inPartyOrder(lineup.filter((id) => PARTY_ORDER.includes(baseCharacter(id)))).slice(0, MAX_LINEUP);
   if (!chosen.length) throw new Error("line-up needs at least one character");
   const battle = createBattle(rng, chosen, stage, 0, mode ?? (PERSONAL_POOL_STAGES.includes(stage) ? "personal" : "team"), foes);
   battle.rows = true;
   const minions = [guardOf(battle), shooterOf(battle)].filter((e) => e !== undefined);
-  if (chosen.length === 1 && minions.length) {
+  const duel = chosen.length === 1 && !allFoes;
+  if (duel && minions.length) {
     for (const e of minions) battle.enemies[e].hp = 0;
     battle.archerTarget = null;
     log(battle, "v3.log.duel", { char: chosen[0] });
@@ -139,7 +143,7 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
   for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
   // ...and a boss who hits harder for each ally past three.
   battle.bossBoost = (battle.bossBoost ?? 0) + R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
-  const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides };
+  const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides, duel };
   return aim(board, rng);
 }
 
@@ -149,7 +153,7 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
  * rest of the battle starts fresh (Shields, energy stuck under a character, once-a-battle skills and the turn count).
  */
 export function nextRoundBoard(prev: Board, stage: StageId, rng: Rng = Math.random): Board {
-  const next = createBoard(prev.lineup, prev.slots, rng, stage, prev.battle.pools);
+  const next = createBoard(prev.lineup, prev.slots, rng, stage, prev.battle.pools, undefined, prev.duel === false);
   for (const id of prev.lineup) next.battle.party[id].hp = prev.battle.party[id].hp;
   next.battle.deck = prev.battle.deck;
   next.battle.hand = prev.battle.hand;

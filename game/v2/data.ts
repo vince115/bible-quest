@@ -903,7 +903,7 @@ export const PERSON: Partial<Record<CharacterId, CharacterId>> = { mosesSinai: "
 export const APOSTLES: ReadonlySet<CharacterId> = new Set(["peter", "andrew", "jamesZeb", "johnApostle", "johnPatmos", "philipApostle", "nathanael", "thomas", "matthew", "jamesAlph", "thaddaeus", "simonZealot", "judas", "matthias"]);
 
 /** Cards that never fall: never targeted, never hurt, and not counted when deciding defeat. */
-export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["jesus"]);
+export const NEVER_FALLS: ReadonlySet<CharacterId> = new Set(["father"]);
 export const personOf = (id: CharacterId): CharacterId => PERSON[id] ?? id;
 
 /** Stages played with each character's own MP and SP (every campaign stage); a battle created without a stage mode still uses the shared team energy. */
@@ -974,7 +974,7 @@ const BASE_HP: Record<BaseEnemyId, number> = {
 };
 export const ENEMY_HP: Record<EnemyId, number> = { ...BASE_HP, ...Object.fromEntries(ALL_AIDES.map((a) => [a, BASE_HP[baseEnemy(a)] * RULES_V2.aideHpMult])) } as Record<EnemyId, number>;
 
-const BASE_MAX_HP: Record<BaseCharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 220, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 260, satan: 300 };
+const BASE_MAX_HP: Record<BaseCharacterId, number> = { david: 190, samuel: 120, jonathan: 180, adam: 220, eve: 190, cain: 140, abel: 140, seth: 120, noah: 230, abraham: 220, isaac: 120, jacob: 220, joseph: 270, moses: 280, aaron: 220, miriam: 120, mosesSinai: 220, joshua: 230, rahab: 120, deborah: 180, gideon: 190, samson: 250, ruth: 140, naomi: 100, boaz: 170, hannah: 120, saul: 250, abigail: 120, solomon: 280, elijah: 190, elisha: 190, jonah: 130, isaiah: 180, esther: 240, daniel: 220, nehemiah: 170, zechariah: 120, mary: 240, josephNaz: 170, johnBaptist: 190, jesus: 360, jesusUR: 330, peter: 230, andrew: 130, johnApostle: 180, matthew: 130, jamesZeb: 140, thomas: 130, maryMagdalene: 180, martha: 140, zacchaeus: 100, maryBethany: 120, lazarus: 140, stephen: 130, philip: 130, paul: 280, barnabas: 140, silas: 130, timothy: 120, lydia: 130, priscilla: 130, eli: 100, aquila: 120, dorcas: 100, cornelius: 180, apollos: 130, phoebe: 100, luke: 130, johnMark: 100, titus: 120, philemon: 120, onesimus: 80, nicodemus: 130, samaritan: 100, simeon: 120, anna: 100, loavesBoy: 70, judas: 120, philipApostle: 130, nathanael: 130, jamesAlph: 120, thaddaeus: 120, simonZealot: 120, matthias: 120, elizabeth: 100, mordecai: 170, sarah: 130, rebekah: 130, rachel: 120, barak: 170, jael: 120, josephArimathea: 130, ananias: 100, threeFriends: 190, job: 250, enoch: 130, melchizedek: 190, caleb: 180, jeremiah: 180, ezekiel: 190, ezra: 130, nathan: 130, hezekiah: 140, josiah: 140, magi: 190, shepherds: 140, bartimaeus: 100, centurion: 170, jairus: 120, simonCyrene: 140, thief: 100, jamesJust: 140, mockingThief: 80, jesusCross: 270, widow: 70, fisherman: 80, fourFriends: 140, goodSamaritan: 140, zarephath: 100, shunammite: 100, naaman: 180, maid: 60, bathsheba: 130, mephibosheth: 100, sheba: 130, leah: 120, esau: 180, hagar: 140, lot: 120, jochebed: 100, pharaohDaughter: 100, jethro: 140, zipporah: 100, loisEunice: 120, balaam: 120, pharaoh: 180, charioteer: 100, jezebel: 130, baalProphet: 80, haman: 140, delilah: 120, nebuchadnezzar: 180, ahab: 170, absalom: 140, sapphira: 100, pilate: 170, caiaphas: 140, herod: 140, barabbas: 100, herodias: 130, romanSoldier: 110, romanSpearman: 100, romanArcher: 80, romanCavalry: 120, romanCenturion: 180, sennacherib: 190, belshazzar: 140, korah: 170, achan: 100, sisera: 180, herodGreat: 170, legionFreed: 140, prodigal: 100, ethiopian: 120, johnPatmos: 190, ehud: 140, jephthah: 170, joab: 180, uriah: 140, cyrus: 170, zerubbabel: 170, vashti: 120, michal: 100, gehazi: 80, jehu: 180, canaanite: 100, richRuler: 120, cleopas: 120, malchus: 100, jailer: 120, rhoda: 100, simonMagus: 120, herodAgrippa: 170, archerP: 60, bearerP: 100, goliathP: 250, serpentP: 160, father: 330, holySpirit: 300, gabriel: 180, michael: 240, satanDisguised: 260, satan: 300 };
 export const MAX_HP: Record<CharacterId, number> = withCopies(BASE_MAX_HP);
 
 export const SKILLS: Record<SkillId, SkillDef> = {
@@ -1061,6 +1061,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   baptism: { id: "baptism", owner: "johnBaptist", kind: "guard", cost: 2 },
   peaceBeUnto: { id: "peaceBeUnto", owner: "jesus", kind: "guard", cost: 1 },
   withYouAlway: { id: "withYouAlway", owner: "jesus", kind: "guard", cost: 2 },
+  allPower: { id: "allPower", owner: "jesus", kind: "attack", cost: 3, damage: 100 },
   comeOut: { id: "comeOut", owner: "jesusUR", kind: "attack", cost: 2, damage: 70 },
   greatFlood: { id: "greatFlood", owner: "noah", kind: "attack", cost: 2, damage: 50 },
   walkOnWater: { id: "walkOnWater", owner: "jesusUR", kind: "faith", cost: 2 },
@@ -1357,6 +1358,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   // The Father: "Let there be light" (Genesis 1:3) and "the LORD is a shield for me" (Psalm 3:3)
   letThereBeLight: { id: "letThereBeLight", owner: "father", kind: "faith", cost: 2 },
   lordMyShield: { id: "lordMyShield", owner: "father", kind: "guard", cost: 1 },
+  manOfWar: { id: "manOfWar", owner: "father", kind: "attack", cost: 3, damage: 150 },
   // The Holy Spirit descends like a dove (Matthew 3:16) and is the Comforter (John 14:26)
   likeADove: { id: "likeADove", owner: "holySpirit", kind: "faith", cost: 1 },
   comforter: { id: "comforter", owner: "holySpirit", kind: "guard", cost: 2 },
@@ -1399,7 +1401,10 @@ const TABLE_BLUE = new Set<SkillId>([
   "letThereBeLight", "likeADove", "heraldNews", "angelOfLight", "heavenlyHost", "roaringLion",
 ]);
 /** A skill's kind in the tabletop rules (decides which colour of energy card pays for it). */
-export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" => (TABLE_BLUE.has(skill) ? "faith" : SKILLS[skill].kind);
+/** Faith skills the tabletop rules pay in green instead, because what they do is heal: the loaves feed the whole team. */
+const TABLE_GREEN = new Set<SkillId>(["loaves"]);
+export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" =>
+  TABLE_BLUE.has(skill) ? "faith" : TABLE_GREEN.has(skill) ? "guard" : SKILLS[skill].kind;
 
 const BASE_CHARACTER_SKILLS: Record<BaseCharacterId, SkillId[]> = {
   david: ["sling", "slingStone"],
@@ -1441,7 +1446,7 @@ const BASE_CHARACTER_SKILLS: Record<BaseCharacterId, SkillId[]> = {
   mary: ["handmaid", "magnificat"],
   josephNaz: ["carpenter", "dreamWarning"],
   johnBaptist: ["axe", "baptism"],
-  jesus: ["peaceBeUnto", "withYouAlway"],
+  jesus: ["allPower", "peaceBeUnto", "withYouAlway"],
   jesusUR: ["comeOut", "walkOnWater", "loaves"],
   peter: ["greatCatch", "drawSword"],
   andrew: ["comeAndSee", "aLadHere"],
@@ -1589,7 +1594,7 @@ const BASE_CHARACTER_SKILLS: Record<BaseCharacterId, SkillId[]> = {
   bearerP: ["shieldUp", "bash"],
   goliathP: ["spearThrust", "taunt"],
   serpentP: ["venom", "beguile"],
-  father: ["letThereBeLight", "lordMyShield"],
+  father: ["manOfWar", "letThereBeLight", "lordMyShield"],
   holySpirit: ["likeADove", "comforter"],
   gabriel: ["heraldNews", "fearNot"],
   michael: ["whoIsLikeGod", "heavenlyHost"],
