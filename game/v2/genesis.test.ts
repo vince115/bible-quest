@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENEMY_HP, MAX_HP, RULES_V2 as R, personOf } from "./data";
+import { ENEMY_HP, MAX_HP, RULES_V2 as R, personOf, tableKind } from "./data";
 import { castSkill, createBattle, endTurn, resolveGoliath, skillBlockReason, skillDamage, skillTargetKind, skillTargets, startNextTurn } from "./engine";
 import type { BattleState, CharacterId } from "./types";
 
@@ -1011,6 +1011,10 @@ describe("Jesus", () => {
     s.intents[0] = { action: "swing", targets: [] };
     s = resolveGoliath(s, seeded());
     expect(s.party.jesus.hp).toBe(MAX_HP.jesus - R.swing);
+  });
+
+  it("the loaves are paid in green on the table, the colour of healing", () => {
+    expect(tableKind("loaves")).toBe("guard");
   });
 
   it("the risen Jesus outlasts the other Jesus cards and strikes with all power", () => {

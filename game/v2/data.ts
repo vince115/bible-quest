@@ -1401,7 +1401,10 @@ const TABLE_BLUE = new Set<SkillId>([
   "letThereBeLight", "likeADove", "heraldNews", "angelOfLight", "heavenlyHost", "roaringLion",
 ]);
 /** A skill's kind in the tabletop rules (decides which colour of energy card pays for it). */
-export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" => (TABLE_BLUE.has(skill) ? "faith" : SKILLS[skill].kind);
+/** Faith skills the tabletop rules pay in green instead, because what they do is heal: the loaves feed the whole team. */
+const TABLE_GREEN = new Set<SkillId>(["loaves"]);
+export const tableKind = (skill: SkillId): "attack" | "guard" | "faith" =>
+  TABLE_BLUE.has(skill) ? "faith" : TABLE_GREEN.has(skill) ? "guard" : SKILLS[skill].kind;
 
 const BASE_CHARACTER_SKILLS: Record<BaseCharacterId, SkillId[]> = {
   david: ["sling", "slingStone"],
