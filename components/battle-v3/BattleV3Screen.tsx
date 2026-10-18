@@ -978,7 +978,7 @@ function FoePicker({ t, foes, onChange, onAuto }: { t: T; foes: FoeSetup; onChan
  * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
  * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
  */
-function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode, foes?: BattleState["foes"]) => void; campaign?: CampaignStage }) {
+function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode, foes?: BattleState["foes"], allFoes?: boolean) => void; campaign?: CampaignStage }) {
   const last = useBattleV3Store((st) => st.lastLineup);
   const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
   const [stage, setStage] = useState<StageId>(campaign?.battle ?? last.stage ?? "goliath");
@@ -1295,13 +1295,24 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
 
       {chosen.length > 0 && <FormationPicker t={t} slots={slots} picked={picked} onPlace={place} onAuto={() => (setPlacement(arrange(chosen)), setPicked(null))} />}
 
-      <button
-        onClick={() => onStart(chosen, slots, stage, mode, campaign || isStageOwn(foes) ? undefined : { guard: foes.guard, shooter: foes.shooter })}
-        disabled={!chosen.length}
-        className={button("primary", "lg")}
-      >
-        {chosen.length === 1 ? t("v3.lineup.startSolo") : chosen.length ? t("v3.lineup.start") : t("v3.lineup.need")}
-      </button>
+      {/* One character may duel the boss alone, or face the whole enemy side. */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          onClick={() => onStart(chosen, slots, stage, mode, campaign || isStageOwn(foes) ? undefined : { guard: foes.guard, shooter: foes.shooter })}
+          disabled={!chosen.length}
+          className={button("primary", "lg")}
+        >
+          {chosen.length === 1 ? t("v3.lineup.startSolo") : chosen.length ? t("v3.lineup.start") : t("v3.lineup.need")}
+        </button>
+        {chosen.length === 1 && (
+          <button
+            onClick={() => onStart(chosen, slots, stage, mode, campaign || isStageOwn(foes) ? undefined : { guard: foes.guard, shooter: foes.shooter }, true)}
+            className={button("secondary", "lg")}
+          >
+            {t("v3.lineup.startAll")}
+          </button>
+        )}
+      </div>
 
       {/* Achievements, one compact line each (details on hover) */}
       {!campaign && (
@@ -1937,7 +1948,7 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
           title={interlude && b.result === "victory" ? t("v3.round.cleared") : b.result === "victory" ? t("v2.ui.victory") : t("v2.ui.defeat")}
           eyebrow={t(`v3.campaign.${resultStage.id}.name`)}
           hint={interlude && b.result === "victory" ? t(`v3.round.${resultStage.id}.hint`) : canHell ? t(`v3.round.${resultStage.id}.hellHint`) : inHell && b.result === "defeat" ? t(`v3.round.${resultStage.id}.hellLost`) : undefined}
-          facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(board.lineup.length === 1 ? [t("v3.lineup.solo")] : [])]}
+          facts={[t("v2.ui.resultTurns", { n: b.turn }), ...(isDuel(board) ? [t("v3.lineup.solo")] : [])]}
           art={resultStage.art}
           artFocus={resultStage.artFocus}
           sections={!!drop || newAchievements.length > 0}

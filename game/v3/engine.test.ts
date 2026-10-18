@@ -14,7 +14,9 @@ import {
   drawOnBoard,
   endBoardTurn,
   frontRow,
+  isDuel,
   moveTo,
+  nextRoundBoard,
   playCardOnBoard,
   resolveBoard,
   type Board,
@@ -102,6 +104,16 @@ describe("line-up", () => {
     const team = createBoard(["david", "jonathan"], undefined, seeded());
     expect(team.battle.enemies.bearer.hp).toBeGreaterThan(0);
     expect(team.battle.enemies.archer.hp).toBeGreaterThan(0);
+  });
+
+  it("a lone champion may instead face every enemy, and keeps that choice into the next round", () => {
+    const all = createBoard(["david"], undefined, seeded(), "goliath", "table", undefined, true);
+    expect(all.battle.enemies.bearer.hp).toBeGreaterThan(0);
+    expect(all.battle.enemies.archer.hp).toBeGreaterThan(0);
+    expect(isDuel(all)).toBe(false);
+    expect(isDuel(createBoard(["david"], undefined, seeded()))).toBe(true);
+    all.battle.result = "victory";
+    expect(isDuel(nextRoundBoard(all, "goliath", seeded()))).toBe(false);
   });
 
   it("Arise can't bring in someone who stayed behind", () => {
