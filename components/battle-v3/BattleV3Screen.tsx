@@ -37,7 +37,7 @@ import { MAX_LINEUP, ROW, SLOTS, arrange, boardBlockReason, boardSkillTargets, c
 import { savedSpeed, useBattleV3Store } from "@/game/v3/store";
 import { COPY_LIMIT } from "@/game/v3/gacha";
 import { CAMPAIGN, CAMPAIGN_IDS, STAGE_ART, campaignStage, isUnlocked, nextStage, stageBgm, stageOfBattle, type CampaignStage, type CampaignStageId } from "@/game/v3/campaign";
-import { freeModePool, useProgressStore } from "@/game/v3/progress";
+import { freeModePool, ownedPool, useProgressStore } from "@/game/v3/progress";
 import { BOSSES, GUARDS, SHOOTERS, autoFoes, isStageOwn, stageFoes, stageOfBoss, type FoeSetup } from "@/game/v3/foes";
 import { safeStorage, useT } from "@/game/locale";
 import { CharacterCardFace, figureArea } from "@/components/cards/CharacterCardFace";
@@ -975,10 +975,12 @@ function FoePicker({ t, foes, onChange, onAuto }: { t: T; foes: FoeSetup; onChan
 }
 
 /**
- * Before battle: bring 1–3 characters and choose who starts on the front line. In the campaign the stage lends its own
- * pool of cards and fixes the battle; free mode offers every card and a choice of stage.
+ * Before battle: bring 1–6 characters and choose who starts on the front line. In the campaign the stage lends its own
+ * pool of cards and fixes the battle. Outside it there is a choice of stage, and the cards are either the player's own
+ * (the own-cards challenge: up to as many copies of a card as they own, at most COPY_LIMIT) or, in free pick (VIPs and
+ * developers), every card in the game, one of each.
  */
-function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode, foes?: BattleState["foes"], allFoes?: boolean) => void; campaign?: CampaignStage }) {
+function LineupPicker({ t, onStart, campaign, freePick = false }: { t: T; onStart: (lineup: CharacterId[], slots: Slots, stage: StageId, mode: PoolMode, foes?: BattleState["foes"], allFoes?: boolean) => void; campaign?: CampaignStage; freePick?: boolean }) {
   const last = useBattleV3Store((st) => st.lastLineup);
   const [mode, setMode] = useState<PoolMode>(!MAGIC_VERSION_ENABLED ? "table" : last.mode === "team" ? "personal" : last.mode);
   const [stage, setStage] = useState<StageId>(campaign?.battle ?? last.stage ?? "goliath");
@@ -995,12 +997,15 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const unlocked = useAchievementStore((st) => st.unlocked);
-  const pool = campaign?.pool ?? freeModePool(PARTY_ORDER);
-  // The collection, for how many copies of a card free mode may bring; read from this browser after mount.
+  // The collection, for which cards (and how many copies) the own-cards challenge offers; read from this browser after mount.
   const collection = useProgressStore((st) => st.collection);
+  const [loaded, setLoaded] = useState(!!campaign || freePick);
   useEffect(() => {
-    if (!campaign) void useProgressStore.persist.rehydrate();
-  }, [campaign]);
+    if (!campaign && !freePick) void Promise.resolve(useProgressStore.persist.rehydrate()).then(() => setLoaded(true));
+  }, [campaign, freePick]);
+  const pool = campaign?.pool ?? (freePick ? freeModePool(PARTY_ORDER) : ownedPool(collection, PARTY_ORDER));
+  /** One copy of each card in a stage and in free pick; the own-cards challenge may bring copies. */
+  const copies = !campaign && !freePick;
   const max = campaign?.pick ?? MAX_LINEUP;
   const q = query.trim().toLowerCase();
   const matching = q ? pool.filter((id) => characterSearchText(id).includes(q)) : pool;
@@ -1010,16 +1015,13 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
     const kept = last.lineup.filter((id) => pool.includes(baseCharacter(id)));
     return kept.length ? kept : campaign ? pool.slice(0, max) : last.lineup;
   });
-  // A line-up drawn from the pool, in print order; free mode may bring copies of a card (see mayBring), a stage never does.
-  const inPool = (ids: CharacterId[]) => inPartyOrder(ids.filter((id) => pool.includes(baseCharacter(id)) && (!campaign || copyNumber(id) === 1)));
+  // A line-up drawn from the pool, in print order; the own-cards challenge may bring copies of a card (see mayBring).
+  const inPool = (ids: CharacterId[]) => inPartyOrder(ids.filter((id) => pool.includes(baseCharacter(id)) && (copies || copyNumber(id) === 1)));
   const chosen = inPool(lineup);
   /** How many copies of a card are in the line-up. */
   const copiesIn = (card: CharacterId) => chosen.filter((x) => baseCharacter(x) === card).length;
-  /**
-   * How many copies of a card may go to battle: one in a stage; in free mode (which offers every card, owned or not) as
-   * many as the collection holds, at least one and up to COPY_LIMIT.
-   */
-  const mayBring = (card: CharacterId) => (campaign ? 1 : Math.max(1, Math.min(COPY_LIMIT, collection[baseCharacter(card)] ?? 0)));
+  /** How many copies of a card may go to battle: in the own-cards challenge as many as the collection holds, up to COPY_LIMIT; otherwise one. */
+  const mayBring = (card: CharacterId) => (copies ? Math.max(1, Math.min(COPY_LIMIT, collection[baseCharacter(card)] ?? 0)) : 1);
   // Where everyone stands: the last formation as far as it still fits, newcomers arranged into the empty places.
   const [placement, setPlacement] = useState<Slots>(() => arrange(chosen, last.slots));
   const slots = arrange(chosen, placement);
@@ -1243,7 +1245,9 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
         </div>
         {/* Laid out in a wrapping grid, as in the card demo. */}
         <div className="grid w-full max-w-7xl grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-x-4 gap-y-6 px-2 py-4">
-          {shownPool.length === 0 && <p className="col-span-full py-8 text-sm text-stone-400">{t("v3.demo.noMatch")}</p>}
+          {shownPool.length === 0 && loaded && (
+            <p className="col-span-full py-8 text-sm text-stone-400">{pool.length ? t("v3.demo.noMatch") : t("v3.lineup.noCards")}</p>
+          )}
           {shownPool.map((id) => {
             const on = copiesIn(id) > 0;
             return (
@@ -1337,10 +1341,12 @@ function LineupPicker({ t, onStart, campaign }: { t: T; onStart: (lineup: Charac
   );
 }
 
-export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
+/** freePick: every card in the game, one of each (VIPs and developers); otherwise outside the campaign, the player's own cards. */
+export function BattleV3Screen({ campaign, freePick = false }: { campaign?: CampaignStageId; freePick?: boolean }) {
   const t = useT();
   const { board, resolving, auto, setAuto, start, restart, pickLineup, play, playAll, draw, drawAll, cast, basic, move, endTurn, newAchievements, drop, dropPoints, enter, interlude, nextRound, hellRound, autoSpeed, setAutoSpeed } = useBattleV3Store();
   const inCampaign = useBattleV3Store((st) => st.campaign);
+  const inFreePick = useBattleV3Store((st) => st.freePick);
   const cleared = useProgressStore((st) => st.cleared);
   const stage = campaign ? campaignStage(campaign) : undefined;
   const b = board?.battle;
@@ -1400,8 +1406,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
   }, [bgmTrack]);
   // Entering a campaign stage (or free mode) starts from its line-up; coming back to the same one keeps the battle.
   useEffect(() => {
-    enter(campaign ?? null);
-  }, [campaign, enter]);
+    enter(campaign ?? null, freePick);
+  }, [campaign, freePick, enter]);
   // Esc closes whatever is open: the enlarged card, the action panel, or targeting.
   useEffect(() => {
     const close = (e: KeyboardEvent) => {
@@ -1420,8 +1426,8 @@ export function BattleV3Screen({ campaign }: { campaign?: CampaignStageId }) {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [b?.log.length, showLog]);
 
-  if (inCampaign !== (campaign ?? null)) return null; // until enter() has switched
-  if (!board || !b) return <LineupPicker t={t} onStart={start} campaign={stage} />;
+  if (inCampaign !== (campaign ?? null) || inFreePick !== freePick) return null; // until enter() has switched
+  if (!board || !b) return <LineupPicker t={t} onStart={start} campaign={stage} freePick={freePick} />;
 
   const locked = resolving || auto || b.result !== "ongoing";
   const open = acting && board.lineup.includes(acting) && !pending ? acting : null;
