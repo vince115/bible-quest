@@ -3,7 +3,7 @@
 // The site around every page that is not a battle: a top bar (menu button, where you are, blessing points, sound and
 // language) and a left menu: a narrow icon rail that opens to labels on a desktop, a drawer that slides in on a phone.
 // Styling is kept plain and in this file, so the look can be redone without touching what the pages do.
-import { BookOpen, Gift, Home, LayoutGrid, Library, Menu, PanelLeftClose, PanelLeftOpen, Swords, X } from "lucide-react";
+import { BookOpen, Crown, Gift, Home, LayoutGrid, Library, Menu, PanelLeftClose, PanelLeftOpen, Swords, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -11,6 +11,7 @@ import { AudioToggle } from "@/components/AudioToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { safeStorage, useT } from "@/game/locale";
 import { useProgressStore } from "@/game/v3/progress";
+import { FREE_PICK_ENABLED } from "@/game/v3/vip";
 import { PageBackground } from "./PageBackground";
 
 const COLLAPSED_KEY = "bq-nav-collapsed";
@@ -42,6 +43,8 @@ const ITEMS: Item[] = [
   { href: "/collection", label: "nav.collection", icon: Library, match: "/collection" },
   { href: "/gacha", label: "nav.gacha", icon: Gift, match: "/gacha" },
   { href: "/battle-v3", label: "nav.free", icon: Swords, match: "/battle-v3" },
+  // Free pick: every card, one of each, for VIPs and developers only.
+  ...(FREE_PICK_ENABLED ? [{ href: "/free-pick", label: "nav.freePick", icon: Crown, match: "/free-pick" }] : []),
   { href: "/card-demo", label: "nav.cards", icon: LayoutGrid, match: "/card-demo" },
 ];
 

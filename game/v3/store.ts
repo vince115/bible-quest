@@ -50,7 +50,10 @@ interface BattleV3Store {
   /** After the stage is cleared: takes on its hell level with the same party (and the HP it has left). */
   hellRound: () => void;
   /** Switches to a campaign stage (or free mode), back at the line-up when it is a different one. */
-  enter: (campaign: CampaignStageId | null) => void;
+  /** Which kind of battle the screen holds: a campaign stage, or (null) the own-cards challenge, or free pick. */
+  enter: (campaign: CampaignStageId | null, freePick?: boolean) => void;
+  /** Free pick (every card, one of each) rather than the own-cards challenge; only when campaign is null. */
+  freePick: boolean;
   /** foes: free mode's own guard and shooter (left out: the stage's own). */
   /** allFoes: one character faces the whole enemy side instead of dueling the boss. */
   start: (lineup: CharacterId[], slots: Slots, stage: StageId, mode?: PoolMode, foes?: BattleState["foes"], allFoes?: boolean) => void;
@@ -143,12 +146,13 @@ export const useBattleV3Store = create<BattleV3Store>((set, get) => {
     runId: 0,
     newAchievements: [],
     campaign: null,
+    freePick: false,
     drop: null,
     dropPoints: 0,
     interlude: null,
-    enter: (campaign) => {
-      if (get().campaign === campaign) return;
-      set((st) => ({ campaign, board: null, drop: null, interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
+    enter: (campaign, freePick = false) => {
+      if (get().campaign === campaign && get().freePick === freePick) return;
+      set((st) => ({ campaign, freePick, board: null, drop: null, interlude: null, resolving: false, auto: false, runId: st.runId + 1, newAchievements: [] }));
     },
     start: (lineup, slots, stage, mode, foes, allFoes) =>
       set((st) => {

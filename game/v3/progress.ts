@@ -117,5 +117,9 @@ export const useProgressStore = create<ProgressStore>()(
 export const ownedCards = (collection: ProgressStore["collection"], order: readonly CharacterId[]) =>
   order.filter((id) => (collection[id] ?? 0) > 0).map((id) => ({ id, count: collection[id]! }));
 
-/** The cards free mode offers: every card in the game, GR cards included, whether the player owns it or not. */
+/** The cards free pick offers: every card in the game, GR cards included, whether the player owns it or not. */
 export const freeModePool = (order: readonly CharacterId[]): CharacterId[] => [...order];
+
+/** The cards the own-cards challenge offers: only those the player owns. */
+export const ownedPool = (collection: ProgressStore["collection"], order: readonly CharacterId[]): CharacterId[] =>
+  order.filter((id) => (collection[id] ?? 0) > 0);
