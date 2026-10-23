@@ -123,7 +123,7 @@ const BASE_RARITY: Record<BaseCharacterId | BaseEnemyId, Rarity> = {
   malchus: "R",
   jailer: "R",
   rhoda: "R",
-  noahFamily: "R",
+  noahFamily: "SR",
   terah: "R",
   hiramKing: "SR",
   hiramSmith: "R",
