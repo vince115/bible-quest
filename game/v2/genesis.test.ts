@@ -2909,6 +2909,81 @@ describe("Rhoda", () => {
   });
 });
 
+describe("Noah's family and Terah", () => {
+  it("Noah's family shield and heal everyone, more with Noah", () => {
+    const s0 = createBattle(seeded(), ["noahFamily", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(s0, "enteredArk").party.david.shield).toBe(R.familyShield);
+    s0.party.david.hp = 50;
+    expect(castSkill(s0, "fruitful").party.david.hp).toBe(50 + R.fruitfulHeal);
+    const n0 = createBattle(seeded(), ["noahFamily", "noah"]);
+    n0.hand = [];
+    n0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(n0, "enteredArk").party.noah.shield).toBe(R.familyShieldNoah);
+    n0.party.noah.hp = 50;
+    expect(castSkill(n0, "fruitful").party.noah.hp).toBe(50 + R.fruitfulHealNoah);
+  });
+
+  it("Terah sets out from Ur with Abraham, and settles in Haran", () => {
+    const s0 = createBattle(seeded(), ["terah", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(s0, "outOfUr").energy.faith).toBe(1);
+    expect(castSkill(s0, "dweltInHaran").party.terah.shield).toBe(R.haranShield);
+    const a0 = createBattle(seeded(), ["terah", "abraham"]);
+    a0.hand = [];
+    a0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(a0, "outOfUr").energy.faith).toBe(2);
+  });
+});
+
+describe("The two Hirams", () => {
+  it("King Hiram's cedar shields another ally (more with Solomon); his floats draw cards", () => {
+    const s0 = createBattle(seeded(), ["hiramKing", "solomon", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    expect(skillTargets(s0, "cedarTimber")).not.toContain("hiramKing");
+    expect(castSkill(s0, "cedarTimber", "david").party.david.shield).toBe(R.cedarShieldKing);
+    expect(castSkill(s0, "floatsBySea").hand.length).toBe(R.floatsDraw + 1);
+  });
+
+  it("Hiram the bronzeworker's pillars shield everyone; the molten sea heals and steadies", () => {
+    const s0 = createBattle(seeded(), ["hiramSmith", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 2 };
+    expect(castSkill(s0, "jachinBoaz").party.david.shield).toBe(R.pillarShield);
+    s0.party.david.hp = 50;
+    s0.party.david.shaken = true;
+    const m = castSkill(s0, "moltenSea");
+    expect([m.party.david.hp, m.party.david.shaken]).toEqual([50 + R.moltenSeaHeal, false]);
+  });
+});
+
+describe("Artaxerxes and Sanballat", () => {
+  it("the king's letters give more Faith with Nehemiah, and draw a card", () => {
+    const s0 = createBattle(seeded(), ["artaxerxes", "nehemiah"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    const k = castSkill(s0, "kingsLetters");
+    expect([k.energy.faith, k.hand.length]).toEqual([R.lettersFaith + 1, 1]);
+    expect(skillTargetKind("captainsHorsemen")).toBe("enemy");
+  });
+
+  it("Sanballat's conspiracy gives Attack, but Nehemiah brings it to nought", () => {
+    const s0 = createBattle(seeded(), ["sanballat", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(s0, "conspired").energy.attack).toBe(R.conspireAttack);
+    const n0 = createBattle(seeded(), ["sanballat", "nehemiah"]);
+    n0.hand = [];
+    n0.energy = { faith: 0, attack: 0, guard: 1 };
+    const c = castSkill(n0, "conspired");
+    expect([c.energy.attack, c.party.sanballat.shaken]).toEqual([0, true]);
+    expect(skillTargetKind("mocked")).toBe("enemy");
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);
