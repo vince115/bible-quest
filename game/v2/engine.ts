@@ -92,7 +92,7 @@ function log(s: BattleState, key: string, kind: LogEntry["kind"], params?: LogEn
 
 export const isAlive = (s: BattleState, id: CharacterId) => s.party[id].hp > 0;
 /** Jesus is with the team: any of his cards is standing. */
-export const jesusHere = (s: BattleState) => isAlive(s, "jesus") || isAlive(s, "jesusUR") || isAlive(s, "jesusCross");
+export const jesusHere = (s: BattleState) => isAlive(s, "jesus") || isAlive(s, "jesusUR") || isAlive(s, "jesusCross") || isAlive(s, "jesusInfant");
 const living = (s: BattleState) => s.lineup.filter((id) => isAlive(s, id));
 /** Allies the enemy can aim at: everyone standing except cards that never fall. */
 export const targetable = (s: BattleState) => living(s).filter((id) => !NEVER_FALLS.has(id) && !(id === "zacchaeus" && s.inTree));
@@ -767,6 +767,8 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "moltenSea") return R.moltenSeaHeal;
   if (skill === "kingsLetters") return R.lettersFaith;
   if (skill === "conspired") return R.conspireAttack;
+  if (skill === "manger") return 1;
+  if (skill === "immanuel") return R.immanuelHeal;
   if (skill === "blessNotCurse") return R.blessHeal;
   if (skill === "writingOnWall") return 1;
   if (skill === "trulySonOfGod") return 2;
@@ -3430,6 +3432,25 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.conspired", "player", { n: R.conspireAttack });
       }
       break;
+    case "manger":
+      // This shall be a sign unto you; Ye shall find the babe wrapped in swaddling clothes, lying in a manger (Luke 2:12).
+      gainFaith(s, caster, 1);
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      log(s, "v2.log.manger", "player");
+      break;
+    case "immanuel": {
+      // They shall call his name Emmanuel, which being interpreted is, God with us (Matthew 1:23).
+      const family = isAlive(s, "mary") || isAlive(s, "josephNaz");
+      log(s, "v2.log.immanuel", "player", { n: R.immanuelHeal });
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(R.immanuelHeal, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        if (family && !NEVER_FALLS.has(id)) addShield(s, id, R.immanuelShield);
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    }
     case "comeSee":
       // Come, see a man, which told me all things that ever I did (John 4:29).
       gainFaith(s, caster, 1);

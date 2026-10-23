@@ -12,7 +12,7 @@ export type Card = CharacterId | BaseEnemyId;
  */
 export const SAME_PERSON: { cards: Card[]; via?: Partial<Record<Card, string>>; ownSection?: boolean }[] = [
   { cards: ["moses", "mosesSinai"] },
-  { cards: ["jesus", "jesusUR", "jesusCross"], ownSection: true },
+  { cards: ["jesusInfant", "jesus", "jesusUR", "jesusCross"], ownSection: true },
   { cards: ["johnApostle", "johnPatmos"] },
   {
     // That old serpent, called the Devil, and Satan (Revelation 12:9).

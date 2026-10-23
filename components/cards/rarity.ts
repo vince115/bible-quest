@@ -129,6 +129,7 @@ const BASE_RARITY: Record<BaseCharacterId | BaseEnemyId, Rarity> = {
   hiramSmith: "R",
   artaxerxes: "SR",
   sanballat: "R",
+  jesusInfant: "SSR",
   nathan: "SR",
   hezekiah: "SR",
   josiah: "SR",

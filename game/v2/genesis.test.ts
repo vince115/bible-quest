@@ -2984,6 +2984,25 @@ describe("Artaxerxes and Sanballat", () => {
   });
 });
 
+describe("The infant Jesus", () => {
+  it("is Jesus for the line-up; the manger steadies everyone, Immanuel heals (and shields with Mary)", () => {
+    expect(personOf("jesusInfant")).toBe("jesus");
+    const s0 = createBattle(seeded(), ["jesusInfant", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    s0.party.david.shaken = true;
+    const g = castSkill(s0, "manger");
+    expect([g.energy.faith, g.party.david.shaken]).toEqual([3, false]);
+    s0.party.david.hp = 50;
+    const h = castSkill(s0, "immanuel");
+    expect([h.party.david.hp, h.party.david.shield]).toEqual([50 + R.immanuelHeal, 0]);
+    const m0 = createBattle(seeded(), ["jesusInfant", "mary"]);
+    m0.hand = [];
+    m0.energy = { faith: 2, attack: 0, guard: 0 };
+    expect(castSkill(m0, "immanuel").party.mary.shield).toBe(R.immanuelShield);
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);
