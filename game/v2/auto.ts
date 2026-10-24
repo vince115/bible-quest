@@ -257,6 +257,8 @@ export function nextAutoAction(real: BattleState): AutoAction {
   if (!isAlive(s, "nehemiah") && s.energy.attack < 2 && canCast(s, "conspired")) return { type: "cast", skill: "conspired" };
   if ((underThreat(s) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.immanuelHeal).length >= 2) && canCast(s, "immanuel")) return { type: "cast", skill: "immanuel" };
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.energy.faith < R.maxFaith) && canCast(s, "manger")) return { type: "cast", skill: "manger" };
+  if (underThreat(s) && canCast(s, "grewTogether")) return { type: "cast", skill: "grewTogether" };
+  if (s.energy.faith < R.maxFaith && s.hand.length < R.maxHand && canCast(s, "fullOfWisdom")) return { type: "cast", skill: "fullOfWisdom" };
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "blewTrumpet")) return { type: "cast", skill: "blewTrumpet" };
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.newHeavenHeal).length >= 2) && canCast(s, "newHeaven")) return { type: "cast", skill: "newHeaven" };
   if (s.energy.faith <= R.maxFaith - R.patmosFaith && s.hand.length < R.maxHand && canCast(s, "inTheSpirit")) return { type: "cast", skill: "inTheSpirit" };

@@ -94,6 +94,7 @@ const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
   artaxerxes: "亞達薛西 阿塔薛西斯 波斯王 尼希米 以斯拉 詔書",
   sanballat: "參巴拉 散巴拉特 和倫人 多比雅 基善 城牆 尼希米",
   jesusInfant: "嬰兒耶穌 耶穌 聖嬰 馬槽 伯利恆 聖誕 聖家 以馬內利 Jesus",
+  jesusChild: "少年耶穌 童年耶穌 耶穌 拿撒勒 十二歲 聖殿 聖家 Jesus",
   simonMagus: "西門 術士 行邪術 巫師 西滿 撒馬利亞 買聖靈",
   herodAgrippa: "希律 亞基帕 黑落德 阿格黎帕 希律王 該撒利亞 彼得出監",
   philipApostle: "斐理伯 菲利普 使徒腓利",

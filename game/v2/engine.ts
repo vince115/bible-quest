@@ -92,7 +92,7 @@ function log(s: BattleState, key: string, kind: LogEntry["kind"], params?: LogEn
 
 export const isAlive = (s: BattleState, id: CharacterId) => s.party[id].hp > 0;
 /** Jesus is with the team: any of his cards is standing. */
-export const jesusHere = (s: BattleState) => isAlive(s, "jesus") || isAlive(s, "jesusUR") || isAlive(s, "jesusCross") || isAlive(s, "jesusInfant");
+export const jesusHere = (s: BattleState) => isAlive(s, "jesus") || isAlive(s, "jesusUR") || isAlive(s, "jesusCross") || isAlive(s, "jesusInfant") || isAlive(s, "jesusChild");
 const living = (s: BattleState) => s.lineup.filter((id) => isAlive(s, id));
 /** Allies the enemy can aim at: everyone standing except cards that never fall. */
 export const targetable = (s: BattleState) => living(s).filter((id) => !NEVER_FALLS.has(id) && !(id === "zacchaeus" && s.inTree));
@@ -769,6 +769,8 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "conspired") return R.conspireAttack;
   if (skill === "manger") return 1;
   if (skill === "immanuel") return R.immanuelHeal;
+  if (skill === "fullOfWisdom") return 1;
+  if (skill === "grewTogether") return R.growShield;
   if (skill === "blessNotCurse") return R.blessHeal;
   if (skill === "writingOnWall") return 1;
   if (skill === "trulySonOfGod") return 2;
@@ -865,6 +867,7 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "cedarTimber" && (isAlive(s, "david") || isAlive(s, "solomon"))) return R.cedarShieldKing;
   if (skill === "floatsBySea" && isAlive(s, "solomon")) return R.floatsDraw + 1;
   if (skill === "jachinBoaz" && isAlive(s, "solomon")) return R.pillarShieldSolomon;
+  if (skill === "grewTogether" && (isAlive(s, "mary") || isAlive(s, "josephNaz"))) return R.growShieldFamily;
   if (skill === "kingsLetters" && (isAlive(s, "nehemiah") || isAlive(s, "ezra"))) return R.lettersFaith + 1;
   if (skill === "hisStar" && (isAlive(s, "mary") || jesusHere(s))) return 2;
   // So built we the wall; and all the wall was joined together (Nehemiah 4:6): each course stands higher.
@@ -3451,6 +3454,17 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       });
       break;
     }
+    case "fullOfWisdom":
+      // And the child grew, and waxed strong in spirit, filled with wisdom: and the grace of God was upon him (Luke 2:40).
+      gainFaith(s, caster, 1);
+      log(s, "v2.log.fullOfWisdom", "player");
+      draw(s, 1, rng);
+      break;
+    case "grewTogether":
+      // And Jesus increased in wisdom and stature, and in favour with God and man (Luke 2:52).
+      log(s, "v2.log.grewTogether", "player");
+      living(s).forEach((id) => addShield(s, id, supportAmount(s, "grewTogether")));
+      break;
     case "comeSee":
       // Come, see a man, which told me all things that ever I did (John 4:29).
       gainFaith(s, caster, 1);

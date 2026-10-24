@@ -3003,6 +3003,22 @@ describe("The infant Jesus", () => {
   });
 });
 
+describe("The child Jesus", () => {
+  it("is Jesus for the line-up; wisdom gives Faith and a card, growing up shields everyone (more with Mary)", () => {
+    expect(personOf("jesusChild")).toBe("jesus");
+    const s0 = createBattle(seeded(), ["jesusChild", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    const w = castSkill(s0, "fullOfWisdom");
+    expect([w.energy.faith, w.hand.length]).toEqual([3, 1]);
+    expect(castSkill(s0, "grewTogether").party.david.shield).toBe(R.growShield);
+    const m0 = createBattle(seeded(), ["jesusChild", "mary"]);
+    m0.hand = [];
+    m0.energy = { faith: 2, attack: 0, guard: 0 };
+    expect(castSkill(m0, "grewTogether").party.mary.shield).toBe(R.growShieldFamily);
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);
