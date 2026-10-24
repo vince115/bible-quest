@@ -55,7 +55,7 @@ describe("booster packs", () => {
   });
 
   it("draws the rare slot near its stated odds when the period has every rarity", () => {
-    // A pack whose period has an SR, an SSR and a UR card to draw (the ministry and passion packs lost their UR cards to GR).
+    // A pack whose period has an SR, an SSR and a UR card to draw.
     const pack = PACKS.find((p) => ["SR", "SSR", "UR"].every((r) => packCards(p).some((id) => CARD_RARITY[id] === r)))!;
     const rng = seeded(11);
     const n = 20000;
