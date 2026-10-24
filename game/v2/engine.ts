@@ -771,6 +771,9 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "immanuel") return R.immanuelHeal;
   if (skill === "fullOfWisdom") return 1;
   if (skill === "grewTogether") return R.growShield;
+  if (skill === "heardAndAsked") return 1;
+  if (skill === "astonished") return R.astonishedFaith;
+  if (skill === "ledToPilate") return R.ledAttack;
   if (skill === "blessNotCurse") return R.blessHeal;
   if (skill === "writingOnWall") return 1;
   if (skill === "trulySonOfGod") return 2;
@@ -867,6 +870,9 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "cedarTimber" && (isAlive(s, "david") || isAlive(s, "solomon"))) return R.cedarShieldKing;
   if (skill === "floatsBySea" && isAlive(s, "solomon")) return R.floatsDraw + 1;
   if (skill === "jachinBoaz" && isAlive(s, "solomon")) return R.pillarShieldSolomon;
+  if (skill === "heardAndAsked" && jesusHere(s)) return 2;
+  if (skill === "ledToPilate" && (isAlive(s, "pilate") || isAlive(s, "caiaphas"))) return R.ledAttack + 1;
+  if (skill === "astonished" && isAlive(s, "jesusChild")) return R.astonishedFaith + 1;
   if (skill === "grewTogether" && (isAlive(s, "mary") || isAlive(s, "josephNaz"))) return R.growShieldFamily;
   if (skill === "kingsLetters" && (isAlive(s, "nehemiah") || isAlive(s, "ezra"))) return R.lettersFaith + 1;
   if (skill === "hisStar" && (isAlive(s, "mary") || jesusHere(s))) return 2;
@@ -1315,7 +1321,7 @@ function dryBonesFallen(s: BattleState): CharacterId[] {
 }
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "comeOut" || skill === "manOfWar" || skill === "allPower" || skill === "greatFlood" || skill === "captainsHorsemen" || skill === "mocked" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
+  if (skill === "comeOut" || skill === "manOfWar" || skill === "allPower" || skill === "greatFlood" || skill === "captainsHorsemen" || skill === "mocked" || skill === "needWitness" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
   if (skill === "heal" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
@@ -3465,6 +3471,28 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       log(s, "v2.log.grewTogether", "player");
       living(s).forEach((id) => addShield(s, id, supportAmount(s, "grewTogether")));
       break;
+    case "heardAndAsked": {
+      // They found him in the temple, sitting in the midst of the doctors, both hearing them, and asking them questions (Luke 2:46).
+      const n = supportAmount(s, "heardAndAsked");
+      log(s, "v2.log.heardAndAsked", "player", { n });
+      draw(s, n, rng);
+      break;
+    }
+    case "astonished": {
+      // And all that heard him were astonished at his understanding and answers (Luke 2:47).
+      const n = supportAmount(s, "astonished");
+      gainFaith(s, caster, n);
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      log(s, "v2.log.astonished", "player", { n });
+      break;
+    }
+    case "ledToPilate": {
+      // And the whole multitude of them arose, and led him unto Pilate (Luke 23:1).
+      const n = supportAmount(s, "ledToPilate");
+      gainAttack(s, caster, n);
+      log(s, "v2.log.ledToPilate", "player", { n });
+      break;
+    }
     case "comeSee":
       // Come, see a man, which told me all things that ever I did (John 4:29).
       gainFaith(s, caster, 1);

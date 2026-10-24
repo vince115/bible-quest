@@ -3019,6 +3019,38 @@ describe("The child Jesus", () => {
   });
 });
 
+describe("The teachers in the temple", () => {
+  it("hearing and asking draws more with Jesus; astonishment gives more Faith with the child Jesus and steadies everyone", () => {
+    const s0 = createBattle(seeded(), ["templeTeachers", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(s0, "heardAndAsked").hand.length).toBe(1);
+    const j0 = createBattle(seeded(), ["templeTeachers", "jesusChild"]);
+    j0.hand = [];
+    j0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(j0, "heardAndAsked").hand.length).toBe(2);
+    j0.party.jesusChild.shaken = true;
+    const a = castSkill(j0, "astonished");
+    expect([a.energy.faith, a.party.jesusChild.shaken]).toEqual([R.astonishedFaith + 1, false]);
+    s0.energy = { faith: 2, attack: 0, guard: 0 };
+    expect(castSkill(s0, "astonished").energy.faith).toBe(R.astonishedFaith);
+  });
+});
+
+describe("The chief priests and scribes", () => {
+  it("strike an enemy; leading him to Pilate gives more Attack with Pilate or Caiaphas", () => {
+    expect(skillTargetKind("needWitness")).toBe("enemy");
+    const s0 = createBattle(seeded(), ["chiefPriests", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(s0, "ledToPilate").energy.attack).toBe(R.ledAttack);
+    const p0 = createBattle(seeded(), ["chiefPriests", "pilate"]);
+    p0.hand = [];
+    p0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(p0, "ledToPilate").energy.attack).toBe(R.ledAttack + 1);
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);
