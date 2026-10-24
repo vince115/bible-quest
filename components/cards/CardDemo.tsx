@@ -97,6 +97,8 @@ const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
   jesusChild: "少年耶穌 童年耶穌 耶穌 拿撒勒 十二歲 聖殿 聖家 Jesus",
   templeTeachers: "聖殿裡的教師 教師 經師 拉比 文士 聖殿 十二歲 又聽又問",
   chiefPriests: "祭司長和文士 祭司長 司祭長 文士 經師 長老 公會 議會 彼拉多",
+  augustus: "該撒亞古士督 凱撒 奧古斯都 屋大維 羅馬皇帝 報名上冊 人口普查",
+  galileeWomen: "從加利利來的婦女 婦女 加利利 約亞拿 雅各的母親馬利亞 香料 香膏 十字架 墳墓",
   simonMagus: "西門 術士 行邪術 巫師 西滿 撒馬利亞 買聖靈",
   herodAgrippa: "希律 亞基帕 黑落德 阿格黎帕 希律王 該撒利亞 彼得出監",
   philipApostle: "斐理伯 菲利普 使徒腓利",

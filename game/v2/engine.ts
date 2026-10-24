@@ -774,6 +774,10 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "heardAndAsked") return 1;
   if (skill === "astonished") return R.astonishedFaith;
   if (skill === "ledToPilate") return R.ledAttack;
+  if (skill === "census") return 1;
+  if (skill === "decreeWent") return R.decreeAttack;
+  if (skill === "stoodAfar") return 1;
+  if (skill === "preparedSpices") return R.womenHeal;
   if (skill === "blessNotCurse") return R.blessHeal;
   if (skill === "writingOnWall") return 1;
   if (skill === "trulySonOfGod") return 2;
@@ -871,6 +875,8 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "floatsBySea" && isAlive(s, "solomon")) return R.floatsDraw + 1;
   if (skill === "jachinBoaz" && isAlive(s, "solomon")) return R.pillarShieldSolomon;
   if (skill === "heardAndAsked" && jesusHere(s)) return 2;
+  if (skill === "stoodAfar" && isAlive(s, "jesusCross")) return 2;
+  if (skill === "preparedSpices" && isAlive(s, "maryMagdalene")) return R.womenHealMary;
   if (skill === "ledToPilate" && (isAlive(s, "pilate") || isAlive(s, "caiaphas"))) return R.ledAttack + 1;
   if (skill === "astonished" && isAlive(s, "jesusChild")) return R.astonishedFaith + 1;
   if (skill === "grewTogether" && (isAlive(s, "mary") || isAlive(s, "josephNaz"))) return R.growShieldFamily;
@@ -3491,6 +3497,41 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       const n = supportAmount(s, "ledToPilate");
       gainAttack(s, caster, n);
       log(s, "v2.log.ledToPilate", "player", { n });
+      break;
+    }
+    case "census":
+      // And all went to be taxed, every one into his own city (Luke 2:3).
+      log(s, "v2.log.census", "player");
+      draw(s, 1, rng);
+      if (isAlive(s, "mary") || isAlive(s, "josephNaz")) {
+        // And Joseph also went up from Galilee, out of the city of Nazareth... unto the city of David (Luke 2:4).
+        gainFaith(s, caster, 1);
+        log(s, "v2.log.censusFamily", "player");
+      }
+      break;
+    case "decreeWent":
+      // There went out a decree from Caesar Augustus, that all the world should be taxed (Luke 2:1).
+      gainAttack(s, caster, R.decreeAttack);
+      log(s, "v2.log.decreeWent", "player", { n: R.decreeAttack });
+      living(s).forEach((id) => addShield(s, id, R.decreeShield));
+      break;
+    case "stoodAfar": {
+      // And all his acquaintance, and the women that followed him from Galilee, stood afar off, beholding these things (Luke 23:49).
+      const n = supportAmount(s, "stoodAfar");
+      gainFaith(s, caster, n);
+      log(s, "v2.log.stoodAfar", "player", { n });
+      break;
+    }
+    case "preparedSpices": {
+      // And they returned, and prepared spices and ointments (Luke 23:56).
+      const n = supportAmount(s, "preparedSpices");
+      log(s, "v2.log.preparedSpices", "player", { n });
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(n, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
       break;
     }
     case "comeSee":

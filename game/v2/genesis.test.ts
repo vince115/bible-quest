@@ -3051,6 +3051,42 @@ describe("The chief priests and scribes", () => {
   });
 });
 
+describe("Caesar Augustus", () => {
+  it("the census draws a card (Faith too with Mary); his decree gives Attack and shields everyone", () => {
+    const s0 = createBattle(seeded(), ["augustus", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 0, attack: 0, guard: 2 };
+    const c = castSkill(s0, "census");
+    expect([c.hand.length, c.energy.faith]).toEqual([1, 0]);
+    const d = castSkill(s0, "decreeWent");
+    expect([d.energy.attack, d.party.david.shield]).toEqual([R.decreeAttack, R.decreeShield]);
+    const m0 = createBattle(seeded(), ["augustus", "mary"]);
+    m0.hand = [];
+    m0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(m0, "census").energy.faith).toBe(1);
+  });
+});
+
+describe("The women from Galilee", () => {
+  it("standing afar off gives more Faith with Jesus on the cross; spices heal more with Mary Magdalene", () => {
+    const s0 = createBattle(seeded(), ["galileeWomen", "david"]);
+    s0.hand = [];
+    s0.energy = { faith: 2, attack: 0, guard: 1 };
+    expect(castSkill(s0, "stoodAfar").energy.faith).toBe(3);
+    s0.party.david.hp = 50;
+    expect(castSkill(s0, "preparedSpices").party.david.hp).toBe(50 + R.womenHeal);
+    const c0 = createBattle(seeded(), ["galileeWomen", "jesusCross"]);
+    c0.hand = [];
+    c0.energy = { faith: 0, attack: 0, guard: 1 };
+    expect(castSkill(c0, "stoodAfar").energy.faith).toBe(2);
+    const m0 = createBattle(seeded(), ["galileeWomen", "maryMagdalene"]);
+    m0.hand = [];
+    m0.energy = { faith: 2, attack: 0, guard: 0 };
+    m0.party.maryMagdalene.hp = 50;
+    expect(castSkill(m0, "preparedSpices").party.maryMagdalene.hp).toBe(50 + R.womenHealMary);
+  });
+});
+
 describe("Sisera and Herod the Great", () => {
   it("Sisera's chariots are routed by Deborah, and Jael is waiting in the tent", () => {
     const s0 = createBattle(seeded(), ["sisera", "barak"]);

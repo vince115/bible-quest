@@ -262,6 +262,10 @@ export function nextAutoAction(real: BattleState): AutoAction {
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.energy.faith <= R.maxFaith - R.astonishedFaith) && canCast(s, "astonished")) return { type: "cast", skill: "astonished" };
   if (s.hand.length < R.maxHand && canCast(s, "heardAndAsked")) return { type: "cast", skill: "heardAndAsked" };
   if (s.energy.attack < 2 && canCast(s, "ledToPilate")) return { type: "cast", skill: "ledToPilate" };
+  if ((underThreat(s) || s.energy.attack < 2) && canCast(s, "decreeWent")) return { type: "cast", skill: "decreeWent" };
+  if (s.hand.length < R.maxHand && canCast(s, "census")) return { type: "cast", skill: "census" };
+  if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.womenHeal).length >= 2 && canCast(s, "preparedSpices")) return { type: "cast", skill: "preparedSpices" };
+  if (s.energy.faith < R.maxFaith && canCast(s, "stoodAfar")) return { type: "cast", skill: "stoodAfar" };
   if (ready >= 1 && s.energy.attack < 2 && canCast(s, "blewTrumpet")) return { type: "cast", skill: "blewTrumpet" };
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.newHeavenHeal).length >= 2) && canCast(s, "newHeaven")) return { type: "cast", skill: "newHeaven" };
   if (s.energy.faith <= R.maxFaith - R.patmosFaith && s.hand.length < R.maxHand && canCast(s, "inTheSpirit")) return { type: "cast", skill: "inTheSpirit" };
