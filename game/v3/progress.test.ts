@@ -1,12 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CARD_RARITY } from "@/components/cards/rarity";
 import { CLEAR_POINTS, COPY_LIMIT, OVERFLOW_POINTS, PACK, STARTING_POINTS } from "./gacha";
-import { freeModePool, ownedCards, useProgressStore } from "./progress";
+import { freeModePool, ownedCards, ownedPool, useProgressStore } from "./progress";
 
 const ORDER = ["david", "samuel", "jonathan", "adam"] as const;
 
 describe("free mode pool", () => {
   afterEach(() => vi.unstubAllEnvs());
+
+  it("the own-cards challenge offers only cards the player owns, in print order", () => {
+    expect(ownedPool({ adam: 1, david: 6, eve: 0 }, ORDER)).toEqual(["david", "adam"]);
+    expect(ownedPool({}, ORDER)).toEqual([]);
+  });
 
   it("offers every card, owned or not, in print order", () => {
     expect(freeModePool(ORDER)).toEqual([...ORDER]);
