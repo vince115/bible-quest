@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RULES_V2 as R } from "../v2/data";
-import { attackableEnemies, enemyDamage, isAlive } from "../v2/engine";
+import { ENEMY_HP, RULES_V2 as R } from "../v2/data";
+import { attackableEnemies, enemyDamage, enemyMaxHp, isAlive } from "../v2/engine";
 import type { CharacterId } from "../v2/types";
 import { earnedBy } from "./achievements";
 import { nextBoardAutoAction } from "./auto";
@@ -244,6 +244,19 @@ describe("formation", () => {
     b.battle.archerTarget = null;
     const before = b.battle.party[aimed].hp;
     expect(resolveBoard(b).battle.party[aimed].hp).toBeLessThan(before);
+  });
+
+  it("where no reinforcements come, a big party meets a boss with more HP, its half-HP phase later with it", () => {
+    const five: CharacterId[] = ["adam", "eve", "cain", "abel", "seth"];
+    const b = createBoard(five, undefined, seeded(), "eden", "table");
+    expect(b.aides).toEqual([]);
+    const full = Math.round((ENEMY_HP.serpent * (1 + R.bossHpPerAlly * 2)) / 10) * 10;
+    expect(b.battle.enemies.serpent.hp).toBe(full);
+    expect(enemyMaxHp(b.battle, "serpent")).toBe(full);
+    // Three or fewer: the card's HP.
+    expect(createBoard(five.slice(0, 3), undefined, seeded(), "eden", "table").battle.enemies.serpent.hp).toBe(ENEMY_HP.serpent);
+    // A stage with reinforcements keeps its boss's HP.
+    expect(createBoard(five, undefined, seeded(), "goliath", "table").battle.enemies.goliath.hp).toBe(ENEMY_HP.goliath);
   });
 
   it("losing the only character is a defeat", () => {

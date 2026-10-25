@@ -8,8 +8,9 @@
 //   all, reach the back row too.
 // - The enemy stands in two rows too: the guard in front, the boss and the shooter behind, and nothing behind can be hit
 //   while anyone stands in front. Against more than three allies the stage sends more of its guards (one for each ally
-//   past three, up to two, at three times their HP); each strikes one member of the front row a turn (telegraphed like
-//   the arrow). The boss hits 20% harder for each ally past three.
+//   past three, up to two, at twice their HP); each strikes one member of the front row a turn (telegraphed like the
+//   arrow). The boss hits 20% harder for each ally past three; where no reinforcements come (no guard, or one the boss
+//   summons), it has 25% more HP for each ally past three instead.
 // - Once per turn one character may move to another place for free (swapping with whoever stands there).
 // - Energy cards are not dealt: the player draws them one at a time from the deck on the table, up to
 //   openingHand draws on turn 1 and drawPerTurn on later turns (unused draws don't carry over).
@@ -20,6 +21,7 @@ import {
   basicAttack,
   canBasicAttack,
   castSkill,
+  bossOf,
   createBattle,
   inPartyOrder,
   drawCard,
@@ -141,6 +143,14 @@ export function createBoard(lineup: CharacterId[], placement?: readonly (Charact
   const aides = (SUMMONED.has(stage) ? [] : foes ? (foes.guard ? aideCopies(foes.guard) : []) : STAGE_GUARD[stage] ? aidesOf(stage) : []).slice(0, aideCount(chosen.length));
   battle.aides = aides;
   for (const e of aides) battle.enemies[e].hp = ENEMY_HP[e];
+  // Where no reinforcements come, a big party meets a boss with more HP instead (its half-HP phase comes later with it).
+  const past = Math.max(0, chosen.length - ROW);
+  if (past > 0 && !aides.length) {
+    const boss = bossOf(battle);
+    const hp = Math.round((ENEMY_HP[boss] * (1 + R.bossHpPerAlly * past)) / 10) * 10;
+    battle.maxHp = { [boss]: hp };
+    battle.enemies[boss].hp = hp;
+  }
   // ...and a boss who hits harder for each ally past three.
   battle.bossBoost = (battle.bossBoost ?? 0) + R.bossBoostPerAlly * Math.max(0, chosen.length - ROW);
   const board: Board = { battle, lineup: chosen, slots: arrange(chosen, placement), swapped: false, draws: R.openingHand, aides, duel };

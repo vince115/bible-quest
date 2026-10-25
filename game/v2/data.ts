@@ -19,9 +19,11 @@ export const RULES_V2 = {
   archerDamage: 30,
   /** What a reinforcement's strike on the front row does, and its HP against its base card's. */
   aideDamage: 40,
-  aideHpMult: 3,
+  aideHpMult: 2,
   /** Against a big party the boss hits harder: this much more for each ally past three (the v3 board). */
   bossBoostPerAlly: 0.2,
+  /** ...and where no reinforcements come (no guard, or one the boss summons), it has this much more HP for each ally past three. */
+  bossHpPerAlly: 0.25,
   spear: 30,
   crush: 90,
   swing: 50,

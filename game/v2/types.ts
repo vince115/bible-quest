@@ -208,6 +208,8 @@ export interface BattleState {
   rows?: boolean;
   /** How much harder the boss hits (0.2 = +20%): the v3 board, against a big party. */
   bossBoost?: number;
+  /** Enemies whose full HP is not their card's (the v3 board: a boss with more HP against a big party). */
+  maxHp?: Partial<Record<EnemyId, number>>;
   /** The reinforcements standing in the enemy's front row beside the guard (the v3 board, against a big party). */
   aides?: EnemyId[];
   /** Who each reinforcement in the enemy's front row will strike this turn (the v3 board, against a big party). */
