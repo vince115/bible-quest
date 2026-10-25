@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { CHARACTER_ELEMENT } from "@/game/v2/data";
 import type { CharacterId } from "@/game/v2/types";
 import { safeStorage, useT } from "@/game/locale";
-import { COPY_LIMIT } from "@/game/v3/gacha";
 import { useProgressStore } from "@/game/v3/progress";
 import { characterSearchText } from "@/components/cards/CardDemo";
 import { FlipCard } from "@/components/cards/FlipCard";
@@ -141,7 +140,7 @@ export function CollectionScreen() {
               </button>
               {n > 1 && (
                 <span className="pointer-events-none absolute -right-1 -top-1 rounded-full bg-[#d4b35f] px-1.5 text-xs font-black text-[#2b1d07] shadow">
-                  ×{n}/{COPY_LIMIT}
+                  ×{n}
                 </span>
               )}
             </div>
