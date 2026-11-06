@@ -495,6 +495,10 @@ export function skillDamage(s: BattleState, skill: SkillId, target?: EnemyId, wh
     + (skill === "atThyWord" && (jesusHere(s) || isAlive(s, self("peter"))) ? 20 : 0)
     // All the horses and chariots of Pharaoh pursued after them (Exodus 14:9).
     + (skill === "pursued" && isAlive(s, self("pharaoh")) ? 20 : 0)
+    // My father hath chastised you with whips, but I will chastise you with scorpions (1 Kings 12:14).
+    + (skill === "scorpions" && isAlive(s, self("solomon")) ? R.scorpionsWithSolomon : 0)
+    // Write ye also for the Jews... and seal it with the king's ring (Esther 8:8).
+    + (skill === "kingsSeal" && isAlive(s, self("mordecai")) ? R.sealWithMordecai : 0)
     // Absalom prepared him chariots and horses, and fifty men to run before him (2 Samuel 15:1).
     + (skill === "fiftyMen" && target === bossOf(s) ? 20 : 0)
     // I am a man under authority, having soldiers under me (Matthew 8:9).
@@ -769,6 +773,16 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "moltenSea") return R.moltenSeaHeal;
   if (skill === "kingsLetters") return R.lettersFaith;
   if (skill === "conspired") return R.conspireAttack;
+  if (skill === "tenPieces") return R.tenPiecesDraw;
+  if (skill === "goldenCalves") return R.calvesAttack;
+  if (skill === "fortifiedCities") return R.citiesShield;
+  if (skill === "askedSecretly") return R.secretFaith;
+  if (skill === "fledByNight") return R.fledShield;
+  if (skill === "laboredToDeliver") return R.deliverHeal;
+  if (skill === "madeDecree") return R.fearShield;
+  if (skill === "goldenSceptre") return R.sceptreShield;
+  if (skill === "sackclothAshes") return R.sackclothShield;
+  if (skill === "godMayRelent") return R.relentHeal;
   if (skill === "manger") return 1;
   if (skill === "immanuel") return R.immanuelHeal;
   if (skill === "fullOfWisdom") return 1;
@@ -883,6 +897,9 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "astonished" && isAlive(s, "jesusChild")) return R.astonishedFaith + 1;
   if (skill === "grewTogether" && (isAlive(s, "mary") || isAlive(s, "josephNaz"))) return R.growShieldFamily;
   if (skill === "kingsLetters" && (isAlive(s, "nehemiah") || isAlive(s, "ezra"))) return R.lettersFaith + 1;
+  if (skill === "askedSecretly" && isAlive(s, "jeremiah")) return R.secretFaith + 1;
+  if (skill === "madeDecree" && isAlive(s, "daniel")) return R.fearShieldDaniel;
+  if (skill === "godMayRelent" && isAlive(s, "jonah")) return R.relentHealJonah;
   if (skill === "hisStar" && (isAlive(s, "mary") || jesusHere(s))) return 2;
   // So built we the wall; and all the wall was joined together (Nehemiah 4:6): each course stands higher.
   if (skill === "buildWall") return Math.min(R.wallCap, R.wallShield + R.wallStep * s.wallCourses);
@@ -1329,10 +1346,10 @@ function dryBonesFallen(s: BattleState): CharacterId[] {
 }
 
 export function skillTargetKind(skill: SkillId): TargetKind {
-  if (skill === "comeOut" || skill === "manOfWar" || skill === "allPower" || skill === "greatFlood" || skill === "captainsHorsemen" || skill === "mocked" || skill === "needWitness" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
+  if (skill === "comeOut" || skill === "manOfWar" || skill === "allPower" || skill === "greatFlood" || skill === "captainsHorsemen" || skill === "mocked" || skill === "scorpions" || skill === "kingsSeal" || skill === "needWitness" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
-  if (skill === "heal" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
+  if (skill === "heal" || skill === "laboredToDeliver" || skill === "goldenSceptre" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
   if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "cedarTimber" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
   if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim" || skill === "lotFell" || skill === "talithaCumi" || skill === "itIsWell") return "fallenAlly";
   if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord" || skill === "underAuthority") return "actedAlly";
@@ -1359,7 +1376,8 @@ export function skillBlockReason(s: BattleState, skill: SkillId, target?: Target
   const caster = casterFor(s, skill, who);
   if (s.result !== "ongoing") return "v2.reason.over";
   if (!isAlive(s, caster)) return "v2.reason.fallen";
-  if (s.party[caster].shaken) return "v2.reason.shaken";
+  // Zedekiah can still flee when his heart fails him: the flight itself steadies him (2 Kings 25:4).
+  if (s.party[caster].shaken && skill !== "fledByNight") return "v2.reason.shaken";
   if (s.party[caster].acted) return "v2.reason.acted";
   if (skill === "arise" && s.ariseUsed) return "v2.reason.ariseUsed";
   if (skill === "helper" && s.helperUsed) return "v2.reason.ariseUsed";
@@ -3430,6 +3448,91 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
         log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
       });
       break;
+    case "tenPieces": {
+      // Take thee ten pieces: for thus saith the LORD... I will rend the kingdom out of the hand of Solomon, and will give ten tribes to thee (1 Kings 11:31).
+      const n = supportAmount(s, "tenPieces");
+      log(s, "v2.log.tenPieces", "player", { n });
+      draw(s, n, rng);
+      break;
+    }
+    case "goldenCalves":
+      // The king took counsel, and made two calves of gold (1 Kings 12:28) — for he feared the kingdom would return to the house of David (12:26).
+      gainAttack(s, caster, R.calvesAttack);
+      s.party[caster].shaken = true;
+      log(s, "v2.log.goldenCalves", "player", { n: R.calvesAttack });
+      break;
+    case "scorpions":
+      // My father hath chastised you with whips, but I will chastise you with scorpions (1 Kings 12:14).
+      log(s, "v2.log.scorpions", "player");
+      break;
+    case "fortifiedCities":
+      // Rehoboam dwelt in Jerusalem, and built cities for defence in Judah (2 Chronicles 11:5).
+      addShield(s, caster, R.citiesShield);
+      log(s, "v2.log.fortifiedCities", "player", { n: R.citiesShield });
+      break;
+    case "askedSecretly": {
+      // The king asked him secretly in his house, and said, Is there any word from the LORD? (Jeremiah 37:17).
+      const n = supportAmount(s, "askedSecretly");
+      gainFaith(s, caster, n);
+      log(s, "v2.log.askedSecretly", "player", { n });
+      if (!isAlive(s, "jeremiah")) {
+        s.party[caster].shaken = true;
+        log(s, "v2.log.askedSecretlyAlone", "detail");
+      }
+      break;
+    }
+    case "fledByNight":
+      // All the men of war fled by night by the way of the gate between two walls (2 Kings 25:4).
+      s.party[caster].shaken = false;
+      addShield(s, caster, R.fledShield);
+      log(s, "v2.log.fledByNight", "player", { n: R.fledShield });
+      break;
+    case "laboredToDeliver": {
+      // He set his heart on Daniel to deliver him: and he laboured till the going down of the sun (Daniel 6:14).
+      const ally = target as CharacterId;
+      const c = s.party[ally];
+      const healed = Math.min(baseCharacter(ally) === "daniel" ? R.deliverHealDaniel : R.deliverHeal, MAX_HP[ally] - c.hp);
+      c.hp += healed;
+      c.shaken = false;
+      log(s, "v2.log.laboredToDeliver", "player", { char: ally, n: healed, hp: c.hp, max: MAX_HP[ally] });
+      break;
+    }
+    case "madeDecree":
+      // I make a decree, That in every dominion of my kingdom men tremble and fear before the God of Daniel (Daniel 6:26).
+      log(s, "v2.log.madeDecree", "player");
+      living(s).forEach((id) => addShield(s, id, supportAmount(s, "madeDecree")));
+      break;
+    case "goldenSceptre": {
+      // The king held out to Esther the golden sceptre that was in his hand (Esther 5:2).
+      const ally = target as CharacterId;
+      const n = baseCharacter(ally) === "esther" ? R.sceptreShieldEsther : R.sceptreShield;
+      s.party[ally].shaken = false;
+      log(s, "v2.log.goldenSceptre", "player", { char: ally, n });
+      addShield(s, ally, n);
+      break;
+    }
+    case "kingsSeal":
+      // The writing which is written in the king's name, and sealed with the king's ring, may no man reverse (Esther 8:8).
+      log(s, "v2.log.kingsSeal", "player");
+      break;
+    case "sackclothAshes":
+      // He arose from his throne, and he laid his robe from him, and covered him with sackcloth, and sat in ashes (Jonah 3:6).
+      living(s).forEach((id) => (s.party[id].shaken = false));
+      addShield(s, caster, R.sackclothShield);
+      log(s, "v2.log.sackclothAshes", "player", { n: R.sackclothShield });
+      break;
+    case "godMayRelent": {
+      // Who can tell if God will turn and repent, and turn away from his fierce anger, that we perish not? (Jonah 3:9).
+      const n = supportAmount(s, "godMayRelent");
+      log(s, "v2.log.godMayRelent", "player", { n });
+      living(s).forEach((id) => {
+        const c = s.party[id];
+        const healed = Math.min(n, MAX_HP[id] - c.hp);
+        c.hp += healed;
+        log(s, "v2.log.motherHeal", "detail", { char: id, n: healed, hp: c.hp, max: MAX_HP[id] });
+      });
+      break;
+    }
     case "kingsLetters": {
       // Let letters be given me to the governors beyond the river... And the king granted me (Nehemiah 2:7-8).
       const n = supportAmount(s, "kingsLetters");

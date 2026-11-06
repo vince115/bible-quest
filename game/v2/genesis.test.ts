@@ -3141,3 +3141,70 @@ describe("Korah and Achan", () => {
     expect(castSkill(hid, "hiddenSpoil").energy.faith).toBe(R.spoilFaith);
   });
 });
+
+describe("Six rulers of the divided kingdom and the exile", () => {
+  const ready = (ids: CharacterId[], energy: Partial<BattleState["energy"]>) => {
+    const s = createBattle(seeded(), ids);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("Jeroboam's ten pieces draw two; the calves give Attack and shake him", () => {
+    expect(castSkill(ready(["jeroboam", "david"], { guard: 2 }), "tenPieces").hand.length).toBe(R.tenPiecesDraw);
+    const c = castSkill(ready(["jeroboam", "david"], { guard: 1 }), "goldenCalves");
+    expect([c.energy.attack, c.party.jeroboam.shaken]).toEqual([R.calvesAttack, true]);
+  });
+
+  it("Rehoboam's scorpions bite harder with Solomon; his cities shield him", () => {
+    expect(skillDamage(ready(["rehoboam", "david"], {}), "scorpions")).toBe(30);
+    expect(skillDamage(ready(["rehoboam", "solomon"], {}), "scorpions")).toBe(30 + R.scorpionsWithSolomon);
+    expect(castSkill(ready(["rehoboam", "david"], { guard: 1 }), "fortifiedCities").party.rehoboam.shield).toBe(R.citiesShield);
+    expect(skillTargetKind("scorpions")).toBe("enemy");
+  });
+
+  it("Zedekiah's secret question gives more Faith with Jeremiah, and shakes him without", () => {
+    const withProphet = castSkill(ready(["zedekiah", "jeremiah"], { guard: 1 }), "askedSecretly");
+    expect([withProphet.energy.faith, withProphet.party.zedekiah.shaken]).toEqual([R.secretFaith + 1, false]);
+    const alone = castSkill(ready(["zedekiah", "david"], { guard: 1 }), "askedSecretly");
+    expect([alone.energy.faith, alone.party.zedekiah.shaken]).toEqual([R.secretFaith, true]);
+  });
+
+  it("Zedekiah's flight shields and steadies him", () => {
+    const s0 = ready(["zedekiah", "david"], { guard: 1 });
+    s0.party.zedekiah.shaken = true;
+    const f = castSkill(s0, "fledByNight");
+    expect([f.party.zedekiah.shield, f.party.zedekiah.shaken]).toEqual([R.fledShield, false]);
+  });
+
+  it("Darius heals Daniel most, and his decree shields more with Daniel", () => {
+    const s0 = ready(["darius", "daniel", "david"], { faith: 2 });
+    s0.party.daniel.hp = 100;
+    s0.party.david.hp = 100;
+    s0.party.daniel.shaken = true;
+    const d = castSkill(s0, "laboredToDeliver", "daniel");
+    expect([d.party.daniel.hp, d.party.daniel.shaken]).toEqual([100 + R.deliverHealDaniel, false]);
+    expect(castSkill(s0, "laboredToDeliver", "david").party.david.hp).toBe(100 + R.deliverHeal);
+    expect(castSkill(ready(["darius", "david"], { guard: 2 }), "madeDecree").party.david.shield).toBe(R.fearShield);
+    expect(castSkill(ready(["darius", "daniel"], { guard: 2 }), "madeDecree").party.daniel.shield).toBe(R.fearShieldDaniel);
+  });
+
+  it("Ahasuerus's sceptre shields Esther most; his seal strikes harder with Mordecai", () => {
+    const s0 = ready(["ahasuerus", "esther", "david"], { guard: 1 });
+    s0.party.david.shaken = true;
+    const g = castSkill(s0, "goldenSceptre", "david");
+    expect([g.party.david.shield, g.party.david.shaken]).toEqual([R.sceptreShield, false]);
+    expect(castSkill(s0, "goldenSceptre", "esther").party.esther.shield).toBe(R.sceptreShieldEsther);
+    expect(skillDamage(ready(["ahasuerus", "mordecai"], {}), "kingsSeal")).toBe(40 + R.sealWithMordecai);
+  });
+
+  it("The king of Nineveh steadies everyone; the whole team is healed, more with Jonah", () => {
+    const s0 = ready(["ninevehKing", "david"], { guard: 1 });
+    s0.party.david.shaken = true;
+    const a = castSkill(s0, "sackclothAshes");
+    expect([a.party.david.shaken, a.party.ninevehKing.shield]).toEqual([false, R.sackclothShield]);
+    const r0 = ready(["ninevehKing", "jonah"], { faith: 2 });
+    r0.party.jonah.hp = 50;
+    expect(castSkill(r0, "godMayRelent").party.jonah.hp).toBe(50 + R.relentHealJonah);
+  });
+});
