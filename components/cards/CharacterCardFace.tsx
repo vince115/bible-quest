@@ -73,7 +73,7 @@ const ART: Partial<Record<BaseCharacterId, { src: string; figure: Figure }>> = {
   herodAgrippa: { src: "/cards/herodAgrippa.jpg", figure: { cx: 0.47, head: 0.103, feet: 0.967 } },
   belshazzar: { src: "/cards/belshazzar.jpg", figure: { cx: 0.47, head: 0.11, feet: 0.955 } },
   sennacherib: { src: "/cards/sennacherib.jpg", figure: { cx: 0.47, head: 0.14, feet: 0.955 } },
-  romanCenturion: { src: "/cards/romanCenturion.jpg", figure: { cx: 0.47, head: 0.14, feet: 0.94 } },
+  romanCenturion: { src: "/cards/romanCenturion-cross.jpg", figure: { cx: 0.42, head: 0.09, feet: 0.95 } },
   romanCavalry: { src: "/cards/romanCavalry.jpg", figure: { cx: 0.5, head: 0.13, feet: 0.94, size: 0.85 } },
   romanArcher: { src: "/cards/romanArcher.jpg", figure: { cx: 0.5, head: 0.17, feet: 0.965 } },
   romanSpearman: { src: "/cards/romanSpearman.jpg", figure: { cx: 0.48, head: 0.155, feet: 0.94 } },
