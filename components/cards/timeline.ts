@@ -24,7 +24,7 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   },
   {
     era: "prophets",
-    cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "ninevehKing", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah", "zedekiah"],
+    cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "shipmaster", "ninevehKing", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah", "zedekiah"],
   },
   { era: "exile", cards: ["ezekiel", "daniel", "presidents", "princes", "lionRest", "lion", "lioness", "nebuchadnezzar", "threeFriends", "belshazzar", "darius", "cyrus", "zerubbabel", "ahasuerus", "vashti", "esther", "mordecai", "haman", "ezra", "artaxerxes", "nehemiah", "sanballat"] },
   { era: "nativity", cards: ["gabriel", "zechariah", "elizabeth", "mary", "josephNaz", "augustus", "jesusInfant", "shepherds", "magi", "herodGreat", "simeon", "anna", "jesusChild", "templeTeachers", "johnBaptist", "romanSoldier", "herodias"] },

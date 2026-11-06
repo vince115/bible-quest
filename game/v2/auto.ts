@@ -266,6 +266,9 @@ export function nextAutoAction(real: BattleState): AutoAction {
   if (underThreat(s) && weakest && canCast(s, "goldenSceptre", weakest)) return { type: "cast", skill: "goldenSceptre", target: weakest };
   if ((underThreat(s) || s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken)) && canCast(s, "sackclothAshes")) return { type: "cast", skill: "sackclothAshes" };
   if (s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.relentHeal).length >= 2 && canCast(s, "godMayRelent")) return { type: "cast", skill: "godMayRelent" };
+  const sleeper = s.lineup.find((id) => isAlive(s, id) && s.party[id].shaken);
+  if (sleeper && canCast(s, "wakeSleeper", sleeper)) return { type: "cast", skill: "wakeSleeper", target: sleeper };
+  if (underThreat(s) && canCast(s, "lightenShip")) return { type: "cast", skill: "lightenShip" };
   if ((underThreat(s) || s.lineup.filter((id) => isAlive(s, id) && MAX_HP[id] - s.party[id].hp >= R.immanuelHeal).length >= 2) && canCast(s, "immanuel")) return { type: "cast", skill: "immanuel" };
   if ((s.lineup.some((id) => isAlive(s, id) && s.party[id].shaken) || s.energy.faith < R.maxFaith) && canCast(s, "manger")) return { type: "cast", skill: "manger" };
   if (underThreat(s) && canCast(s, "grewTogether")) return { type: "cast", skill: "grewTogether" };

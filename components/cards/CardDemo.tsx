@@ -99,6 +99,7 @@ const ALIASES: Partial<Record<CharacterId | EnemyId, string>> = {
   darius: "瑪代人大利烏 大流士 達理阿 獅子坑 但以理 瑪代",
   ahasuerus: "亞哈隨魯王 亞哈隨魯 薛西 阿哈蘇魯 金杖 以斯帖 末底改 波斯",
   ninevehKing: "尼尼微王 亞述 約拿 麻布 灰 悔改",
+  shipmaster: "船主 船長 約拿 他施 約帕 風暴 水手",
   jesusInfant: "嬰兒耶穌 耶穌 聖嬰 馬槽 伯利恆 聖誕 聖家 以馬內利 Jesus",
   jesusChild: "少年耶穌 童年耶穌 耶穌 拿撒勒 十二歲 聖殿 聖家 Jesus",
   templeTeachers: "聖殿裡的教師 教師 經師 拉比 文士 聖殿 十二歲 又聽又問",

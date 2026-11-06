@@ -3208,3 +3208,26 @@ describe("Six rulers of the divided kingdom and the exile", () => {
     expect(castSkill(r0, "godMayRelent").party.jonah.hp).toBe(50 + R.relentHealJonah);
   });
 });
+
+describe("The shipmaster", () => {
+  const ready = (ids: CharacterId[], energy: Partial<BattleState["energy"]>) => {
+    const s = createBattle(seeded(), ids);
+    s.hand = [];
+    s.energy = { faith: 0, attack: 0, guard: 0, ...energy };
+    return s;
+  };
+
+  it("wakes another ally: Shaken ends and Faith comes, more for Jonah", () => {
+    const s0 = ready(["shipmaster", "jonah", "david"], { guard: 1 });
+    s0.party.david.shaken = true;
+    const d = castSkill(s0, "wakeSleeper", "david");
+    expect([d.party.david.shaken, d.energy.faith]).toEqual([false, R.wakeFaith]);
+    expect(castSkill(s0, "wakeSleeper", "jonah").energy.faith).toBe(R.wakeFaith + 1);
+    expect(skillTargets(s0, "wakeSleeper")).not.toContain("shipmaster");
+  });
+
+  it("casting out the wares shields everyone, more with Jonah", () => {
+    expect(castSkill(ready(["shipmaster", "david"], { guard: 2 }), "lightenShip").party.david.shield).toBe(R.lightenShield);
+    expect(castSkill(ready(["shipmaster", "jonah"], { guard: 2 }), "lightenShip").party.jonah.shield).toBe(R.lightenShieldJonah);
+  });
+});
