@@ -20,13 +20,13 @@ export const TIMELINE_ERAS: { era: string; cards: Card[] }[] = [
   { era: "judges", cards: ["ehud", "deborah", "barak", "sisera", "jael", "gideon", "jephthah", "delilah", "samson", "ruth", "naomi", "boaz"] },
   {
     era: "kingdom",
-    cards: ["eli", "hannah", "samuel", "saul", "jonathan", "david", "goliath", "bearer", "archer", "michal", "abigail", "joab", "nathan", "bathsheba", "uriah", "mephibosheth", "absalom", "hiramKing", "solomon", "hiramSmith", "sheba"],
+    cards: ["eli", "hannah", "samuel", "saul", "jonathan", "david", "goliath", "bearer", "archer", "michal", "abigail", "joab", "nathan", "bathsheba", "uriah", "mephibosheth", "absalom", "hiramKing", "solomon", "hiramSmith", "sheba", "rehoboam", "jeroboam"],
   },
   {
     era: "prophets",
-    cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah"],
+    cards: ["elijah", "ahab", "jezebel", "baalProphet", "ahabKing", "baalProphets", "jezebelQueen", "zarephath", "elisha", "shunammite", "naaman", "maid", "gehazi", "jehu", "jonah", "ninevehKing", "sennacherib", "hezekiah", "isaiah", "josiah", "jeremiah", "zedekiah"],
   },
-  { era: "exile", cards: ["ezekiel", "daniel", "presidents", "princes", "lionRest", "lion", "lioness", "nebuchadnezzar", "threeFriends", "belshazzar", "cyrus", "zerubbabel", "vashti", "esther", "mordecai", "haman", "ezra", "artaxerxes", "nehemiah", "sanballat"] },
+  { era: "exile", cards: ["ezekiel", "daniel", "presidents", "princes", "lionRest", "lion", "lioness", "nebuchadnezzar", "threeFriends", "belshazzar", "darius", "cyrus", "zerubbabel", "ahasuerus", "vashti", "esther", "mordecai", "haman", "ezra", "artaxerxes", "nehemiah", "sanballat"] },
   { era: "nativity", cards: ["gabriel", "zechariah", "elizabeth", "mary", "josephNaz", "augustus", "jesusInfant", "shepherds", "magi", "herodGreat", "simeon", "anna", "jesusChild", "templeTeachers", "johnBaptist", "romanSoldier", "herodias"] },
   {
     era: "ministry",
