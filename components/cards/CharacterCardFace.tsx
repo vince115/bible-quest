@@ -154,7 +154,7 @@ const ART: Partial<Record<BaseCharacterId, { src: string; figure: Figure }>> = {
   johnMark: { src: "/cards/john-mark.jpg", figure: { cx: 0.46, head: 0.195, feet: 0.957 } },
   luke: { src: "/cards/luke.jpg", figure: { cx: 0.47, head: 0.146, feet: 0.957 } },
   phoebe: { src: "/cards/phoebe.jpg", figure: { cx: 0.45, head: 0.164, feet: 0.967 } },
-  apollos: { src: "/cards/apollos.jpg", figure: { cx: 0.47, head: 0.156, feet: 0.967 } },
+  apollos: { src: "/cards/apollos-v2.jpg", figure: { cx: 0.47, head: 0.04, feet: 0.98 } },
   cornelius: { src: "/cards/cornelius.jpg", figure: { cx: 0.47, head: 0.156, feet: 0.967 } },
   dorcas: { src: "/cards/dorcas.jpg", figure: { cx: 0.5, head: 0.168, feet: 0.977 } },
   aquila: { src: "/cards/aquila.jpg", figure: { cx: 0.5, head: 0.186, feet: 0.977 } },
