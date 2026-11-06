@@ -783,6 +783,8 @@ export function baseSupportAmount(skill: SkillId): number {
   if (skill === "goldenSceptre") return R.sceptreShield;
   if (skill === "sackclothAshes") return R.sackclothShield;
   if (skill === "godMayRelent") return R.relentHeal;
+  if (skill === "wakeSleeper") return R.wakeFaith;
+  if (skill === "lightenShip") return R.lightenShield;
   if (skill === "manger") return 1;
   if (skill === "immanuel") return R.immanuelHeal;
   if (skill === "fullOfWisdom") return 1;
@@ -900,6 +902,7 @@ export function supportAmount(s: BattleState, skill: SkillId): number {
   if (skill === "askedSecretly" && isAlive(s, "jeremiah")) return R.secretFaith + 1;
   if (skill === "madeDecree" && isAlive(s, "daniel")) return R.fearShieldDaniel;
   if (skill === "godMayRelent" && isAlive(s, "jonah")) return R.relentHealJonah;
+  if (skill === "lightenShip" && isAlive(s, "jonah")) return R.lightenShieldJonah;
   if (skill === "hisStar" && (isAlive(s, "mary") || jesusHere(s))) return 2;
   // So built we the wall; and all the wall was joined together (Nehemiah 4:6): each course stands higher.
   if (skill === "buildWall") return Math.min(R.wallCap, R.wallShield + R.wallStep * s.wallCourses);
@@ -1350,7 +1353,7 @@ export function skillTargetKind(skill: SkillId): TargetKind {
   if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
   if (skill === "heal" || skill === "laboredToDeliver" || skill === "goldenSceptre" || skill === "comforter" || skill === "fearNot" || skill === "shieldUp" || skill === "firstlings" || skill === "anotherSeed" || skill === "blessing" || skill === "hideSpies" || skill === "counsel" || skill === "wings" || skill === "carpenter" || skill === "peaceBeUnto" || skill === "mendNets" || skill === "spices" || skill === "looseHim" || skill === "hereIsWater" || skill === "purpleCloth" || skill === "goInPeace" || skill === "almsdeeds" || skill === "succourer" || skill === "physician" || skill === "bornAgain" || skill === "blessedAmong" || skill === "tooHard" || skill === "drinkMyLord" || skill === "fineLinen" || skill === "brotherSaul" || skill === "twoPence" || skill === "kingsMother") return "ally";
-  if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "cedarTimber" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
+  if (skill === "whither" || skill === "expound" || skill === "layDownNeck" || skill === "speakTheWord" || skill === "bearHisCross" || skill === "braceSpears" || skill === "throughTheRoof" || skill === "cedarTimber" || skill === "wakeSleeper" || skill === "oilAndWine" || skill === "letDownWindow" || skill === "crumbs" || skill === "littleCake" || skill === "littleMaid" || skill === "arkOfBulrushes" || skill === "nurseHim" || skill === "hadCompassion") return "otherAlly";
   if (skill === "arise" || skill === "restorer" || skill === "seenTheLord" || skill === "receiveHim" || skill === "lotFell" || skill === "talithaCumi" || skill === "itIsWell") return "fallenAlly";
   if (skill === "helper" || skill === "comeAndSee" || skill === "speakLord" || skill === "underAuthority") return "actedAlly";
   return "none";
@@ -3533,6 +3536,20 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
       });
       break;
     }
+    case "wakeSleeper": {
+      // What meanest thou, O sleeper? arise, call upon thy God (Jonah 1:6).
+      const ally = target as CharacterId;
+      const n = baseCharacter(ally) === "jonah" ? R.wakeFaith + 1 : R.wakeFaith;
+      s.party[ally].shaken = false;
+      gainFaith(s, ally, n);
+      log(s, "v2.log.wakeSleeper", "player", { char: ally, n });
+      break;
+    }
+    case "lightenShip":
+      // They cast forth the wares that were in the ship into the sea, to lighten it of them (Jonah 1:5).
+      log(s, "v2.log.lightenShip", "player");
+      living(s).forEach((id) => addShield(s, id, supportAmount(s, "lightenShip")));
+      break;
     case "kingsLetters": {
       // Let letters be given me to the governors beyond the river... And the king granted me (Nehemiah 2:7-8).
       const n = supportAmount(s, "kingsLetters");

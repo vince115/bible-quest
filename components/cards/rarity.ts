@@ -135,6 +135,7 @@ const BASE_RARITY: Record<BaseCharacterId | BaseEnemyId, Rarity> = {
   darius: "SR",
   ahasuerus: "SR",
   ninevehKing: "SR",
+  shipmaster: "R",
   jesusInfant: "SSR",
   jesusChild: "SSR",
   templeTeachers: "R",
