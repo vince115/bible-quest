@@ -228,6 +228,18 @@ const en = {
   "ui.switchLanguage": "Switch language",
   "ui.soundOn": "Sound on",
   "ui.soundOff": "Sound off",
+  "char.hosea.name": "Hosea",
+  "char.joel.name": "Joel",
+  "char.amos.name": "Amos",
+  "char.obadiah.name": "Obadiah",
+  "char.micah.name": "Micah",
+  "char.nahum.name": "Nahum",
+  "char.habakkuk.name": "Habakkuk",
+  "char.zephaniah.name": "Zephaniah",
+  "char.haggai.name": "Haggai",
+  "char.zechariahProphet.name": "Zechariah",
+  "char.malachi.name": "Malachi",
+
 };
 
 type MessageKey = keyof typeof en;
@@ -453,6 +465,18 @@ const zh: Record<MessageKey, string> = {
   "ui.switchLanguage": "切換語言",
   "ui.soundOn": "聲音開啟",
   "ui.soundOff": "聲音關閉",
+  "char.hosea.name": "何西阿",
+  "char.joel.name": "約珥",
+  "char.amos.name": "阿摩司",
+  "char.obadiah.name": "俄巴底亞",
+  "char.micah.name": "彌迦",
+  "char.nahum.name": "那鴻",
+  "char.habakkuk.name": "哈巴谷",
+  "char.zephaniah.name": "西番雅",
+  "char.haggai.name": "哈該",
+  "char.zechariahProphet.name": "撒迦利亞",
+  "char.malachi.name": "瑪拉基",
+
 };
 
 const DICTS: Record<Locale, Record<string, string>> = {

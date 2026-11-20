@@ -1,0 +1,17 @@
+
+> bible-quest@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/vincelo/dev-hub/github/vince115/bible-quest
+
+
+ Test Files  19 passed (19)
+      Tests  477 passed (477)
+   Start at  13:46:01
+   Duration  18.20s (tests 59%, transform 33%, import 8%, worker 1%)
+
+  Transform  transforming modules took 18.20s · 33% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

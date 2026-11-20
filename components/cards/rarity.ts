@@ -9,6 +9,17 @@ export type Rarity = "N" | "R" | "SR" | "SSR" | "UR" | "GR";
 
 /** Which rarity each card is printed at. R and UR are kept for later cards (common soldiers, special editions). */
 const BASE_RARITY: Record<BaseCharacterId | BaseEnemyId, Rarity> = {
+  hosea: "SR",
+  joel: "SR",
+  amos: "SR",
+  obadiah: "SR",
+  micah: "SR",
+  nahum: "SR",
+  habakkuk: "SR",
+  zephaniah: "SR",
+  haggai: "SR",
+  zechariahProphet: "SR",
+  malachi: "SR",
   archer: "N",
   bearer: "N",
   samuel: "SR",

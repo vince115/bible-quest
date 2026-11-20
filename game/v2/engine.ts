@@ -43,6 +43,7 @@ import {
   STORY,
   RULES_V2 as R,
   SKILLS,
+  PROPHET_EFFECTS,
   tableKind,
 } from "./data";
 import { baseCharacter, copyNumber } from "./copies";
@@ -554,6 +555,8 @@ export function mpCost(skill: SkillId): number {
 
 /** Heal or Shield a support skill gives before story bonuses; 0 for skills without an amount (Helper, Beguile). */
 export function baseSupportAmount(skill: SkillId): number {
+  const effect = PROPHET_EFFECTS[skill];
+  if (effect) return effect.heal ?? effect.shield ?? effect.faith ?? 0;
   if (skill === "heal") return R.healAmount;
   if (skill === "arise") return R.ariseHp;
   if (skill === "covshield") return R.covShield;
@@ -1349,6 +1352,8 @@ function dryBonesFallen(s: BattleState): CharacterId[] {
 }
 
 export function skillTargetKind(skill: SkillId): TargetKind {
+  const effect = PROPHET_EFFECTS[skill];
+  if (effect) return SKILLS[skill].damage ? "enemy" : effect.allies ? "none" : "ally";
   if (skill === "comeOut" || skill === "manOfWar" || skill === "allPower" || skill === "greatFlood" || skill === "captainsHorsemen" || skill === "mocked" || skill === "scorpions" || skill === "kingsSeal" || skill === "needWitness" || skill === "drivethFuriously" || skill === "hottestBattle" || skill === "threeDarts" || skill === "rashVow" || skill === "leftHanded" || skill === "exceedingWroth" || skill === "sling" || skill === "sword" || skill === "rebuke" || skill === "till" || skill === "offering" || skill === "faithOffering" || skill === "callOnLord" || skill === "harvest" || skill === "wrestle" || skill === "javelin" || skill === "sendMe" || skill === "stoneCut" || skill === "swordAndTrowel" || skill === "axe" || skill === "drawSword" || skill === "thunder" || skill === "boanerges" || skill === "gracePower" || skill === "swordOfSpirit" || skill === "stirUpGift" || skill === "tentRope" || skill === "centurionCommand" || skill === "mightyScriptures" || skill === "profitable" || skill === "nowProfitable" || skill === "pebble" || skill === "moneyBag" || skill === "twoHundredPence" || skill === "noGuile" || skill === "oneOfTwelve" || skill === "contendFaith" || skill === "zeal" || skill === "withEleven" || skill === "downTabor" || skill === "tentPeg" || skill === "saintsCome" || skill === "thisMountain" || skill === "fireInBones" || skill === "thouArtTheMan" || skill === "purgeIdols" || skill === "castGarment" || skill === "faithWorks" || skill === "saveThyself" || skill === "railedOn" || skill === "atThyWord" || skill === "pursued" || skill === "callOnBaal" || skill === "whereinStrength" || skill === "captainOfHost" || skill === "fiftyMen" || skill === "cunningHunter" || skill === "rentClothes" || skill === "insurrection" || skill === "heldGrudge" || skill === "gladius") return "enemy";
   if (skill === "bash" || skill === "spearThrust" || skill === "venom" || skill === "ifThouBeSon" || skill === "fieryDarts" || skill === "roaringLion" || skill === "whoIsLikeGod") return "enemy";
   if (skill === "volley" || skill === "courage" || skill === "sealedLetters" || skill === "pilum" || skill === "aimedShot" || skill === "cavalryCharge") return "anyEnemy";
@@ -1576,6 +1581,25 @@ export function castSkill(state: BattleState, skill: SkillId, target?: Target, r
     else s.party[caster].mp -= mpCost(skill);
   }
   if (pay.faith && def.kind !== "faith") log(s, "v2.log.faithSpent", "detail", { n: pay.faith });
+
+  const prophetEffect = PROPHET_EFFECTS[skill];
+  if (prophetEffect && !def.damage) {
+    log(s, "v2.log.prophetSupport", "player", { char: caster, skill });
+    const recipients = prophetEffect.allies ? living(s) : [target as CharacterId];
+    for (const id of recipients) {
+      if (prophetEffect.cleanse) s.party[id].shaken = false;
+      if (prophetEffect.heal) {
+        const healed = Math.min(prophetEffect.heal, MAX_HP[id] - s.party[id].hp);
+        s.party[id].hp += healed;
+        log(s, "v2.log.heal", "detail", { char: id, n: healed, hp: s.party[id].hp, max: MAX_HP[id] });
+      }
+      if (prophetEffect.shield) addShield(s, id, prophetEffect.shield);
+      if (prophetEffect.faith) {
+        const n = gainFaith(s, id, prophetEffect.faith);
+        log(s, "v2.log.stars", "detail", { n });
+      }
+    }
+  }
 
   switch (skill) {
     case "slingStone":
