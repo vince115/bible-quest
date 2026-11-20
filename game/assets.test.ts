@@ -26,4 +26,11 @@ describe("asset", () => {
     expect(asset("/cards/scripture-gilt-frame.png")).toBe("/cards/scripture-gilt-frame.png");
     expect(asset("/elements/fire.webp")).toBe("/elements/fire.webp");
   });
+  it("serves the eleven book-prophet illustrations from the media host like every other card", async () => {
+    const asset = await load("https://example.r2.dev/");
+    for (const id of ["hosea", "joel", "amos", "obadiah", "micah", "nahum", "habakkuk", "zephaniah", "haggai", "zechariahProphet", "malachi"]) {
+      expect(asset(`/cards/${id}.jpg`)).toBe(`https://example.r2.dev/cards/${id}.jpg`);
+    }
+  });
+
 });

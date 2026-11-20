@@ -1,0 +1,84 @@
+[
+  [
+    {
+      "loaded": true,
+      "name": "何西阿",
+      "source": "/cards/hosea.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "約珥",
+      "source": "/cards/joel.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "阿摩司",
+      "source": "/cards/amos.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "俄巴底亞",
+      "source": "/cards/obadiah.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "彌迦",
+      "source": "/cards/micah.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "那鴻",
+      "source": "/cards/nahum.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "哈巴谷",
+      "source": "/cards/habakkuk.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "西番雅",
+      "source": "/cards/zephaniah.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "哈該",
+      "source": "/cards/haggai.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "撒迦利亞",
+      "source": "/cards/zechariahProphet.jpg"
+    },
+    {
+      "loaded": true,
+      "name": "撒迦利亞",
+      "source": "https://pub-3de8339c6b3542e3a3312adc58bc9b63.r2.dev/cards/zechariah.jpg"
+    }
+  ],
+  [
+    {
+      "loaded": true,
+      "name": "瑪拉基",
+      "source": "/cards/malachi.jpg"
+    }
+  ]
+]

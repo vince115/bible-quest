@@ -1,0 +1,24 @@
+
+> bible-quest@0.1.0 lint
+> eslint
+
+
+/Users/vincelo/dev-hub/github/vince115/bible-quest/components/battle-v3/BattleV3Screen.tsx
+    38:60  warning  'isUnlocked' is defined but never used        @typescript-eslint/no-unused-vars
+    38:72  warning  'nextStage' is defined but never used         @typescript-eslint/no-unused-vars
+  1349:9   warning  'cleared' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/vincelo/dev-hub/github/vince115/bible-quest/components/campaign/CampaignBattle.tsx
+  4:8   warning  'Link' is defined but never used           @typescript-eslint/no-unused-vars
+  6:10  warning  'useT' is defined but never used           @typescript-eslint/no-unused-vars
+  7:10  warning  'campaignStage' is defined but never used  @typescript-eslint/no-unused-vars
+  7:25  warning  'isUnlocked' is defined but never used     @typescript-eslint/no-unused-vars
+
+/Users/vincelo/dev-hub/github/vince115/bible-quest/components/campaign/CampaignScreen.tsx
+  50:17  warning  'playable' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/vincelo/dev-hub/github/vince115/bible-quest/components/cards/CharacterCardFace.tsx
+  8:54  warning  'EnergyKind' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 9 problems (0 errors, 9 warnings)
+
